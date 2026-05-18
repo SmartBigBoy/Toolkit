@@ -55,7 +55,10 @@
                     <label for="imageUpload" class="upload-btn">📁 选择图片</label>
                 </div>
                 <div id="imagePreview" class="image-preview"></div>
-                <button onclick="copyBase64Image()" id="copyImageBtn" disabled>复制Base64</button>
+                <div class="image-actions">
+                    <button onclick="convertToBase64()" id="convertBtn" class="action-btn primary">转Base64</button>
+                    <button onclick="copyBase64Image()" id="copyImageBtn" class="action-btn" disabled>复制Base64</button>
+                </div>
             </div>
         </div>
     </main>

@@ -73,9 +73,17 @@ function handleImageUpload(event) {
             <p>Base64长度: ${imageBase64.length} 字符</p>
         `;
         
-        document.getElementById('copyImageBtn').disabled = false;
+        document.getElementById('convertBtn').disabled = false;
+        document.getElementById('copyImageBtn').disabled = true;
     };
     reader.readAsDataURL(file);
+}
+
+function convertToBase64() {
+    if (!imageBase64) return;
+    
+    document.getElementById('output').value = imageBase64;
+    document.getElementById('copyImageBtn').disabled = false;
 }
 
 function copyBase64Image() {
