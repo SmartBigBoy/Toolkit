@@ -93,3 +93,7 @@ logs/
 assets/bg-removal/models/
 assets/bg-removal/ort-wasm-simd-threaded.wasm
 assets/bg-removal/onnxruntime-web/
+# AI 模型文件（太大，不上传）
+assets/bg-removal/models/
+assets/bg-removal/onnxruntime-web/*.wasm
+assets/bg-removal/medium
