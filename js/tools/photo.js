@@ -20,6 +20,7 @@ let processing = false;
 
 // 加载背景移除模型
 async function loadBackgroundRemovalModel() {
+    console.log('[DEBUG] loadBackgroundRemovalModel 被调用！');
     if (modelReady) return true;
     
     const convertBtn = document.getElementById('convertBtn');
@@ -131,6 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function handlePhotoUpload(event) {
+    console.log('[DEBUG] handlePhotoUpload 被调用');
     const file = event.target.files[0];
     if (!file) return;
 
@@ -173,6 +175,7 @@ function selectBgColor(el) {
 }
 
 async function convertPhoto() {
+    console.log('[DEBUG] convertPhoto 被调用！');
     if (!originalImage) {
         alert('请先上传照片');
         return;
