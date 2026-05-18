@@ -44,7 +44,9 @@ async function loadBackgroundRemovalModel() {
         await preload({
             publicPath: 'https://staticimgly.com/@imgly/background-removal-data/1.4.5/dist/',
             progress: (key, current, total) => {
-                console.log(`[预加载] ${key}: ${current}/${total}`);
+                const pct = total > 0 ? Math.round(current / total * 100) : 0;
+                console.log(`[预加载] ${key}: ${current}/${total} (${pct}%)`);
+                if (statusText) statusText.textContent = `加载模型资源 ${pct}%`;
             }
         });
         
