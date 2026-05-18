@@ -3,508 +3,432 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>数学计算器 - TOOLKIT.SKIN</title>
-    <meta name="description" content="在线数学计算器，支持基础四则运算、三角函数、函数计算等多种数学计算功能。">
-    <meta name="keywords" content="在线计算器,数学计算,科学计算器,三角函数,开方,对数">
-    <meta name="author" content="TOOLKIT.SKIN">
-    <meta name="robots" content="index, follow">
-    <link rel="canonical" href="https://toolkit.skin/tools/math.html">
-    <meta property="og:title" content="数学计算器">
-    <meta property="og:description" content="在线数学计算器，支持多种计算功能。">
-    <meta property="og:url" content="https://toolkit.skin/tools/math.html">
-    <meta property="og:type" content="website">
-    <meta name="twitter:card" content="summary">
+    <title>数学计算 - 在线工具箱</title>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6560822080596473" crossorigin="anonymous"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: var(--bg-primary, #f8fafc);
-            min-height: 100vh;
-            padding: 20px;
-        }
-
-        .page-wrapper {
-            max-width: 600px;
+        .math-container {
+            max-width: 750px;
             margin: 0 auto;
+            background: var(--bg-secondary);
+            border-radius: 20px;
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+            border: 1px solid var(--border);
         }
 
-        /* 顶部标题栏 */
-        .header {
+        .math-header {
+            padding: 28px 32px;
             background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
-            border-radius: 20px 20px 0 0;
-            padding: 20px;
+            color: white;
             text-align: center;
         }
 
-        .header h1 {
-            color: #fff;
-            font-size: 20px;
+        .math-header h2 {
+            font-size: 24px;
             font-weight: 700;
-            margin-bottom: 4px;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
         }
 
-        .header h1 i {
-            margin-right: 8px;
+        .math-header p {
+            margin: 8px 0 0;
+            font-size: 14px;
+            opacity: 0.9;
         }
 
-        .header p {
-            color: rgba(255, 255, 255, 0.85);
-            font-size: 13px;
+        .math-body {
+            padding: 32px;
         }
 
-        /* 主体卡片 */
-        .main-card {
-            background: #fff;
-            border-radius: 0 0 20px 20px;
-            padding: 20px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-        }
-
-        /* 模块通用样式 */
-        .calc-section {
-            background: #f8fafc;
+        .conversion-block {
+            margin-bottom: 32px;
+            padding: 24px;
+            background: var(--bg-tertiary);
             border-radius: 16px;
-            padding: 16px;
-            margin-bottom: 16px;
+            border-left: 4px solid #10b981;
         }
 
-        .section-title {
+        .conversion-block:last-child {
+            margin-bottom: 0;
+        }
+
+        .block-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 16px;
             display: flex;
             align-items: center;
             gap: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            color: #1e293b;
-            margin-bottom: 12px;
         }
 
-        .section-title i {
+        .block-title i {
             color: #10b981;
-            font-size: 16px;
         }
 
-        /* 基础四则运算 */
-        .basic-calc {
-            display: flex;
+        .basic-calc-row {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 16px;
+            margin-bottom: 16px;
             align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
         }
 
-        .calc-input {
-            flex: 1;
-            min-width: 80px;
-            padding: 12px 14px;
-            border: 1px solid #e2e8f0;
-            border-radius: 10px;
+        .basic-input {
+            padding: 14px 16px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
             font-size: 16px;
+            background: var(--bg-secondary);
             text-align: center;
-            background: #fff;
-            transition: border-color 0.2s;
-        }
-
-        .calc-input:focus {
-            outline: none;
-            border-color: #10b981;
-        }
-
-        .calc-select {
-            padding: 12px 30px 12px 14px;
-            border: 1px solid #e2e8f0;
-            border-radius: 10px;
-            font-size: 16px;
-            background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M2 4l4 4 4-4'/%3E%3C/svg%3E") no-repeat right 12px center;
-            appearance: none;
-            cursor: pointer;
-        }
-
-        .calc-select:focus {
-            outline: none;
-            border-color: #10b981;
-        }
-
-        .calc-btn {
-            background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
-            color: #fff;
-            border: none;
-            border-radius: 10px;
-            padding: 12px 20px;
-            font-size: 14px;
+            transition: all 0.2s;
             font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            transition: transform 0.15s, box-shadow 0.15s;
         }
 
-        .calc-btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        .basic-input:focus {
+            outline: none;
+            border-color: #10b981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
         }
 
-        .basic-result {
-            margin-top: 10px;
-            padding: 12px;
-            background: #fff;
-            border-radius: 10px;
-            text-align: center;
+        .operator-select {
+            padding: 14px 12px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
             font-size: 18px;
-            font-weight: 600;
-            color: #10b981;
-            border: 1px solid #e2e8f0;
+            font-weight: 700;
+            background: var(--bg-secondary);
+            cursor: pointer;
+            text-align: center;
+            width: 70px;
+            transition: all 0.2s;
         }
 
-        /* 三角函数 */
-        .trig-grid {
+        .operator-select:focus {
+            outline: none;
+            border-color: #10b981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        }
+
+        .action-btn {
+            padding: 16px 24px;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+            white-space: nowrap;
+        }
+
+        .action-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.45);
+        }
+
+        .action-btn.full {
+            width: 100%;
+        }
+
+        .action-btn.secondary {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+            box-shadow: none;
+        }
+
+        .action-btn.secondary:hover:not(:disabled) {
+            background: var(--border);
+        }
+
+        .result-area {
+            margin-top: 16px;
+            padding: 16px;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            border-left: 4px solid #10b981;
+        }
+
+        .result-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .result-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-primary);
+            font-family: 'SF Mono', 'Monaco', 'Menlo', monospace;
+            word-break: break-all;
+        }
+
+        .trig-row {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 10px;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .trig-item {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .trig-item label {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
         }
 
         .trig-input {
-            padding: 12px 14px;
-            border: 1px solid #e2e8f0;
-            border-radius: 10px;
-            font-size: 16px;
-            background: #fff;
-            text-align: center;
+            padding: 14px 16px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            font-size: 15px;
+            background: var(--bg-secondary);
+            transition: all 0.2s;
         }
 
         .trig-input:focus {
             outline: none;
             border-color: #10b981;
-        }
-
-        .trig-label {
-            font-size: 12px;
-            color: #64748b;
-            margin-bottom: 4px;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
         }
 
         .trig-select {
-            padding: 12px 30px 12px 14px;
-            border: 1px solid #e2e8f0;
-            border-radius: 10px;
-            font-size: 16px;
-            background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M2 4l4 4 4-4'/%3E%3C/svg%3E") no-repeat right 12px center;
-            appearance: none;
+            padding: 14px 16px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            font-size: 15px;
+            background: var(--bg-secondary);
             cursor: pointer;
+            transition: all 0.2s;
         }
 
         .trig-select:focus {
             outline: none;
             border-color: #10b981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
         }
 
-        .trig-btn {
-            grid-column: span 2;
-            background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
-            color: #fff;
-            border: none;
-            border-radius: 10px;
-            padding: 14px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            margin-top: 4px;
-        }
-
-        .trig-btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-        }
-
-        /* 函数计算 */
-        .func-input {
-            padding: 12px 14px;
-            border: 1px solid #e2e8f0;
-            border-radius: 10px;
-            font-size: 16px;
-            width: 100%;
-            text-align: center;
-            margin-bottom: 12px;
-            background: #fff;
-        }
-
-        .func-input:focus {
-            outline: none;
-            border-color: #10b981;
-        }
-
-        .func-btn {
-            background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
-            color: #fff;
-            border: none;
-            border-radius: 10px;
-            padding: 14px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            margin-bottom: 12px;
-        }
-
-        .func-btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-        }
-
-        .func-results {
+        .advanced-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
+            gap: 12px;
+            margin-bottom: 16px;
         }
 
-        .func-result-item {
-            background: #fff;
-            border-radius: 10px;
-            padding: 12px;
+        .advanced-item {
+            padding: 14px;
+            background: var(--bg-secondary);
+            border-radius: 12px;
             text-align: center;
-            border: 1px solid #e2e8f0;
+            border: 1px solid var(--border);
         }
 
-        .func-result-label {
-            font-size: 12px;
-            color: #64748b;
-            margin-bottom: 4px;
+        .advanced-item .label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+            display: block;
         }
 
-        .func-result-value {
-            font-size: 14px;
-            font-weight: 600;
-            color: #10b981;
+        .advanced-item .value {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-primary);
+            font-family: 'SF Mono', 'Monaco', 'Menlo', monospace;
         }
 
-        /* Toast */
-        .toast {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%) translateY(-100px);
-            background: #10b981;
-            color: #fff;
-            padding: 12px 24px;
-            border-radius: 10px;
-            font-size: 14px;
-            font-weight: 500;
-            z-index: 9999;
-            transition: transform 0.3s;
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        .single-num-input {
+            padding: 14px 16px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            font-size: 16px;
+            background: var(--bg-secondary);
+            width: 100%;
+            margin-bottom: 16px;
+            transition: all 0.2s;
         }
 
-        .toast.show {
-            transform: translateX(-50%) translateY(0);
+        .single-num-input:focus {
+            outline: none;
+            border-color: #10b981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
         }
 
-        /* 响应式 */
-        @media (max-width: 480px) {
-            .func-results {
-                grid-template-columns: repeat(2, 1fr);
+        @media (max-width: 768px) {
+            .math-body {
+                padding: 20px;
             }
-            
-            .basic-calc {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            
-            .trig-grid {
+
+            .basic-calc-row {
                 grid-template-columns: 1fr;
             }
-            
-            .trig-btn {
-                grid-column: span 1;
+
+            .operator-select {
+                width: 100%;
+            }
+
+            .trig-row {
+                grid-template-columns: 1fr;
+            }
+
+            .advanced-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .conversion-block {
+                padding: 16px;
             }
         }
     </style>
 </head>
 <body>
-    <div class="page-wrapper">
-        <!-- 顶部标题栏 -->
-        <div class="header">
-            <h1><i class="fas fa-square-root-alt"></i>数学计算器</h1>
-            <p>常用数学计算工具</p>
+    <header class="header">
+        <div class="container">
+            <a href="../index.html" class="logo">
+                <i class="fas fa-wrench"></i>
+                <h1>在线工具箱</h1>
+            </a>
         </div>
+    </header>
 
-        <!-- 主体卡片 -->
-        <div class="main-card">
-            <!-- 基础四则运算 -->
-            <div class="calc-section">
-                <div class="section-title">
-                    <i class="fas fa-table"></i>基础四则运算
+    <main class="main">
+        <div class="container">
+            <div class="math-container">
+                <div class="math-header">
+                    <h2><i class="fas fa-square-root-alt"></i> 数学计算器</h2>
+                    <p>常用数学计算工具</p>
                 </div>
-                <div class="basic-calc">
-                    <input type="number" class="calc-input" id="num1" value="10">
-                    <select class="calc-select" id="operator">
-                        <option value="+">+</option>
-                        <option value="-">−</option>
-                        <option value="*">×</option>
-                        <option value="/">÷</option>
-                    </select>
-                    <input type="number" class="calc-input" id="num2" value="5">
-                    <button class="calc-btn" onclick="basicCalc()">
-                        <i class="fas fa-equals"></i>计算
-                    </button>
-                </div>
-                <div class="basic-result" id="basicResult">---</div>
-            </div>
 
-            <!-- 三角函数 -->
-            <div class="calc-section">
-                <div class="section-title">
-                    <i class="fas fa-wave-square"></i>三角函数
-                </div>
-                <div class="trig-grid">
-                    <div>
-                        <div class="trig-label">角度（度）</div>
-                        <input type="number" class="trig-input" id="angle" value="45">
+                <div class="math-body">
+                    <div class="conversion-block">
+                        <div class="block-title">
+                            <i class="fas fa-calculator"></i> 基础四则运算
+                        </div>
+                        <div class="basic-calc-row">
+                            <input type="number" id="num1" class="basic-input" value="10">
+                            <select id="operation" class="operator-select">
+                                <option value="add">+</option>
+                                <option value="subtract">-</option>
+                                <option value="multiply">×</option>
+                                <option value="divide">÷</option>
+                                <option value="pow">^</option>
+                                <option value="mod">%</option>
+                            </select>
+                            <input type="number" id="num2" class="basic-input" value="5">
+                        </div>
+                        <button class="action-btn full" onclick="calculate()">
+                            <i class="fas fa-equals"></i> 计算
+                        </button>
+                        <div id="basicResult" class="result-area" style="display: none;">
+                            <div class="result-label">结果</div>
+                            <div style="display: flex; gap: 12px; align-items: center;">
+                                <div class="result-value" id="basicResultValue"></div>
+                                <button class="action-btn secondary" onclick="copyBasicResult()" style="padding: 10px 16px; font-size: 14px; flex-shrink: 0;">
+                                    <i class="fas fa-copy"></i> 复制
+                                </button>
+                            </div>
+                        </div>
                     </div>
-                    <div>
-                        <div class="trig-label">函数类型</div>
-                        <select class="trig-select" id="trigFunc">
-                            <option value="sin">sin</option>
-                            <option value="cos">cos</option>
-                            <option value="tan">tan</option>
-                        </select>
-                    </div>
-                    <button class="trig-btn" onclick="trigCalc()">
-                        <i class="fas fa-equals"></i>计算
-                    </button>
-                </div>
-                <div class="basic-result" id="trigResult">---</div>
-            </div>
 
-            <!-- 函数计算 -->
-            <div class="calc-section">
-                <div class="section-title">
-                    <i class="fas fa-function"></i>函数计算
-                </div>
-                <input type="number" class="func-input" id="funcNum" value="16" placeholder="输入数字">
-                <button class="func-btn" onclick="funcCalc()">
-                    <i class="fas fa-edit"></i>全部计算
-                </button>
-                <div class="func-results">
-                    <div class="func-result-item">
-                        <div class="func-result-label">平方根</div>
-                        <div class="func-result-value" id="sqrt">---</div>
+                    <div class="conversion-block">
+                        <div class="block-title">
+                            <i class="fas fa-chart-line"></i> 三角函数
+                        </div>
+                        <div class="trig-row">
+                            <div class="trig-item">
+                                <label>角度（度）</label>
+                                <input type="number" id="angle" class="trig-input" value="45">
+                            </div>
+                            <div class="trig-item">
+                                <label>函数类型</label>
+                                <select id="trigType" class="trig-select">
+                                    <option value="sin">sin</option>
+                                    <option value="cos">cos</option>
+                                    <option value="tan">tan</option>
+                                    <option value="asin">asin</option>
+                                    <option value="acos">acos</option>
+                                    <option value="atan">atan</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button class="action-btn full" onclick="calculateTrig()">
+                            <i class="fas fa-equals"></i> 计算
+                        </button>
+                        <div id="trigResult" class="result-area" style="display: none;">
+                            <div class="result-label">结果</div>
+                            <div style="display: flex; gap: 12px; align-items: center;">
+                                <div class="result-value" id="trigResultValue"></div>
+                                <button class="action-btn secondary" onclick="copyTrigResult()" style="padding: 10px 16px; font-size: 14px; flex-shrink: 0;">
+                                    <i class="fas fa-copy"></i> 复制
+                                </button>
+                            </div>
+                        </div>
                     </div>
-                    <div class="func-result-item">
-                        <div class="func-result-label">立方根</div>
-                        <div class="func-result-value" id="cbrt">---</div>
-                    </div>
-                    <div class="func-result-item">
-                        <div class="func-result-label">绝对值</div>
-                        <div class="func-result-value" id="abs">---</div>
-                    </div>
-                    <div class="func-result-item">
-                        <div class="func-result-label">自然对数</div>
-                        <div class="func-result-value" id="log">---</div>
-                    </div>
-                    <div class="func-result-item">
-                        <div class="func-result-label">常用对数</div>
-                        <div class="func-result-value" id="log10">---</div>
-                    </div>
-                    <div class="func-result-item">
-                        <div class="func-result-label">e的幂</div>
-                        <div class="func-result-value" id="exp">---</div>
+
+                    <div class="conversion-block">
+                        <div class="block-title">
+                            <i class="fas fa-cubes"></i> 函数计算
+                        </div>
+                        <input type="number" id="calcNum" class="single-num-input" value="16" placeholder="输入数字">
+                        <button class="action-btn full" onclick="calculateAdvanced()">
+                            <i class="fas fa-magic"></i> 全部计算
+                        </button>
+                        <div class="advanced-grid" style="margin-top: 16px;">
+                            <div class="advanced-item">
+                                <span class="label">平方根</span>
+                                <span class="value" id="sqrtResult">---</span>
+                            </div>
+                            <div class="advanced-item">
+                                <span class="label">立方根</span>
+                                <span class="value" id="cbrtResult">---</span>
+                            </div>
+                            <div class="advanced-item">
+                                <span class="label">绝对值</span>
+                                <span class="value" id="absResult">---</span>
+                            </div>
+                            <div class="advanced-item">
+                                <span class="label">自然对数</span>
+                                <span class="value" id="logResult">---</span>
+                            </div>
+                            <div class="advanced-item">
+                                <span class="label">常用对数</span>
+                                <span class="value" id="log10Result">---</span>
+                            </div>
+                            <div class="advanced-item">
+                                <span class="label">e的幂</span>
+                                <span class="value" id="expResult">---</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
+    </main>
 
-    <!-- Toast -->
-    <div class="toast" id="toast"></div>
+    <footer class="footer">
+        <div class="container">
+            <p>© 2025 在线工具箱 | 简洁高效的工具集合</p>
+        </div>
+    </footer>
 
-    <script>
-        function showToast(message) {
-            const toast = document.getElementById('toast');
-            toast.textContent = message;
-            toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 2000);
-        }
-
-        // 基础四则运算
-        function basicCalc() {
-            const num1 = parseFloat(document.getElementById('num1').value);
-            const num2 = parseFloat(document.getElementById('num2').value);
-            const op = document.getElementById('operator').value;
-            
-            if (isNaN(num1) || isNaN(num2)) {
-                showToast('请输入有效的数字');
-                return;
-            }
-            
-            let result;
-            switch(op) {
-                case '+': result = num1 + num2; break;
-                case '-': result = num1 - num2; break;
-                case '*': result = num1 * num2; break;
-                case '/': result = num2 !== 0 ? num1 / num2 : 'Error'; break;
-            }
-            
-            document.getElementById('basicResult').textContent = isNaN(result) ? 'Error' : result;
-        }
-
-        // 三角函数计算
-        function trigCalc() {
-            const angle = parseFloat(document.getElementById('angle').value);
-            const func = document.getElementById('trigFunc').value;
-            
-            if (isNaN(angle)) {
-                showToast('请输入有效的角度');
-                return;
-            }
-            
-            const radians = angle * Math.PI / 180;
-            let result;
-            
-            switch(func) {
-                case 'sin': result = Math.sin(radians); break;
-                case 'cos': result = Math.cos(radians); break;
-                case 'tan': result = Math.tan(radians); break;
-            }
-            
-            document.getElementById('trigResult').textContent = isNaN(result) ? 'Error' : result.toFixed(6);
-        }
-
-        // 函数计算
-        function funcCalc() {
-            const num = parseFloat(document.getElementById('funcNum').value);
-            
-            if (isNaN(num)) {
-                showToast('请输入有效的数字');
-                return;
-            }
-            
-            document.getElementById('sqrt').textContent = Math.sqrt(num).toFixed(4);
-            document.getElementById('cbrt').textContent = Math.cbrt(num).toFixed(4);
-            document.getElementById('abs').textContent = Math.abs(num);
-            document.getElementById('log').textContent = num > 0 ? Math.log(num).toFixed(4) : 'N/A';
-            document.getElementById('log10').textContent = num > 0 ? Math.log10(num).toFixed(4) : 'N/A';
-            document.getElementById('exp').textContent = Math.exp(num).toFixed(4);
-        }
-
-        // 页面加载时执行一次
-        basicCalc();
-        trigCalc();
-        funcCalc();
-    </script>
+    <script src="../js/tools/math.js"></script>
 </body>
 </html>
