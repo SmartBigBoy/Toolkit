@@ -812,6 +812,21 @@ body {
     flex-wrap: wrap;
 }
 
+/* 进度文本样式 */
+.progress-text {
+    text-align: center;
+    color: #8b5cf6;
+    font-size: 14px;
+    font-weight: 500;
+    margin-top: 12px;
+    min-height: 20px;
+}
+
+/* 证件照工具进度文本 */
+.tool-container.image-section .progress-text {
+    color: #8b5cf6;
+}
+
 .image-actions .action-btn {
     flex: 1;
     min-width: 140px;
