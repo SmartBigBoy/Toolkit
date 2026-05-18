@@ -35,8 +35,8 @@ async function loadBackgroundRemovalModel() {
         
         console.log('[模型] 导入 background-removal 库...');
         
-        // 使用 CDN 加载（自动缓存到 IndexedDB）
-        const bgRemoval = await import('https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.5/+esm');
+        // 使用本地库文件
+        const bgRemoval = await import('../assets/bg-removal/dist/index.mjs');
         const { removeBackground, preload } = bgRemoval;
         
         console.log('[模型] 库导入成功，开始预加载...');
