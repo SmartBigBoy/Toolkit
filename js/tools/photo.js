@@ -11,6 +11,43 @@ const photoSizes = {
 let originalImage = null;
 let convertedCanvas = null;
 let selectedSize = '1inch';
+let segmenter = null;
+let segmenterLoading = false;
+
+// 初始化 MediaPipe Selfie Segmentation
+async function initSegmenter() {
+    if (segmenter) return segmenter;
+    if (segmenterLoading) {
+        // 等待加载完成
+        while (segmenterLoading) {
+            await new Promise(r => setTimeout(r, 100));
+        }
+        return segmenter;
+    }
+
+    segmenterLoading = true;
+    
+    try {
+        const { SelfieSegmentation } = await import('https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/selfie_segmentation.js');
+        
+        segmenter = new SelfieSegmentation({
+            locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/${file}`
+        });
+
+        segmenter.setOptions({
+            modelSelection: 1, // 0: general, 1: landscape
+            selfieMode: false
+        });
+
+        await segmenter.initialize();
+        segmenterLoading = false;
+        return segmenter;
+    } catch (error) {
+        console.error('MediaPipe 加载失败:', error);
+        segmenterLoading = false;
+        return null;
+    }
+}
 
 document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.size-option').forEach(option => {
@@ -54,6 +91,9 @@ document.addEventListener('DOMContentLoaded', () => {
             photoUpload.click();
         }
     });
+
+    // 预加载分割模型
+    initSegmenter();
 });
 
 function handlePhotoUpload(event) {
@@ -72,6 +112,9 @@ function handlePhotoUpload(event) {
             `;
             document.getElementById('convertBtn').disabled = false;
             document.getElementById('downloadBtn').disabled = true;
+            
+            // 预加载模型
+            initSegmenter();
         };
         img.src = e.target.result;
     };
@@ -88,12 +131,117 @@ function selectBgColor(el) {
     selectedBgName = el.dataset.name;
 }
 
-function convertPhoto() {
+async function convertPhoto() {
     if (!originalImage) {
         alert('请先上传照片');
         return;
     }
 
+    const convertBtn = document.getElementById('convertBtn');
+    const originalText = convertBtn.textContent;
+    convertBtn.textContent = 'AI 分割中...';
+    convertBtn.disabled = true;
+
+    try {
+        // 初始化/等待分割模型
+        const seg = await initSegmenter();
+        
+        if (!seg) {
+            // 回退到传统算法
+            await convertWithTraditionalAlgorithm();
+            return;
+        }
+
+        const targetSize = photoSizes[selectedSize];
+        const targetColor = hexToRgb(selectedBgColor);
+
+        // 创建临时 canvas 用于处理
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = originalImage.width;
+        tempCanvas.height = originalImage.height;
+        const tempCtx = tempCanvas.getContext('2d');
+        tempCtx.drawImage(originalImage, 0, 0);
+
+        // 使用 MediaPipe 进行分割
+        const segmentationMask = await seg.segment(tempCanvas);
+
+        // 创建带透明度的结果
+        const resultCanvas = document.createElement('canvas');
+        resultCanvas.width = originalImage.width;
+        resultCanvas.height = originalImage.height;
+        const resultCtx = resultCanvas.getContext('2d');
+
+        // 绘制原图
+        resultCtx.drawImage(tempCanvas, 0, 0);
+
+        // 创建蒙版图像
+        const maskCanvas = document.createElement('canvas');
+        maskCanvas.width = originalImage.width;
+        maskCanvas.height = originalImage.height;
+        const maskCtx = maskCanvas.getContext('2d');
+
+        // 将分割结果绘制到蒙版
+        const maskData = maskCtx.createImageData(originalImage.width, originalImage.height);
+        for (let i = 0; i < segmentationMask.length; i++) {
+            const value = segmentationMask[i];
+            // value 是 0-1 的概率，表示背景概率
+            // 我们需要的是人物概率
+            const personProb = 1 - value;
+            const idx = i * 4;
+            maskData.data[idx] = 255;
+            maskData.data[idx + 1] = 255;
+            maskData.data[idx + 2] = 255;
+            maskData.data[idx + 3] = Math.round(personProb * 255);
+        }
+        maskCtx.putImageData(maskData, 0, 0);
+
+        // 应用蒙版
+        resultCtx.globalCompositeOperation = 'destination-in';
+        resultCtx.drawImage(maskCanvas, 0, 0);
+
+        // 创建目标尺寸 canvas
+        const canvas = document.createElement('canvas');
+        canvas.width = targetSize.width;
+        canvas.height = targetSize.height;
+        const ctx = canvas.getContext('2d');
+
+        // 填充目标背景色
+        ctx.fillStyle = selectedBgColor;
+        ctx.fillRect(0, 0, targetSize.width, targetSize.height);
+
+        // 绘制分割后的人像
+        const scale = Math.min(targetSize.width / originalImage.width, targetSize.height / originalImage.height);
+        const drawWidth = originalImage.width * scale;
+        const drawHeight = originalImage.height * scale;
+        const drawX = (targetSize.width - drawWidth) / 2;
+        const drawY = (targetSize.height - drawHeight) / 2;
+
+        ctx.drawImage(resultCanvas, drawX, drawY, drawWidth, drawHeight);
+
+        convertedCanvas = canvas;
+
+        const resultBox = document.getElementById('resultBox');
+        const resultPreview = document.getElementById('resultPreview');
+        resultBox.style.display = 'block';
+        resultPreview.innerHTML = `
+            <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px;">${selectedBgName} ${targetSize.name} - ${targetSize.width} × ${targetSize.height} 像素</p>
+            <img src="${canvas.toDataURL()}" alt="转换结果">
+        `;
+
+        document.getElementById('downloadBtn').disabled = false;
+
+    } catch (error) {
+        console.error('分割失败:', error);
+        // 回退到传统算法
+        await convertWithTraditionalAlgorithm();
+    } finally {
+        convertBtn.textContent = originalText;
+        convertBtn.disabled = false;
+    }
+}
+
+// 传统算法回退
+async function convertWithTraditionalAlgorithm() {
     const targetSize = photoSizes[selectedSize];
     const targetColor = hexToRgb(selectedBgColor);
 
@@ -114,10 +262,10 @@ function convertPhoto() {
     // 容差
     const tolerance = 35;
 
-    // 创建蒙版：1=主体，0=背景
+    // 创建蒙版
     const mask = new Uint8Array(width * height);
 
-    // 步骤1：基于肤色和背景色的混合判断
+    // 基于肤色和背景色的判断
     for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; x++) {
             const idx = (y * width + x) * 4;
@@ -129,19 +277,16 @@ function convertPhoto() {
             const isSkin = isSkinColor(r, g, b);
             const isHair = isHairColor(r, g, b, bgColor);
 
-            // 主体判断：肤色、头发颜色、或与背景色差异足够大
             if (isSkin || isHair || bgDist > tolerance * 1.2) {
                 mask[y * width + x] = 1;
             }
         }
     }
 
-    // 步骤2：区域生长 - 从已标记的主体向外扩展
+    // 区域生长
     let changed = true;
     let iterations = 0;
-    const maxIterations = 30;
-
-    while (changed && iterations < maxIterations) {
+    while (changed && iterations < 30) {
         changed = false;
         iterations++;
 
@@ -150,7 +295,6 @@ function convertPhoto() {
                 const idx = y * width + x;
                 if (mask[idx]) continue;
 
-                // 8邻域
                 let neighborCount = 0;
                 let maxNeighborDist = 0;
 
@@ -160,7 +304,6 @@ function convertPhoto() {
                         const nidx = (y + dy) * width + (x + dx);
                         if (mask[nidx]) {
                             neighborCount++;
-                            // 计算这个邻居与当前像素的颜色差异
                             const nIdx4 = nidx * 4;
                             const cIdx4 = idx * 4;
                             const dist = colorDistance(
@@ -172,7 +315,6 @@ function convertPhoto() {
                     }
                 }
 
-                // 如果周围有足够多的主体像素，且颜色差异不大，纳入主体
                 if (neighborCount >= 3 && maxNeighborDist < tolerance) {
                     mask[idx] = 1;
                     changed = true;
@@ -181,33 +323,25 @@ function convertPhoto() {
         }
     }
 
-    // 步骤3：形态学清理
-    // 闭运算：先膨胀后腐蚀，填充缝隙
-    for (let i = 0; i < 3; i++) {
-        dilateMask(mask, width, height, 1);
-    }
-    for (let i = 0; i < 2; i++) {
-        erodeMask(mask, width, height, 1);
-    }
+    // 形态学清理
+    for (let i = 0; i < 3; i++) dilateMask(mask, width, height, 1);
+    for (let i = 0; i < 2; i++) erodeMask(mask, width, height, 1);
 
-    // 步骤4：边缘羽化替换
+    // 边缘羽化替换
     for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; x++) {
             const idx = (y * width + x) * 4;
             const pixel = { r: data[idx], g: data[idx + 1], b: data[idx + 2] };
 
             if (mask[y * width + x]) {
-                // 主体像素，检查是否需要边缘处理
                 const bgDist = colorDistance(pixel, bgColor);
                 if (bgDist < tolerance * 1.5) {
-                    // 接近背景色的边缘，进行混合
                     const blendFactor = Math.min(1, bgDist / (tolerance * 1.5));
                     data[idx] = Math.round(pixel.r * blendFactor + targetColor.r * (1 - blendFactor) * 0.5);
                     data[idx + 1] = Math.round(pixel.g * blendFactor + targetColor.g * (1 - blendFactor) * 0.5);
                     data[idx + 2] = Math.round(pixel.b * blendFactor + targetColor.b * (1 - blendFactor) * 0.5);
                 }
             } else {
-                // 背景像素，直接替换
                 data[idx] = targetColor.r;
                 data[idx + 1] = targetColor.g;
                 data[idx + 2] = targetColor.b;
@@ -217,7 +351,6 @@ function convertPhoto() {
 
     tempCtx.putImageData(imageData, 0, 0);
 
-    // 创建目标尺寸 canvas
     const canvas = document.createElement('canvas');
     canvas.width = targetSize.width;
     canvas.height = targetSize.height;
@@ -249,46 +382,30 @@ function convertPhoto() {
 
 // 肤色检测
 function isSkinColor(r, g, b) {
-    // 简化的肤色检测
-    // 肤色特征：红色分量较高，蓝色分量较低
     if (r < 80 || g < 40 || b < 30) return false;
     if (r < g || r < b) return false;
-
     const max = Math.max(r, g, b);
     const min = Math.min(r, g, b);
-
-    // 亮度适中
     if (max < 60 || max > 240) return false;
-
-    // 红色主导
     if (r < max * 0.4) return false;
-
     return true;
 }
 
 // 头发颜色检测
 function isHairColor(r, g, b, bgColor) {
-    // 头发通常比肤色暗，比背景色也暗
     const brightness = (r + g + b) / 3;
     const bgBrightness = (bgColor.r + bgColor.g + bgColor.b) / 3;
-
-    // 头发比背景略亮或接近，但比肤色暗
     if (brightness > bgBrightness * 1.1) return false;
-    if (brightness > 180) return false; // 太亮不是头发
-
-    // 头发通常不是特别饱和的蓝色或绿色
+    if (brightness > 180) return false;
     const max = Math.max(r, g, b);
     const min = Math.min(r, g, b);
     const saturation = (max - min) / max;
-
-    // 头发饱和度适中偏低
     return saturation < 0.5 && brightness < bgBrightness;
 }
 
 // 膨胀蒙版
 function dilateMask(mask, width, height, radius) {
     const newMask = new Uint8Array(mask.length);
-
     for (let y = radius; y < height - radius; y++) {
         for (let x = radius; x < width - radius; x++) {
             let found = mask[y * width + x];
@@ -302,14 +419,12 @@ function dilateMask(mask, width, height, radius) {
             newMask[y * width + x] = found;
         }
     }
-
     for (let i = 0; i < mask.length; i++) mask[i] = newMask[i];
 }
 
 // 腐蚀蒙版
 function erodeMask(mask, width, height, radius) {
     const newMask = new Uint8Array(mask.length);
-
     for (let y = radius; y < height - radius; y++) {
         for (let x = radius; x < width - radius; x++) {
             let all = mask[y * width + x];
@@ -323,7 +438,6 @@ function erodeMask(mask, width, height, radius) {
             newMask[y * width + x] = all;
         }
     }
-
     for (let i = 0; i < mask.length; i++) mask[i] = newMask[i];
 }
 
@@ -388,9 +502,7 @@ function hexToRgb(hex) {
 
 function downloadPhoto() {
     if (!convertedCanvas) return;
-
     const targetSize = photoSizes[selectedSize];
-    
     const link = document.createElement('a');
     link.download = `${targetSize.name}.png`;
     link.href = convertedCanvas.toDataURL('image/png');
