@@ -32,24 +32,46 @@ async function loadBackgroundRemovalModel() {
             convertBtn.disabled = true;
         }
         
-        // 动态导入 background-removal 库（使用本地文件）
-        const { removeBackground } = await import('../assets/bg-removal/dist/index.mjs');
+        console.log('[模型] 导入 background-removal 库...');
         
-        // 预热模型：用 1x1 透明 PNG 触发模型下载
+        // 动态导入 background-removal 库（使用本地文件）
+        const bgRemoval = await import('../assets/bg-removal/dist/index.mjs');
+        const { removeBackground, preload } = bgRemoval;
+        
+        console.log('[模型] 库导入成功，开始预加载资源...');
+        
+        // 预加载资源（下载 WASM 和模型元数据）
+        await preload({
+            publicPath: '/assets/bg-removal/',
+            progress: (key, current, total) => {
+                console.log(`[预加载] ${key}: ${current}/${total}`);
+                if (statusText) statusText.textContent = `准备资源 ${key}...`;
+            },
+            debug: true
+        });
+        
+        console.log('[模型] 预加载完成，初始化模型...');
+        
+        // 用 tiny 图片触发模型加载
         const tiny = await fetch('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==')
             .then(r => r.blob());
         
         await removeBackground(tiny, {
-            model: 'medium',  // 使用本地 medium 模型
-            publicPath: '../assets/bg-removal/',
+            model: 'medium',
+            publicPath: '/assets/bg-removal/',
             progress: (key, current, total) => {
+                console.log(`[模型] ${key}: ${current}/${total}`);
                 if (total > 0) {
                     const pct = Math.round(current / total * 100);
-                    if (statusText) statusText.textContent = `加载模型中 ${pct}%...`;
+                    if (statusText) statusText.textContent = `加载模型 ${pct}%...`;
+                } else {
+                    if (statusText) statusText.textContent = `加载 ${key}...`;
                 }
-            }
+            },
+            debug: true
         });
         
+        console.log('[模型] 模型加载完成!');
         modelReady = true;
         if (statusText) statusText.textContent = 'AI 模型已就绪';
         updateConvertButton();
