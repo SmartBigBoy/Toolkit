@@ -234,6 +234,7 @@ async function applyBackgroundToCanvas() {
     if (!bgRemovalBlob || !originalImage) return;
 
     const targetSize = photoSizes[selectedSize];
+    const keepOriginalColor = selectedBgColor === 'keep';
     
     return new Promise((resolve) => {
         const url = URL.createObjectURL(bgRemovalBlob);
@@ -246,9 +247,11 @@ async function applyBackgroundToCanvas() {
             canvas.height = targetSize.height;
             const ctx = canvas.getContext('2d');
 
-            // 填充目标背景色
-            ctx.fillStyle = selectedBgColor;
-            ctx.fillRect(0, 0, targetSize.width, targetSize.height);
+            // 如果不保持原色，填充目标背景色
+            if (!keepOriginalColor) {
+                ctx.fillStyle = selectedBgColor;
+                ctx.fillRect(0, 0, targetSize.width, targetSize.height);
+            }
 
             // 绘制 AI 抠图后的人像（保持透明通道）
             const scale = Math.min(
@@ -267,9 +270,10 @@ async function applyBackgroundToCanvas() {
             // 显示结果
             const resultBox = document.getElementById('resultBox');
             const resultPreview = document.getElementById('resultPreview');
+            const bgText = keepOriginalColor ? '保持原色' : selectedBgName;
             resultBox.style.display = 'block';
             resultPreview.innerHTML = `
-                <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px;">${selectedBgName} ${targetSize.name} - ${targetSize.width} × ${targetSize.height} 像素</p>
+                <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px;">${bgText} ${targetSize.name} - ${targetSize.width} × ${targetSize.height} 像素</p>
                 <img src="${canvas.toDataURL()}" alt="转换结果">
             `;
 
