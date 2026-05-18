@@ -23,12 +23,12 @@ async function loadBackgroundRemovalModel() {
     if (modelReady) return true;
     
     const convertBtn = document.getElementById('convertBtn');
-    const statusText = document.getElementById('conversionStatus');
+    const progressText = document.getElementById('progressText');
     
     try {
-        if (statusText) statusText.textContent = '加载 AI 模型中...';
+        if (progressText) progressText.textContent = '加载 AI 模型中... 0%';
         if (convertBtn) {
-            convertBtn.textContent = '加载模型中...';
+            convertBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>加载模型中...</span>';
             convertBtn.disabled = true;
         }
         
@@ -46,7 +46,7 @@ async function loadBackgroundRemovalModel() {
             progress: (key, current, total) => {
                 const pct = total > 0 ? Math.round(current / total * 100) : 0;
                 console.log(`[预加载] ${key}: ${current}/${total} (${pct}%)`);
-                if (statusText) statusText.textContent = `加载模型资源 ${pct}%`;
+                if (progressText) progressText.textContent = `加载模型资源中... ${pct}%`;
             }
         });
         
@@ -54,13 +54,13 @@ async function loadBackgroundRemovalModel() {
         
         // 初始化完成（模型会在首次使用时加载）
         modelReady = true;
-        if (statusText) statusText.textContent = 'AI 模型已就绪';
+        if (progressText) progressText.textContent = 'AI 模型已就绪 ✓';
         updateConvertButton();
         
         return true;
     } catch (error) {
         console.error('模型加载失败:', error);
-        if (statusText) statusText.textContent = 'AI 模型加载失败，将使用传统算法';
+        if (progressText) progressText.textContent = 'AI 模型加载失败，将使用传统算法';
         return false;
     }
 }
@@ -180,11 +180,11 @@ async function convertPhoto() {
     }
 
     const convertBtn = document.getElementById('convertBtn');
-    const statusText = document.getElementById('conversionStatus');
+    const progressText = document.getElementById('progressText');
     
     processing = true;
     updateConvertButton();
-    if (statusText) statusText.textContent = '正在 AI 分割，请稍候...';
+    if (progressText) progressText.textContent = '正在 AI 分割，请稍候... 0%';
 
     try {
         // 确保模型已加载
@@ -209,7 +209,7 @@ async function convertPhoto() {
                 console.log(`[AI] ${key}: ${current}/${total}`);
                 if (total > 0) {
                     const pct = Math.round(current / total * 100);
-                    if (statusText) statusText.textContent = `AI 分割中 ${pct}%...`;
+                    if (progressText) progressText.textContent = `AI 分割中... ${pct}%`;
                 }
             }
         });
@@ -219,11 +219,11 @@ async function convertPhoto() {
         // 应用背景色并生成目标尺寸
         await applyBackgroundToCanvas();
 
-        if (statusText) statusText.textContent = '转换完成 ✓';
+        if (progressText) progressText.textContent = '转换完成 ✓';
 
     } catch (error) {
         console.error('AI 分割失败，回退到传统算法:', error);
-        if (statusText) statusText.textContent = 'AI 分割失败，使用传统算法...';
+        if (progressText) progressText.textContent = 'AI 分割失败，使用传统算法...';
         
         // 回退到传统算法
         await convertWithTraditionalAlgorithm();
