@@ -289,7 +289,30 @@ async function applyBackgroundToCanvas() {
 
 // 传统算法 - 完全重写，更激进的边缘处理
 async function convertWithTraditionalAlgorithm() {
-    const targetSize = photoSizes[selectedSize];
+    // 如果选择保持原色，直接裁剪尺寸
+    if (selectedBgName === 'keep') {
+        const canvas = document.createElement('canvas');
+        canvas.width = targetSize.width;
+        canvas.height = targetSize.height;
+        const ctx = canvas.getContext('2d');
+        
+        ctx.drawImage(originalImage, 0, 0, targetSize.width, targetSize.height);
+        
+        convertedCanvas = canvas;
+        
+        const resultBox = document.getElementById('resultBox');
+        const resultPreview = document.getElementById('resultPreview');
+        resultBox.style.display = 'block';
+        resultPreview.innerHTML = `
+            <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px;">${selectedSizeName} - ${targetSize.width} × ${targetSize.height} 像素</p>
+            <img src="${canvas.toDataURL()}" alt="转换结果">
+        `;
+        
+        document.getElementById('downloadBtn').disabled = false;
+        return;
+    }
+    
+    // 如果选择换底色，继续执行换底色逻辑
     const targetColor = hexToRgb(selectedBgColor);
 
     const tempCanvas = document.createElement('canvas');
