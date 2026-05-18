@@ -1001,18 +1001,13 @@
       if (['small1inch', 'large1inch', 'small2inch', 'idcard'].includes(key)) return;
       const btn = document.createElement('button');
       btn.type = 'button';
-      btn.className = 'size-card size-option' + (key === state.selectedSize ? ' active selected' : '');
+      btn.className = 'size-tag' + (key === state.selectedSize ? ' active selected' : '');
       btn.dataset.size = key;
-      btn.innerHTML = `
-        <span class="size-name">${s.label}</span>
-        <span class="size-mm">${s.mm[0]}×${s.mm[1]}mm</span>
-        <span class="size-px">${s.px[0]}×${s.px[1]}px</span>
-      `;
+      btn.innerHTML = `${s.label} <span class="size-info">${s.mm[0]}×${s.mm[1]}mm / ${s.px[0]}×${s.px[1]}px</span>`;
       btn.addEventListener('click', () => {
         state.selectedSize = key;
-        $$('.size-card, .size-option').forEach((el) => {
+        $$('.size-tag').forEach((el) => {
           el.classList.toggle('active', el.dataset.size === key);
-          el.classList.toggle('selected', el.dataset.size === key);
         });
         schedulePreview();
       });
@@ -1050,16 +1045,14 @@
       Object.entries(BACKGROUNDS).forEach(([key, hex]) => {
         const btn = document.createElement('button');
         btn.type = 'button';
-        btn.className = 'bg-card bg-color-card' + (key === state.selectedBg ? ' active selected' : '');
+        btn.className = 'bg-tag' + (key === state.selectedBg ? ' active selected' : '');
         btn.dataset.bg = key;
         btn.dataset.color = hex;
-        btn.dataset.name = labels[key];
-        btn.innerHTML = `<span class="bg-swatch" style="background:${hex}"></span><span class="bg-label">${labels[key]}</span>`;
+        btn.innerHTML = `<span class="bg-dot" style="background:${hex}"></span>${labels[key]}`;
         btn.addEventListener('click', () => {
           state.selectedBg = key;
-          $$('.bg-card, .bg-color-card').forEach((el) => {
+          $$('.bg-tag').forEach((el) => {
             el.classList.toggle('active', el.dataset.bg === key);
-            el.classList.toggle('selected', el.dataset.bg === key);
           });
           schedulePreview();
         });
