@@ -1,766 +1,924 @@
-const photoSizes = {
-    '1inch': { width: 295, height: 413, name: '一寸照片' },
-    'small1inch': { width: 260, height: 378, name: '小一寸照片' },
-    'large1inch': { width: 390, height: 567, name: '大一寸照片' },
-    '2inch': { width: 413, height: 579, name: '二寸照片' },
-    'small2inch': { width: 390, height: 567, name: '小二寸照片' },
-    'passport': { width: 390, height: 567, name: '护照照片' },
-    'idcard': { width: 358, height: 441, name: '身份证照片' }
-};
+/**
+ * 证件照转换 - 尺寸裁剪 + 换底色（纯前端 Canvas）
+ */
+(function () {
+  'use strict';
 
-let originalImage = null;
-let originalFile = null;
-let convertedCanvas = null;
-let selectedSize = '1inch';
-let bgRemovalBlob = null;  // 保存 AI 抠图结果
+  const DPI = 300;
+  const MM_PER_INCH = 25.4;
 
-// 状态管理
-let modelReady = false;
-let processing = false;
+  const SIZES = {
+    '1inch': { label: '一寸照片', mm: [25, 35], px: [295, 413] },
+    'small-1inch': { label: '小一寸', mm: [22, 32], px: [260, 378] },
+    'large-1inch': { label: '大一寸', mm: [33, 48], px: [390, 567] },
+    '2inch': { label: '二寸照片', mm: [35, 49], px: [413, 579] },
+    'small-2inch': { label: '小二寸', mm: [33, 48], px: [390, 567] },
+    'id-card': { label: '身份证', mm: [26, 32], px: [358, 441] },
+    passport: { label: '护照/签证', mm: [33, 48], px: [390, 567] },
+    small1inch: { label: '小一寸', mm: [22, 32], px: [260, 378] },
+    large1inch: { label: '大一寸', mm: [33, 48], px: [390, 567] },
+    small2inch: { label: '小二寸', mm: [33, 48], px: [390, 567] },
+    idcard: { label: '身份证', mm: [26, 32], px: [358, 441] },
+  };
 
-// 加载背景移除模型
-async function loadBackgroundRemovalModel() {
-    console.log('[DEBUG] loadBackgroundRemovalModel 被调用！');
-    if (modelReady) return true;
-    
-    const convertBtn = document.getElementById('convertBtn');
-    const progressText = document.getElementById('progressText');
-    
-    try {
-        if (progressText) progressText.textContent = '加载 AI 模型中... 0%';
-        if (convertBtn) {
-            convertBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>加载模型中...</span>';
-            convertBtn.disabled = true;
-        }
-        
-        console.log('[模型] 导入 background-removal 库...');
-        
-        // 使用本地库文件（从 js/tools/ 到 assets/bg-removal/）
-        const bgRemoval = await import('../../assets/bg-removal/dist/index.mjs');
-        const { removeBackground, preload } = bgRemoval;
-        
-        console.log('[模型] 库导入成功，开始预加载...');
-        
-        // 预加载资源（WASM）
-        await preload({
-            publicPath: 'https://staticimgly.com/@imgly/background-removal-data/1.4.5/dist/',
-            progress: (key, current, total) => {
-                const pct = total > 0 ? Math.round(current / total * 100) : 0;
-                console.log(`[预加载] ${key}: ${current}/${total} (${pct}%)`);
-                if (progressText) progressText.textContent = `加载模型资源中... ${pct}%`;
-            }
-        });
-        
-        console.log('[模型] 预加载完成!');
-        
-        // 初始化完成（模型会在首次使用时加载）
-        modelReady = true;
-        if (progressText) progressText.textContent = 'AI 模型已就绪 ✓';
-        updateConvertButton();
-        
-        return true;
-    } catch (error) {
-        console.error('模型加载失败:', error);
-        if (progressText) progressText.textContent = 'AI 模型加载失败，将使用传统算法';
-        return false;
+  const BACKGROUNDS = {
+    white: '#ffffff',
+    blue: '#438edb',
+    red: '#d81e06',
+    green: '#00b140',
+    yellow: '#fadb14',
+    gray: '#9e9e9e',
+  };
+
+  const state = {
+    sourceImage: null,
+    sourceBlob: null,
+    selectedSize: '1inch',
+    selectedBg: 'white',
+    tolerance: 42,
+    headOffset: 12,
+    zoom: 100,
+    edgeRefine: 72,
+    aiProc: null,
+    processing: false,
+    resultUrl: null,
+  };
+
+  const $ = (sel) => document.querySelector(sel);
+  const $$ = (sel) => document.querySelectorAll(sel);
+
+  /** @type {Record<string, HTMLElement|null>} */
+  const els = {};
+
+  let previewObjectUrl = null;
+
+  function pick(...selectors) {
+    for (const sel of selectors) {
+      const el = $(sel);
+      if (el) return el;
     }
-}
+    return null;
+  }
 
-function updateConvertButton() {
-    const convertBtn = document.getElementById('convertBtn');
-    if (!convertBtn) return;
-    
-    if (processing) {
-        convertBtn.textContent = 'AI 分割中...';
-        convertBtn.disabled = true;
-    } else if (!originalImage) {
-        convertBtn.textContent = '请先上传照片';
-        convertBtn.disabled = true;
+  function resolveElements() {
+    els.fileInput = pick('#photoFile', '#photoUpload', 'input[type="file"]');
+    els.dropZone = pick('#dropZone', '#uploadArea', '.drop-zone', '.photo-upload');
+    els.selectBtn = pick('#selectBtn', 'label[for="photoFile"]', 'label[for="photoUpload"]', '.upload-btn');
+    els.previewOriginal = pick('#previewOriginal', '#photoPreview img');
+    els.previewResult = pick('#previewResult', '#resultPreview img');
+    els.previewPlaceholder = pick('#previewPlaceholder');
+    els.resultPlaceholder = pick('#resultPlaceholder');
+    els.previewContainer = pick('#photoPreview', '.preview-box');
+    els.sizeGrid = pick('#sizeGrid');
+    els.bgGrid = pick('#bgGrid');
+    els.convertBtn = pick('#convertBtn', '#convertBtn');
+    els.downloadBtn = pick('#downloadBtn');
+    els.resetBtn = pick('#resetBtn');
+    els.tolerance = pick('#tolerance');
+    els.toleranceVal = pick('#toleranceVal');
+    els.headOffset = pick('#headOffset');
+    els.headOffsetVal = pick('#headOffsetVal');
+    els.zoom = pick('#zoom');
+    els.zoomVal = pick('#zoomVal');
+    els.edgeRefine = pick('#edgeRefine');
+    els.edgeRefineVal = pick('#edgeRefineVal');
+    els.edgeRefineRow = pick('#edgeRefineRow');
+    els.modeRadios = $$('input[name="bgMode"]');
+    els.status = pick('#statusText', '#conversionStatus');
+    els.loading = pick('#loadingOverlay');
+    els.resultMeta = pick('#resultMeta');
+  }
+
+  function normalizeSizeKey(key) {
+    if (!key) return '1inch';
+    if (SIZES[key]) return key;
+    const map = {
+      small1inch: 'small-1inch',
+      large1inch: 'large-1inch',
+      small2inch: 'small-2inch',
+      idcard: 'id-card',
+    };
+    return map[key] || key;
+  }
+
+  function setStatus(msg, type) {
+    if (!els.status) return;
+    els.status.textContent = msg;
+    els.status.className = (els.status.className.split(' ').filter((c) => !c.startsWith('is-')).join(' ') + (type ? ' is-' + type : '')).trim();
+    if (els.status.id === 'conversionStatus' || !els.status.classList.contains('photo-status')) {
+      els.status.classList.add('photo-status');
+    }
+  }
+
+  function showLoading(show, text) {
+    if (!els.loading) return;
+    els.loading.hidden = !show;
+    const t = els.loading.querySelector('.loading-text');
+    if (t && text) t.textContent = text;
+  }
+
+  function revokeResultUrl() {
+    if (state.resultUrl) {
+      URL.revokeObjectURL(state.resultUrl);
+      state.resultUrl = null;
+    }
+  }
+
+  function loadImageFromUrl(url) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error('图片加载失败'));
+      img.src = url;
+    });
+  }
+
+  function readFileAsImage(file) {
+    if (!file) return Promise.reject(new Error('未选择文件'));
+    const type = (file.type || '').toLowerCase();
+    if (!/^image\/(jpeg|png|webp|jpg)$/.test(type) && !/\.(jpe?g|png|webp)$/i.test(file.name || '')) {
+      return Promise.reject(new Error('请上传 JPG、PNG 或 WebP 图片'));
+    }
+    if (file.size > 15 * 1024 * 1024) {
+      return Promise.reject(new Error('图片不能超过 15MB'));
+    }
+    if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
+    previewObjectUrl = URL.createObjectURL(file);
+    return loadImageFromUrl(previewObjectUrl);
+  }
+
+  function showOriginalPreview(img) {
+    if (els.previewOriginal) {
+      els.previewPlaceholder && (els.previewPlaceholder.hidden = true);
+      els.previewOriginal.hidden = false;
+      els.previewOriginal.src = previewObjectUrl;
+      return;
+    }
+    if (els.previewContainer) {
+      els.previewContainer.innerHTML = `<img src="${previewObjectUrl}" alt="原图" style="max-width:100%;max-height:320px;border-radius:10px">`;
+    }
+  }
+
+  function showResultPreview(url, meta) {
+    if (els.previewResult) {
+      els.resultPlaceholder && (els.resultPlaceholder.hidden = true);
+      els.previewResult.hidden = false;
+      els.previewResult.src = url;
     } else {
-        convertBtn.textContent = '开始转换';
-        convertBtn.disabled = false;
+      const box = pick('#resultBox', '#resultPreview');
+      if (box) {
+        box.style.display = 'block';
+        box.innerHTML = `<p style="font-size:13px;color:var(--text-secondary);margin-bottom:8px">${meta || ''}</p><img src="${url}" alt="结果" style="max-width:100%;border-radius:10px">`;
+      }
     }
-}
+    if (els.resultMeta && meta) els.resultMeta.textContent = meta;
+  }
 
-document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('.size-option').forEach(option => {
-        option.addEventListener('click', () => {
-            document.querySelectorAll('.size-option').forEach(opt => opt.classList.remove('selected'));
-            option.classList.add('selected');
-            selectedSize = option.dataset.size;
-            
-            const sizeInfo = photoSizes[selectedSize];
-            document.getElementById('selectedSizeName').textContent = sizeInfo.name;
-            document.getElementById('selectedSizeInfo').style.display = 'block';
-        });
-    });
+  async function handleFile(file) {
+    try {
+      setStatus('正在加载图片…');
+      const img = await readFileAsImage(file);
+      state.sourceImage = img;
+      state.sourceBlob = file;
+      state.aiProc = null;
+      revokeResultUrl();
 
-    document.querySelector('.size-option[data-size="1inch"]').click();
+      showOriginalPreview(img);
 
-    const uploadArea = document.getElementById('uploadArea');
-    const photoUpload = document.getElementById('photoUpload');
+      if (els.convertBtn) els.convertBtn.disabled = false;
+      if (els.downloadBtn) els.downloadBtn.disabled = true;
+      if (els.previewResult) {
+        els.previewResult.hidden = true;
+        els.resultPlaceholder && (els.resultPlaceholder.hidden = false);
+      }
+      if (els.resultMeta) els.resultMeta.textContent = '';
 
-    uploadArea.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        uploadArea.classList.add('dragover');
-    });
+      setStatus('已加载，可调整参数后点击「生成证件照」', 'success');
+      schedulePreview();
+    } catch (e) {
+      setStatus(e.message || '加载失败', 'error');
+    }
+  }
 
-    uploadArea.addEventListener('dragleave', () => {
-        uploadArea.classList.remove('dragover');
-    });
+  function onFileInputChange(e) {
+    const f = e.target.files?.[0];
+    if (f) handleFile(f);
+  }
 
-    uploadArea.addEventListener('drop', (e) => {
-        e.preventDefault();
-        uploadArea.classList.remove('dragover');
-        const files = e.dataTransfer.files;
-        if (files.length > 0) {
-            photoUpload.files = files;
-            handlePhotoUpload({ target: photoUpload });
+  function getBgMode() {
+    const checked = document.querySelector('input[name="bgMode"]:checked');
+    return checked ? checked.value : 'auto';
+  }
+
+  function sampleBackgroundColor(data, w, h) {
+    const samples = [];
+    const band = Math.max(2, Math.floor(Math.min(w, h) * 0.04));
+
+    function sampleRect(x0, y0, x1, y1) {
+      for (let y = y0; y < y1; y++) {
+        for (let x = x0; x < x1; x++) {
+          const i = (y * w + x) * 4;
+          samples.push([data[i], data[i + 1], data[i + 2]]);
         }
-    });
+      }
+    }
 
-    uploadArea.addEventListener('click', (e) => {
-        if (e.target !== uploadArea && !e.target.classList.contains('upload-btn')) {
-            photoUpload.click();
+    sampleRect(0, 0, w, band);
+    sampleRect(0, h - band, w, h);
+    sampleRect(0, 0, band, h);
+    sampleRect(w - band, 0, w, h);
+
+    const avg = [0, 0, 0];
+    for (const s of samples) {
+      avg[0] += s[0];
+      avg[1] += s[1];
+      avg[2] += s[2];
+    }
+    const n = samples.length || 1;
+    return { r: avg[0] / n, g: avg[1] / n, b: avg[2] / n };
+  }
+
+  function colorDist(r1, g1, b1, r2, g2, b2) {
+    const dr = r1 - r2;
+    const dg = g1 - g2;
+    const db = b1 - b2;
+    return Math.sqrt(dr * dr + 0.75 * dg * dg + 0.5 * db * db);
+  }
+
+  function buildBackgroundMask(imageData, tolerance) {
+    const { width: w, height: h, data } = imageData;
+    const bg = sampleBackgroundColor(data, w, h);
+    const isBg = new Uint8Array(w * h);
+    const visited = new Uint8Array(w * h);
+    const queue = new Int32Array(w * h);
+    let head = 0;
+    let tail = 0;
+
+    function tryPush(x, y) {
+      const idx = y * w + x;
+      if (visited[idx]) return;
+      const i = idx * 4;
+      const d = colorDist(data[i], data[i + 1], data[i + 2], bg.r, bg.g, bg.b);
+      if (d > tolerance) return;
+      visited[idx] = 1;
+      isBg[idx] = 1;
+      queue[tail++] = idx;
+    }
+
+    for (let x = 0; x < w; x++) {
+      tryPush(x, 0);
+      tryPush(x, h - 1);
+    }
+    for (let y = 0; y < h; y++) {
+      tryPush(0, y);
+      tryPush(w - 1, y);
+    }
+
+    const dx = [1, -1, 0, 0];
+    const dy = [0, 0, 1, -1];
+
+    while (head < tail) {
+      const idx = queue[head++];
+      const x = idx % w;
+      const y = (idx / w) | 0;
+      for (let k = 0; k < 4; k++) {
+        const nx = x + dx[k];
+        const ny = y + dy[k];
+        if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+        tryPush(nx, ny);
+      }
+    }
+
+    return { isBg };
+  }
+
+  function featherAlpha(alpha, w, h, radius) {
+    if (radius < 1) return alpha;
+    const out = new Float32Array(alpha.length);
+    const r = radius;
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        let sum = 0;
+        let count = 0;
+        for (let dy = -r; dy <= r; dy++) {
+          for (let dx = -r; dx <= r; dx++) {
+            const nx = x + dx;
+            const ny = y + dy;
+            if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+            sum += alpha[ny * w + nx];
+            count++;
+          }
         }
+        out[y * w + x] = sum / count;
+      }
+    }
+    return out;
+  }
+
+  function removeBackgroundCanvas(img, tolerance) {
+    const maxSide = 1200;
+    let sw = img.naturalWidth;
+    let sh = img.naturalHeight;
+    const scale = Math.min(1, maxSide / Math.max(sw, sh));
+    sw = Math.round(sw * scale);
+    sh = Math.round(sh * scale);
+
+    const c = document.createElement('canvas');
+    c.width = sw;
+    c.height = sh;
+    const ctx = c.getContext('2d', { willReadFrequently: true });
+    ctx.drawImage(img, 0, 0, sw, sh);
+    const imageData = ctx.getImageData(0, 0, sw, sh);
+    const { isBg } = buildBackgroundMask(imageData, tolerance);
+
+    const alpha = new Float32Array(sw * sh);
+    for (let i = 0; i < isBg.length; i++) {
+      alpha[i] = isBg[i] ? 0 : 255;
+    }
+    const smooth = featherAlpha(alpha, sw, sh, 2);
+
+    const out = ctx.createImageData(sw, sh);
+    for (let i = 0; i < sw * sh; i++) {
+      const si = i * 4;
+      out.data[si] = imageData.data[si];
+      out.data[si + 1] = imageData.data[si + 1];
+      out.data[si + 2] = imageData.data[si + 2];
+      out.data[si + 3] = Math.round(smooth[i]);
+    }
+    ctx.putImageData(out, 0, 0);
+    return c;
+  }
+
+  let bgRemovalModule = null;
+
+  function imageToProcessCanvas(img, maxSide) {
+    const nw = img.naturalWidth || img.width;
+    const nh = img.naturalHeight || img.height;
+    const scale = Math.min(1, maxSide / Math.max(nw, nh));
+    const w = Math.max(1, Math.round(nw * scale));
+    const h = Math.max(1, Math.round(nh * scale));
+    const c = document.createElement('canvas');
+    c.width = w;
+    c.height = h;
+    c.getContext('2d').drawImage(img, 0, 0, w, h);
+    return c;
+  }
+
+  /** 仅在半透明边缘带平滑 alpha，保留发丝细节 */
+  function refineAlphaChannel(alpha, w, h, strength) {
+    const out = new Float32Array(alpha.length);
+    const s = Math.max(0.35, Math.min(1, strength));
+
+    for (let i = 0; i < alpha.length; i++) {
+      const a = alpha[i];
+      if (a <= 4 || a >= 251) {
+        out[i] = a;
+        continue;
+      }
+      let sum = 0;
+      let count = 0;
+      for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+          const nx = (i % w) + dx;
+          const ny = ((i / w) | 0) + dy;
+          if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+          sum += alpha[ny * w + nx];
+          count++;
+        }
+      }
+      const blurred = sum / count;
+      const edge = Math.min(a, 255 - a) < 64;
+      out[i] = edge ? a * (1 - 0.35 * s) + blurred * (0.35 * s) : a;
+    }
+
+    for (let pass = 0; pass < 2; pass++) {
+      for (let y = 1; y < h - 1; y++) {
+        for (let x = 1; x < w - 1; x++) {
+          const i = y * w + x;
+          const a = out[i];
+          if (a < 18 || a > 237) continue;
+          const lumN = out[i - w];
+          const lumS = out[i + w];
+          if (a > lumN + 28 && a > lumS + 28) {
+            out[i] = Math.max(lumN, lumS) * 0.92 + a * 0.08 * (1 - s * 0.5);
+          }
+        }
+      }
+    }
+
+    return out;
+  }
+
+  /** 用原图 RGB + AI 蒙版合成，并对边缘做去色边（减轻白发丝/白边） */
+  function compositeWithRefinedMask(sourceCanvas, maskCanvas, strength) {
+    const w = sourceCanvas.width;
+    const h = sourceCanvas.height;
+    const srcCtx = sourceCanvas.getContext('2d', { willReadFrequently: true });
+    const maskCtx = maskCanvas.getContext('2d', { willReadFrequently: true });
+    const src = srcCtx.getImageData(0, 0, w, h);
+    const mask = maskCtx.getImageData(0, 0, w, h);
+
+    const alpha = new Float32Array(w * h);
+    for (let i = 0; i < w * h; i++) {
+      const mi = i * 4;
+      const m = (mask.data[mi] + mask.data[mi + 1] + mask.data[mi + 2]) / 3;
+      alpha[i] = m;
+    }
+
+    const refined = refineAlphaChannel(alpha, w, h, strength);
+    const out = srcCtx.createImageData(w, h);
+    const s = Math.max(0.35, Math.min(1, strength));
+
+    for (let i = 0; i < w * h; i++) {
+      const si = i * 4;
+      let a = refined[i] / 255;
+      if (a < 0.004) {
+        out.data[si + 3] = 0;
+        continue;
+      }
+
+      let r = src.data[si];
+      let g = src.data[si + 1];
+      let b = src.data[si + 2];
+      const srcLum = 0.299 * r + 0.587 * g + 0.114 * b;
+
+      if (a > 0.04 && a < 0.96) {
+        const af = 1 / Math.max(a, 0.05);
+        let ur = r * af;
+        let ug = g * af;
+        let ub = b * af;
+        const maxC = Math.max(ur, ug, ub);
+        const minC = Math.min(ur, ug, ub);
+        if (maxC - minC < 35 && maxC > 200) {
+          const pull = (maxC - 200) / 55 * s;
+          ur = ur * (1 - pull) + srcLum * pull;
+          ug = ug * (1 - pull) + srcLum * pull;
+          ub = ub * (1 - pull) + srcLum * pull;
+        }
+        r = ur * a + r * (1 - a);
+        g = ug * a + g * (1 - a);
+        b = ub * a + b * (1 - a);
+        if (srcLum < 95 && a < 0.85) {
+          a = Math.min(a * (1 + 0.12 * s), 1);
+        }
+      }
+
+      out.data[si] = Math.round(Math.max(0, Math.min(255, r)));
+      out.data[si + 1] = Math.round(Math.max(0, Math.min(255, g)));
+      out.data[si + 2] = Math.round(Math.max(0, Math.min(255, b)));
+      out.data[si + 3] = Math.round(Math.max(0, Math.min(255, a * 255)));
+    }
+
+    const result = document.createElement('canvas');
+    result.width = w;
+    result.height = h;
+    result.getContext('2d').putImageData(out, 0, 0);
+    return result;
+  }
+
+  /** 1.5.7+ 使用 lodash-es；勿用 1.4.5 的 jsdelivr +esm（会触发 lodash memoize 导出错误） */
+  async function loadBgRemovalModule() {
+    if (bgRemovalModule) return bgRemovalModule;
+    const sources = [
+      'https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.5.7/dist/index.mjs',
+      'https://esm.sh/@imgly/background-removal@1.5.7?bundle',
+    ];
+    let lastError;
+    for (const src of sources) {
+      try {
+        bgRemovalModule = await import(/* @vite-ignore */ src);
+        return bgRemovalModule;
+      } catch (e) {
+        lastError = e;
+        console.warn('[photo] AI 库加载失败:', src, e);
+      }
+    }
+    throw lastError || new Error('AI 抠图库加载失败');
+  }
+
+  async function fetchAiMaskData(img) {
+    const mod = await loadBgRemovalModule();
+    const removeBackground =
+      typeof mod.removeBackground === 'function' ? mod.removeBackground : mod.default;
+    if (typeof removeBackground !== 'function') {
+      throw new Error('AI 抠图库接口异常');
+    }
+
+    const sourceCanvas = imageToProcessCanvas(img, 1600);
+    const blob = await canvasToBlob(sourceCanvas, 'image/png');
+    const maskBlob = await removeBackground(blob, {
+      publicPath: 'https://staticimgly.com/@imgly/background-removal-data/1.5.7/dist/',
+      model: 'isnet',
+      output: { format: 'image/png', quality: 1, type: 'mask' },
+      progress: (key, current, total) => {
+        const pct = total ? Math.round((current / total) * 100) : 0;
+        showLoading(true, `AI 分割蒙版 ${pct}%…`);
+      },
     });
 
-    // 模型将在用户点击"开始转换"时按需加载
-});
+    const maskUrl = URL.createObjectURL(maskBlob);
+    const maskImg = await loadImageFromUrl(maskUrl);
+    URL.revokeObjectURL(maskUrl);
 
-function handlePhotoUpload(event) {
-    console.log('[DEBUG] handlePhotoUpload 被调用');
-    const file = event.target.files[0];
-    if (!file) return;
+    const maskCanvas = document.createElement('canvas');
+    maskCanvas.width = sourceCanvas.width;
+    maskCanvas.height = sourceCanvas.height;
+    maskCanvas.getContext('2d').drawImage(maskImg, 0, 0, maskCanvas.width, maskCanvas.height);
 
-    originalFile = file;  // 保存原始文件用于 AI 处理
-    
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        const img = new Image();
-        img.onload = () => {
-            originalImage = img;
-            const preview = document.getElementById('photoPreview');
-            preview.innerHTML = `
-                <img src="${e.target.result}" alt="预览">
-                <p style="margin-top: 12px; font-size: 13px; color: var(--text-secondary);">原始尺寸: ${img.width} × ${img.height} 像素</p>
-            `;
-            document.getElementById('convertBtn').disabled = false;
-            document.getElementById('downloadBtn').disabled = true;
-            bgRemovalBlob = null;  // 清空之前的抠图结果
-            
-            updateConvertButton();
-        };
-        img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
-}
+    return { sourceCanvas, maskCanvas };
+  }
 
-let selectedBgColor = '#FFFFFF';
-let selectedBgName = '白底';
+  function drawImageToCanvas(img) {
+    const c = document.createElement('canvas');
+    c.width = img.naturalWidth;
+    c.height = img.naturalHeight;
+    c.getContext('2d').drawImage(img, 0, 0);
+    return c;
+  }
 
-function selectBgColor(el) {
-    document.querySelectorAll('.bg-color-card').forEach(c => c.classList.remove('selected'));
-    el.classList.add('selected');
-    selectedBgColor = el.dataset.color;
-    selectedBgName = el.dataset.name;
-    
-    // 如果已有抠图结果，直接应用新背景
-    if (bgRemovalBlob) {
-        applyBackgroundToCanvas();
-    }
-}
+  function canvasToBlob(canvas, type, quality) {
+    return new Promise((resolve) => {
+      canvas.toBlob((b) => resolve(b), type || 'image/png', quality ?? 0.92);
+    });
+  }
 
-async function convertPhoto() {
-    console.log('[DEBUG] convertPhoto 被调用！');
-    if (!originalImage) {
-        alert('请先上传照片');
-        return;
+  function computeCropRect(sw, sh, tw, th, headOffsetPct, zoomPct) {
+    const targetAspect = tw / th;
+    const zoom = zoomPct / 100;
+    const effW = sw / zoom;
+    const effH = sh / zoom;
+
+    let cropW, cropH;
+    if (effW / effH > targetAspect) {
+      cropH = effH;
+      cropW = effH * targetAspect;
+    } else {
+      cropW = effW;
+      cropH = effW / targetAspect;
     }
 
-    const convertBtn = document.getElementById('convertBtn');
-    const progressText = document.getElementById('progressText');
-    
-    processing = true;
-    updateConvertButton();
-    if (progressText) progressText.textContent = '正在处理，请稍候...';
+    let cropX = (sw - cropW) / 2;
+    let cropY = (sh - cropH) * (headOffsetPct / 100);
+
+    cropX = Math.max(0, Math.min(sw - cropW, cropX));
+    cropY = Math.max(0, Math.min(sh - cropH, cropY));
+
+    return { cropX, cropY, cropW, cropH };
+  }
+
+  async function getSubjectCanvas() {
+    const img = state.sourceImage;
+    if (!img) throw new Error('请先上传照片');
+
+    if (getBgMode() === 'ai') {
+      try {
+        if (!state.aiProc) {
+          showLoading(true, 'AI 抠图中，首次加载模型较慢…');
+          state.aiProc = await fetchAiMaskData(img);
+        }
+        showLoading(true, '发丝边缘精修…');
+        const cut = compositeWithRefinedMask(
+          state.aiProc.sourceCanvas,
+          state.aiProc.maskCanvas,
+          state.edgeRefine / 100
+        );
+        showLoading(false);
+        return cut;
+      } catch (e) {
+        console.error('[photo] AI 抠图失败，回退智能抠图:', e);
+        showLoading(false);
+        setStatus(
+          'AI 抠图加载失败，已改用「智能抠图」。若仅需纯色背景请保持默认模式。',
+          'error'
+        );
+        return removeBackgroundCanvas(img, state.tolerance);
+      }
+    }
+
+    return removeBackgroundCanvas(img, state.tolerance);
+  }
+
+  async function renderIdPhoto() {
+    console.log('[photo] renderIdPhoto called, sourceImage:', !!state.sourceImage, 'processing:', state.processing);
+    if (!state.sourceImage || state.processing) return;
+    state.processing = true;
+    if (els.convertBtn) els.convertBtn.disabled = true;
 
     try {
-        // 尝试 AI 分割（如果模型可用）
-        if (modelReady) {
-            if (progressText) progressText.textContent = 'AI 分割中... 0%';
-            
-            const { removeBackground } = await import('../../assets/bg-removal/dist/index.mjs');
-            
-            const resultBlob = await removeBackground(originalFile, {
-                model: 'small',
-                publicPath: '../../assets/bg-removal/',
-                output: {
-                    format: 'image/png',
-                    quality: 1,
-                },
-                progress: (key, current, total) => {
-                    if (total > 0) {
-                        const pct = Math.round(current / total * 100);
-                        if (progressText) progressText.textContent = `AI 分割中... ${pct}%`;
-                    }
-                }
-            });
+      setStatus('正在处理…');
+      showLoading(true, '正在生成证件照…');
 
-            bgRemovalBlob = resultBlob;
-            await applyBackgroundToCanvas();
-        } else {
-            // 模型未加载，直接使用传统算法
-            if (progressText) progressText.textContent = '使用传统算法处理...';
-            await convertWithTraditionalAlgorithm();
-        }
+      const sizeKey = normalizeSizeKey(state.selectedSize);
+      const size = SIZES[sizeKey] || SIZES['1inch'];
+      const [tw, th] = size.px;
+      const bgHex = BACKGROUNDS[state.selectedBg] || BACKGROUNDS.white;
 
-        if (progressText) progressText.textContent = '转换完成 ✓';
+      const subject = await getSubjectCanvas();
+      const sw = subject.width;
+      const sh = subject.height;
 
-    } catch (error) {
-        console.error('处理失败，使用传统算法:', error);
-        if (progressText) progressText.textContent = '使用传统算法处理...';
-        
-        // 回退到传统算法
-        await convertWithTraditionalAlgorithm();
+      const { cropX, cropY, cropW, cropH } = computeCropRect(
+        sw,
+        sh,
+        tw,
+        th,
+        state.headOffset,
+        state.zoom
+      );
+
+      const out = document.createElement('canvas');
+      out.width = tw;
+      out.height = th;
+      const ctx = out.getContext('2d');
+      ctx.fillStyle = bgHex;
+      ctx.fillRect(0, 0, tw, th);
+      ctx.drawImage(subject, cropX, cropY, cropW, cropH, 0, 0, tw, th);
+
+      revokeResultUrl();
+      const blob = await canvasToBlob(out, 'image/jpeg', 0.95);
+      state.resultUrl = URL.createObjectURL(blob);
+
+      const meta = `${size.label} · ${tw}×${th}px · ${size.mm[0]}×${size.mm[1]}mm`;
+      showResultPreview(state.resultUrl, meta);
+
+      if (els.downloadBtn) els.downloadBtn.disabled = false;
+      setStatus('生成完成，可下载', 'success');
+    } catch (e) {
+      console.error(e);
+      setStatus(e.message || '处理失败', 'error');
     } finally {
-        processing = false;
-        updateConvertButton();
+      showLoading(false);
+      state.processing = false;
+      if (els.convertBtn) els.convertBtn.disabled = !state.sourceImage;
     }
-}
+  }
 
-// 应用背景色到抠图结果
-async function applyBackgroundToCanvas() {
-    if (!bgRemovalBlob || !originalImage) return;
+  let previewTimer = null;
+  function schedulePreview() {
+    if (!state.sourceImage) return;
+    clearTimeout(previewTimer);
+    previewTimer = setTimeout(() => renderIdPhoto(), 600);
+  }
 
-    const targetSize = photoSizes[selectedSize];
-    const keepOriginalColor = selectedBgColor === 'keep';
-    
-    return new Promise((resolve) => {
-        const url = URL.createObjectURL(bgRemovalBlob);
-        const img = new Image();
-        
-        img.onload = () => {
-            // 创建目标尺寸 canvas
-            const canvas = document.createElement('canvas');
-            canvas.width = targetSize.width;
-            canvas.height = targetSize.height;
-            const ctx = canvas.getContext('2d');
-
-            // 如果不保持原色，填充目标背景色
-            if (!keepOriginalColor) {
-                ctx.fillStyle = selectedBgColor;
-                ctx.fillRect(0, 0, targetSize.width, targetSize.height);
-            }
-
-            // 绘制 AI 抠图后的人像（保持透明通道）
-            const scale = Math.min(
-                targetSize.width / originalImage.width,
-                targetSize.height / originalImage.height
-            );
-            const drawWidth = originalImage.width * scale;
-            const drawHeight = originalImage.height * scale;
-            const drawX = (targetSize.width - drawWidth) / 2;
-            const drawY = (targetSize.height - drawHeight) / 2;
-
-            ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
-
-            convertedCanvas = canvas;
-
-            // 显示结果
-            const resultBox = document.getElementById('resultBox');
-            const resultPreview = document.getElementById('resultPreview');
-            const bgText = keepOriginalColor ? '保持原色' : selectedBgName;
-            resultBox.style.display = 'block';
-            resultPreview.innerHTML = `
-                <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px;">${bgText} ${targetSize.name} - ${targetSize.width} × ${targetSize.height} 像素</p>
-                <img src="${canvas.toDataURL()}" alt="转换结果">
-            `;
-
-            document.getElementById('downloadBtn').disabled = false;
-
-            URL.revokeObjectURL(url);
-            resolve();
-        };
-        
-        img.src = url;
+  function bindSizeGrid() {
+    if (!els.sizeGrid) return;
+    els.sizeGrid.innerHTML = '';
+    Object.entries(SIZES).forEach(([key, s]) => {
+      if (['small1inch', 'large1inch', 'small2inch', 'idcard'].includes(key)) return;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'size-card size-option' + (key === state.selectedSize ? ' active selected' : '');
+      btn.dataset.size = key;
+      btn.innerHTML = `
+        <span class="size-name">${s.label}</span>
+        <span class="size-mm">${s.mm[0]}×${s.mm[1]}mm</span>
+        <span class="size-px">${s.px[0]}×${s.px[1]}px</span>
+      `;
+      btn.addEventListener('click', () => {
+        state.selectedSize = key;
+        $$('.size-card, .size-option').forEach((el) => {
+          el.classList.toggle('active', el.dataset.size === key);
+          el.classList.toggle('selected', el.dataset.size === key);
+        });
+        schedulePreview();
+      });
+      els.sizeGrid.appendChild(btn);
     });
-}
+  }
 
-// 传统算法 - 完全重写，更激进的边缘处理
-async function convertWithTraditionalAlgorithm() {
-    const targetSize = photoSizes[selectedSize];
-    
-    // 如果选择保持原色，直接裁剪尺寸
-    if (selectedBgName === 'keep') {
-        const canvas = document.createElement('canvas');
-        canvas.width = targetSize.width;
-        canvas.height = targetSize.height;
-        const ctx = canvas.getContext('2d');
-        
-        // 填充白色背景
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, targetSize.width, targetSize.height);
-        
-        // 计算缩放比例，保持宽高比并填满（裁剪多余部分）
-        const scale = Math.max(targetSize.width / originalImage.width, targetSize.height / originalImage.height);
-        const scaledWidth = originalImage.width * scale;
-        const scaledHeight = originalImage.height * scale;
-        const drawX = (targetSize.width - scaledWidth) / 2;
-        const drawY = (targetSize.height - scaledHeight) / 2;
-        
-        ctx.drawImage(originalImage, drawX, drawY, scaledWidth, scaledHeight);
-        
-        convertedCanvas = canvas;
-        
-        const resultBox = document.getElementById('resultBox');
-        const resultPreview = document.getElementById('resultPreview');
-        resultBox.style.display = 'block';
-        resultPreview.innerHTML = `
-            <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px;">${selectedSizeName} - ${targetSize.width} × ${targetSize.height} 像素</p>
-            <img src="${canvas.toDataURL()}" alt="转换结果">
-        `;
-        
-        document.getElementById('downloadBtn').disabled = false;
-        return;
+  function bindLegacySizeOptions() {
+    if (els.sizeGrid) return;
+    const options = $$('.size-option');
+    if (!options.length) return;
+    options.forEach((option) => {
+      option.addEventListener('click', () => {
+        $$('.size-option').forEach((opt) => {
+          opt.classList.remove('selected', 'active');
+        });
+        option.classList.add('selected', 'active');
+        state.selectedSize = normalizeSizeKey(option.dataset.size);
+      });
+    });
+    const first =
+      document.querySelector('.size-option[data-size="1inch"]') ||
+      document.querySelector('.size-option.active') ||
+      options[0];
+    if (first) {
+      first.classList.add('selected', 'active');
+      state.selectedSize = normalizeSizeKey(first.dataset.size);
     }
-    
-    // 如果选择换底色，继续执行换底色逻辑
-    const targetColor = hexToRgb(selectedBgColor);
+  }
 
-    const tempCanvas = document.createElement('canvas');
-    tempCanvas.width = originalImage.width;
-    tempCanvas.height = originalImage.height;
-    const tempCtx = tempCanvas.getContext('2d');
-    tempCtx.drawImage(originalImage, 0, 0);
-
-    const imageData = tempCtx.getImageData(0, 0, originalImage.width, originalImage.height);
-    const data = imageData.data;
-    const width = originalImage.width;
-    const height = originalImage.height;
-
-    // 检测背景色
-    const bgColor = detectBackgroundColor(data, width, height);
-
-    // 提高容差以捕获更多边缘
-    const tolerance = 50;
-    const edgeTolerance = 65;
-
-    // 创建蒙版
-    const mask = new Uint8Array(width * height);
-
-    // 第一步：基于肤色、头发和背景色的粗略判断
-    for (let y = 0; y < height; y++) {
-        for (let x = 0; x < width; x++) {
-            const idx = (y * width + x) * 4;
-            const r = data[idx];
-            const g = data[idx + 1];
-            const b = data[idx + 2];
-
-            const bgDist = colorDistance({ r, g, b }, bgColor);
-            const isSkin = isSkinColor(r, g, b);
-            const isHair = isHairColor(r, g, b, bgColor);
-
-            // 放宽条件：只要不是接近背景色就标记为主体
-            if (isSkin || isHair || bgDist > tolerance) {
-                mask[y * width + x] = 1;
-            }
-        }
+  function bindBgGrid() {
+    if (els.bgGrid) {
+      els.bgGrid.innerHTML = '';
+      const labels = { white: '白底', blue: '蓝底', red: '红底', green: '绿底', yellow: '黄底', gray: '灰底' };
+      Object.entries(BACKGROUNDS).forEach(([key, hex]) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'bg-card bg-color-card' + (key === state.selectedBg ? ' active selected' : '');
+        btn.dataset.bg = key;
+        btn.dataset.color = hex;
+        btn.dataset.name = labels[key];
+        btn.innerHTML = `<span class="bg-swatch" style="background:${hex}"></span><span class="bg-label">${labels[key]}</span>`;
+        btn.addEventListener('click', () => {
+          state.selectedBg = key;
+          $$('.bg-card, .bg-color-card').forEach((el) => {
+            el.classList.toggle('active', el.dataset.bg === key);
+            el.classList.toggle('selected', el.dataset.bg === key);
+          });
+          schedulePreview();
+        });
+        els.bgGrid.appendChild(btn);
+      });
+      return;
     }
 
-    // 第二步：区域生长 - 从已标记的像素向外扩展
-    let changed = true;
-    let iterations = 0;
-    while (changed && iterations < 50) {
-        changed = false;
-        iterations++;
+    $$('.bg-color-card').forEach((card) => {
+      card.addEventListener('click', () => {
+        $$('.bg-color-card').forEach((c) => c.classList.remove('selected', 'active'));
+        card.classList.add('selected', 'active');
+        const bgKey = card.dataset.bg || 'white';
+        state.selectedBg = bgKey in BACKGROUNDS ? bgKey : 'white';
+        schedulePreview();
+      });
+    });
+  }
 
-        for (let y = 2; y < height - 2; y++) {
-            for (let x = 2; x < width - 2; x++) {
-                const idx = y * width + x;
-                if (mask[idx]) continue;
-
-                // 检查周围有多少是主体像素
-                let neighborCount = 0;
-                let minNeighborDist = Infinity;
-                const pixel = { r: data[idx * 4], g: data[idx * 4 + 1], b: data[idx * 4 + 2] };
-
-                for (let dy = -2; dy <= 2; dy++) {
-                    for (let dx = -2; dx <= 2; dx++) {
-                        const nidx = (y + dy) * width + (x + dx);
-                        if (mask[nidx]) {
-                            neighborCount++;
-                            const nIdx4 = nidx * 4;
-                            const dist = colorDistance(pixel, { r: data[nIdx4], g: data[nIdx4 + 1], b: data[nIdx4 + 2] });
-                            minNeighborDist = Math.min(minNeighborDist, dist);
-                        }
-                    }
-                }
-
-                // 放宽条件：2个邻居 + 颜色差异不太大
-                if (neighborCount >= 2 && minNeighborDist < edgeTolerance) {
-                    mask[idx] = 1;
-                    changed = true;
-                }
-            }
-        }
+  function bindUpload() {
+    if (!els.fileInput) {
+      console.error('[photo] 未找到 file input (#photoFile / #photoUpload)');
+      setStatus('上传控件未配置，请联系站长更新页面', 'error');
+      return;
     }
 
-    // 第三步：闭运算 - 先膨胀再腐蚀，填充头发缝隙
-    for (let i = 0; i < 5; i++) dilateMask(mask, width, height, 1);
-    for (let i = 0; i < 3; i++) erodeMask(mask, width, height, 1);
+    els.fileInput.addEventListener('change', onFileInputChange);
 
-    // 第四步：从中心向外洪水填充，确保主体完整
-    const queue = [];
-    const centerX = Math.floor(width / 2);
-    const centerY = Math.floor(height / 2);
-    
-    // 从多个起点开始洪水填充
-    const startPoints = [
-        [centerX, centerY],
-        [centerX, Math.floor(height * 0.3)],
-        [centerX, Math.floor(height * 0.7)],
-        [Math.floor(width * 0.4), centerY],
-        [Math.floor(width * 0.6), centerY]
-    ];
-
-    for (const [sx, sy] of startPoints) {
-        if (!mask[sy * width + sx]) {
-            queue.push([sx, sy]);
-            mask[sy * width + sx] = 2; // 标记为洪水填充
-        }
+    if (els.selectBtn && els.selectBtn.tagName !== 'LABEL') {
+      els.selectBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        els.fileInput.click();
+      });
     }
 
-    // BFS 洪水填充
-    while (queue.length > 0) {
-        const [x, y] = queue.shift();
-        
-        for (let dy = -2; dy <= 2; dy++) {
-            for (let dx = -2; dx <= 2; dx++) {
-                const nx = x + dx;
-                const ny = y + dy;
-                if (nx < 0 || nx >= width || ny < 0 || ny >= height) continue;
-                
-                const nidx = ny * width + nx;
-                if (mask[nidx] > 0) continue;
-                
-                const idx = (y * width + x) * 4;
-                const nIdx = (ny * width + nx) * 4;
-                const dist = colorDistance(
-                    { r: data[idx], g: data[idx + 1], b: data[idx + 2] },
-                    { r: data[nIdx], g: data[nIdx + 1], b: data[nIdx + 2] }
-                );
-                
-                // 如果颜色接近，且在边缘区域内
-                if (dist < edgeTolerance * 1.2) {
-                    mask[nidx] = 2;
-                    queue.push([nx, ny]);
-                }
-            }
-        }
+    if (els.dropZone) {
+      ['dragenter', 'dragover'].forEach((ev) => {
+        els.dropZone.addEventListener(ev, (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          els.dropZone.classList.add('dragover');
+        });
+      });
+      ['dragleave', 'drop'].forEach((ev) => {
+        els.dropZone.addEventListener(ev, (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          els.dropZone.classList.remove('dragover');
+        });
+      });
+      els.dropZone.addEventListener('drop', (e) => {
+        const f = e.dataTransfer?.files?.[0];
+        if (f) handleFile(f);
+      });
+      els.dropZone.addEventListener('click', (e) => {
+        if (els.selectBtn && (e.target === els.selectBtn || els.selectBtn.contains(e.target))) return;
+        if (e.target === els.fileInput) return;
+        els.fileInput.click();
+      });
+    }
+  }
+
+  function bindControls() {
+    if (els.convertBtn) {
+      els.convertBtn.addEventListener('click', () => {
+        console.log('[photo] convertBtn clicked, sourceImage:', !!state.sourceImage, 'processing:', state.processing);
+        renderIdPhoto();
+      });
+    }
+    if (els.downloadBtn) {
+      els.downloadBtn.addEventListener('click', () => {
+        if (!state.resultUrl) return;
+        const a = document.createElement('a');
+        const size = SIZES[normalizeSizeKey(state.selectedSize)] || SIZES['1inch'];
+        a.href = state.resultUrl;
+        a.download = `证件照_${size.label}_${state.selectedBg}.jpg`;
+        a.click();
+      });
     }
 
-    // 第五步：再次膨胀确保边缘完整（增加次数确保头发被包含）
-    for (let i = 0; i < 10; i++) dilateMask(mask, width, height, 1);
+    els.resetBtn?.addEventListener('click', () => {
+      state.sourceImage = null;
+      state.sourceBlob = null;
+      state.aiProc = null;
+      if (previewObjectUrl) {
+        URL.revokeObjectURL(previewObjectUrl);
+        previewObjectUrl = null;
+      }
+      revokeResultUrl();
+      if (els.fileInput) els.fileInput.value = '';
+      if (els.previewOriginal) {
+        els.previewOriginal.hidden = true;
+        els.previewPlaceholder && (els.previewPlaceholder.hidden = false);
+      }
+      if (els.previewResult) {
+        els.previewResult.hidden = true;
+        els.resultPlaceholder && (els.resultPlaceholder.hidden = false);
+      }
+      if (els.convertBtn) els.convertBtn.disabled = true;
+      if (els.downloadBtn) els.downloadBtn.disabled = true;
+      if (els.resultMeta) els.resultMeta.textContent = '';
+      setStatus('已重置');
+    });
 
-    // 第六步：去除蒙版中的小噪点（小于50像素的区域设为背景）
-    removeSmallBlobs(mask, width, height, 50);
-
-    // 第七步：替换背景
-    for (let y = 0; y < height; y++) {
-        for (let x = 0; x < width; x++) {
-            const idx = (y * width + x) * 4;
-            const pixel = { r: data[idx], g: data[idx + 1], b: data[idx + 2] };
-            const bgDist = colorDistance(pixel, bgColor);
-
-            if (mask[y * width + x]) {
-                // 主体区域：接近背景色的边缘像素进行混合
-                if (bgDist < tolerance * 2) {
-                    const blendFactor = Math.min(1, bgDist / (tolerance * 2));
-                    data[idx] = Math.round(pixel.r * blendFactor + targetColor.r * (1 - blendFactor));
-                    data[idx + 1] = Math.round(pixel.g * blendFactor + targetColor.g * (1 - blendFactor));
-                    data[idx + 2] = Math.round(pixel.b * blendFactor + targetColor.b * (1 - blendFactor));
-                }
-            } else {
-                // 背景区域：直接替换
-                data[idx] = targetColor.r;
-                data[idx + 1] = targetColor.g;
-                data[idx + 2] = targetColor.b;
-            }
-        }
+    if (els.tolerance) {
+      els.tolerance.addEventListener('input', () => {
+        state.tolerance = Number(els.tolerance.value);
+        if (els.toleranceVal) els.toleranceVal.textContent = state.tolerance;
+        state.aiProc = null;
+        schedulePreview();
+      });
     }
 
-    tempCtx.putImageData(imageData, 0, 0);
-
-    // 第七步：边缘羽化 - 让头发边缘更自然
-    featherEdges(tempCanvas, mask, width, height, 6);
-
-    // 绘制到目标尺寸
-    const canvas = document.createElement('canvas');
-    canvas.width = targetSize.width;
-    canvas.height = targetSize.height;
-    const ctx = canvas.getContext('2d');
-
-    ctx.fillStyle = selectedBgColor;
-    ctx.fillRect(0, 0, targetSize.width, targetSize.height);
-
-    const scale = Math.min(targetSize.width / originalImage.width, targetSize.height / originalImage.height);
-    const drawWidth = originalImage.width * scale;
-    const drawHeight = originalImage.height * scale;
-    const drawX = (targetSize.width - drawWidth) / 2;
-    const drawY = (targetSize.height - drawHeight) / 2;
-
-    ctx.drawImage(tempCanvas, drawX, drawY, drawWidth, drawHeight);
-
-    convertedCanvas = canvas;
-
-    const resultBox = document.getElementById('resultBox');
-    const resultPreview = document.getElementById('resultPreview');
-    resultBox.style.display = 'block';
-    resultPreview.innerHTML = `
-        <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px;">${selectedBgName} ${targetSize.name} - ${targetSize.width} × ${targetSize.height} 像素</p>
-        <img src="${canvas.toDataURL()}" alt="转换结果">
-    `;
-
-    document.getElementById('downloadBtn').disabled = false;
-}
-
-// 肤色检测
-function isSkinColor(r, g, b) {
-    if (r < 80 || g < 40 || b < 30) return false;
-    if (r < g || r < b) return false;
-    const max = Math.max(r, g, b);
-    const min = Math.min(r, g, b);
-    if (max < 60 || max > 240) return false;
-    if (r < max * 0.4) return false;
-    return true;
-}
-
-// 头发颜色检测
-function isHairColor(r, g, b, bgColor) {
-    const brightness = (r + g + b) / 3;
-    const bgBrightness = (bgColor.r + bgColor.g + bgColor.b) / 3;
-    if (brightness > bgBrightness * 1.1) return false;
-    if (brightness > 180) return false;
-    const max = Math.max(r, g, b);
-    const min = Math.min(r, g, b);
-    const saturation = (max - min) / max;
-    return saturation < 0.5 && brightness < bgBrightness;
-}
-
-// 膨胀蒙版
-function dilateMask(mask, width, height, radius) {
-    const newMask = new Uint8Array(mask.length);
-    for (let y = radius; y < height - radius; y++) {
-        for (let x = radius; x < width - radius; x++) {
-            let found = mask[y * width + x];
-            if (!found) {
-                for (let dy = -radius; dy <= radius && !found; dy++) {
-                    for (let dx = -radius; dx <= radius && !found; dx++) {
-                        if (mask[(y + dy) * width + (x + dx)]) found = 1;
-                    }
-                }
-            }
-            newMask[y * width + x] = found;
-        }
-    }
-    for (let i = 0; i < mask.length; i++) mask[i] = newMask[i];
-}
-
-// 腐蚀蒙版
-function erodeMask(mask, width, height, radius) {
-    const newMask = new Uint8Array(mask.length);
-    for (let y = radius; y < height - radius; y++) {
-        for (let x = radius; x < width - radius; x++) {
-            let all = mask[y * width + x];
-            if (all) {
-                for (let dy = -radius; dy <= radius && all; dy++) {
-                    for (let dx = -radius; dx <= radius && all; dx++) {
-                        if (!mask[(y + dy) * width + (x + dx)]) all = 0;
-                    }
-                }
-            }
-            newMask[y * width + x] = all;
-        }
-    }
-    for (let i = 0; i < mask.length; i++) mask[i] = newMask[i];
-}
-
-// 去除蒙版中的小噪点（连通区域小于threshold的设为0）
-function removeSmallBlobs(mask, width, height, threshold) {
-    const visited = new Uint8Array(mask.length);
-    const queue = [];
-    const toRemove = [];
-    
-    for (let y = 0; y < height; y++) {
-        for (let x = 0; x < width; x++) {
-            const idx = y * width + x;
-            if (mask[idx] && !visited[idx]) {
-                toRemove.length = 0;
-                queue.length = 0;
-                queue.push([x, y]);
-                visited[idx] = 1;
-                
-                while (queue.length > 0) {
-                    const [cx, cy] = queue.shift();
-                    toRemove.push([cx, cy]);
-                    
-                    const neighbors = [[cx-1,cy],[cx+1,cy],[cx,cy-1],[cx,cy+1]];
-                    for (const [nx, ny] of neighbors) {
-                        if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
-                            const nidx = ny * width + nx;
-                            if (mask[nidx] && !visited[nidx]) {
-                                visited[nidx] = 1;
-                                queue.push([nx, ny]);
-                            }
-                        }
-                    }
-                }
-                
-                // 如果区域太小，标记为背景
-                if (toRemove.length < threshold) {
-                    for (const [rx, ry] of toRemove) {
-                        mask[ry * width + rx] = 0;
-                    }
-                }
-            }
-        }
-    }
-}
-
-// 检测背景色
-function detectBackgroundColor(data, width, height) {
-    const samples = [];
-    const cornerSize = Math.floor(Math.min(width, height) * 0.06);
-
-    for (let y = 0; y < cornerSize; y += 2) {
-        for (let x = 0; x < cornerSize; x += 2) {
-            const i = (y * width + x) * 4;
-            samples.push({ r: data[i], g: data[i + 1], b: data[i + 2] });
-        }
-    }
-    for (let y = 0; y < cornerSize; y += 2) {
-        for (let x = width - cornerSize; x < width; x += 2) {
-            const i = (y * width + x) * 4;
-            samples.push({ r: data[i], g: data[i + 1], b: data[i + 2] });
-        }
-    }
-    for (let y = height - cornerSize; y < height; y += 2) {
-        for (let x = 0; x < cornerSize; x += 2) {
-            const i = (y * width + x) * 4;
-            samples.push({ r: data[i], g: data[i + 1], b: data[i + 2] });
-        }
-    }
-    for (let y = height - cornerSize; y < height; y += 2) {
-        for (let x = width - cornerSize; x < width; x += 2) {
-            const i = (y * width + x) * 4;
-            samples.push({ r: data[i], g: data[i + 1], b: data[i + 2] });
-        }
+    if (els.headOffset) {
+      els.headOffset.addEventListener('input', () => {
+        state.headOffset = Number(els.headOffset.value);
+        if (els.headOffsetVal) els.headOffsetVal.textContent = state.headOffset + '%';
+        schedulePreview();
+      });
     }
 
-    if (samples.length === 0) return { r: 200, g: 200, b: 200 };
-
-    const sortedR = samples.map(c => c.r).sort((a, b) => a - b);
-    const sortedG = samples.map(c => c.g).sort((a, b) => a - b);
-    const sortedB = samples.map(c => c.b).sort((a, b) => a - b);
-
-    return {
-        r: sortedR[Math.floor(samples.length / 2)],
-        g: sortedG[Math.floor(samples.length / 2)],
-        b: sortedB[Math.floor(samples.length / 2)]
-    };
-}
-
-function colorDistance(c1, c2) {
-    const dr = c1.r - c2.r;
-    const dg = c1.g - c2.g;
-    const db = c1.b - c2.b;
-    return Math.sqrt(dr * dr + dg * dg + db * db);
-}
-
-function hexToRgb(hex) {
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    return result ? {
-        r: parseInt(result[1], 16),
-        g: parseInt(result[2], 16),
-        b: parseInt(result[3], 16)
-    } : { r: 255, g: 255, b: 255 };
-}
-
-function downloadPhoto() {
-    if (!convertedCanvas) return;
-    const targetSize = photoSizes[selectedSize];
-    const link = document.createElement('a');
-    link.download = `${targetSize.name}.png`;
-    link.href = convertedCanvas.toDataURL('image/png');
-    link.click();
-}
-
-function featherEdges(canvas, mask, width, height, radius) {
-    const ctx = canvas.getContext('2d');
-    const imageData = ctx.getImageData(0, 0, width, height);
-    const data = imageData.data;
-
-    const newMask = new Uint8Array(mask);
-    const queue = [];
-
-    for (let y = 0; y < height; y++) {
-        for (let x = 0; x < width; x++) {
-            const idx = y * width + x;
-            if (newMask[idx] === 1) {
-                for (let dy = -radius; dy <= radius; dy++) {
-                    for (let dx = -radius; dx <= radius; dx++) {
-                        const nx = x + dx, ny = y + dy;
-                        if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
-                            const nidx = ny * width + nx;
-                            if (newMask[nidx] === 0) {
-                                newMask[nidx] = 2;
-                                queue.push([nx, ny]);
-                            }
-                        }
-                    }
-                }
-            }
-        }
+    if (els.zoom) {
+      els.zoom.addEventListener('input', () => {
+        state.zoom = Number(els.zoom.value);
+        if (els.zoomVal) els.zoomVal.textContent = state.zoom + '%';
+        schedulePreview();
+      });
     }
 
-    while (queue.length > 0) {
-        const [x, y] = queue.shift();
-        const idx = y * width + x;
-        if (newMask[idx] !== 2) continue;
-
-        let subjectCount = 0;
-        let total = 0;
-        for (let dy = -1; dy <= 1; dy++) {
-            for (let dx = -1; dx <= 1; dx++) {
-                const nx = x + dx, ny = y + dy;
-                if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
-                    const nidx = ny * width + nx;
-                    if (newMask[nidx] === 1) subjectCount++;
-                    total++;
-                }
-            }
+    els.modeRadios.forEach((r) => {
+      r.addEventListener('change', () => {
+        state.aiProc = null;
+        if (els.tolerance) els.tolerance.disabled = getBgMode() === 'ai';
+        if (els.edgeRefineRow) {
+          els.edgeRefineRow.hidden = getBgMode() !== 'ai';
         }
+        schedulePreview();
+      });
+    });
 
-        const ratio = subjectCount / total;
-        if (ratio > 0.2) {
-            newMask[idx] = 3;
-        }
+    if (els.edgeRefine) {
+      els.edgeRefine.addEventListener('input', () => {
+        state.edgeRefine = Number(els.edgeRefine.value);
+        if (els.edgeRefineVal) els.edgeRefineVal.textContent = state.edgeRefine + '%';
+        schedulePreview();
+      });
     }
+  }
 
-    for (let y = 0; y < height; y++) {
-        for (let x = 0; x < width; x++) {
-            const idx = y * width + x;
-            const mval = newMask[idx];
-            if (mval >= 2 && mval <= 3) {
-                const blendFactor = (mval === 3) ? 0.3 : (mval - 2) * 0.3;
-                const i = idx * 4;
-                data[i] = Math.round(data[i] * blendFactor);
-                data[i + 1] = Math.round(data[i + 1] * blendFactor);
-                data[i + 2] = Math.round(data[i + 2] * blendFactor);
-            }
-        }
+  function updateModeUI() {
+    const isAi = getBgMode() === 'ai';
+    if (els.tolerance) els.tolerance.disabled = isAi;
+    if (els.edgeRefineRow) els.edgeRefineRow.hidden = !isAi;
+  }
+
+  function init() {
+    try {
+      resolveElements();
+      bindUpload();
+      bindSizeGrid();
+      bindLegacySizeOptions();
+      bindBgGrid();
+      bindControls();
+
+      if (els.toleranceVal && els.tolerance) els.toleranceVal.textContent = state.tolerance;
+      if (els.headOffsetVal && els.headOffset) els.headOffsetVal.textContent = state.headOffset + '%';
+    if (els.zoomVal && els.zoom) els.zoomVal.textContent = state.zoom + '%';
+    if (els.edgeRefineVal && els.edgeRefine) els.edgeRefineVal.textContent = state.edgeRefine + '%';
+    if (els.convertBtn) els.convertBtn.disabled = true;
+    if (els.downloadBtn) els.downloadBtn.disabled = true;
+    updateModeUI();
+
+    if (els.fileInput) {
+      setStatus('请上传一张证件照或半身照');
     }
+    } catch (err) {
+      console.error('[photo] init failed:', err);
+      setStatus('页面初始化异常: ' + (err.message || err), 'error');
+    }
+  }
 
-    ctx.putImageData(imageData, 0, 0);
-}
+  window.PhotoTool = {
+    handleFile,
+    renderIdPhoto,
+    get ready() {
+      return !!state.sourceImage;
+    },
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
