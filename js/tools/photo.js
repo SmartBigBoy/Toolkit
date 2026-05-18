@@ -35,7 +35,7 @@
     sourceBlob: null,
     selectedSize: '1inch',
     selectedBg: 'white',
-    tolerance: 42,
+    tolerance: 15,
     headOffset: 12,
     zoom: 100,
     edgeRefine: 72,
@@ -1143,7 +1143,7 @@
       state.sourceBlob = null;
       state.selectedSize = '1inch';
       state.selectedBg = 'white';
-      state.tolerance = 42;
+      state.tolerance = 15;
       state.headOffset = 12;
       state.zoom = 100;
       state.edgeRefine = 72;
@@ -1167,8 +1167,8 @@
       if (els.resultMeta) els.resultMeta.textContent = '';
       // 恢复滑块默认值
       if (els.tolerance) {
-        els.tolerance.value = 42;
-        if (els.toleranceVal) els.toleranceVal.textContent = '42';
+        els.tolerance.value = 15;
+        if (els.toleranceVal) els.toleranceVal.textContent = '15';
       }
       if (els.headOffset) {
         els.headOffset.value = 12;
