@@ -322,13 +322,13 @@
     <script>
         function pad(n) { return n.toString().padStart(2, '0'); }
         
-        function updateCurrentTime() {
+        function initCurrentTime() {
             const now = new Date();
             const seconds = Math.floor(now.getTime() / 1000);
             document.getElementById('currentSeconds').textContent = seconds;
             document.getElementById('currentMillis').textContent = now.getTime();
             
-            // 实时更新日期输入框
+            // 初始化日期输入框为当前时间
             document.getElementById('year').value = now.getFullYear();
             document.getElementById('month').value = pad(now.getMonth() + 1);
             document.getElementById('day').value = pad(now.getDate());
@@ -336,8 +336,16 @@
             document.getElementById('minute').value = pad(now.getMinutes());
             document.getElementById('second').value = pad(now.getSeconds());
         }
-        updateCurrentTime();
-        setInterval(updateCurrentTime, 1000);
+        
+        // 只刷新时间戳数字，不刷新日期输入框
+        function updateTimestampOnly() {
+            const now = new Date();
+            document.getElementById('currentSeconds').textContent = Math.floor(now.getTime() / 1000);
+            document.getElementById('currentMillis').textContent = now.getTime();
+        }
+        
+        initCurrentTime();
+        setInterval(updateTimestampOnly, 1000);
         
         function timestampToDate() {
             const input = document.getElementById('timestampInput').value.trim();
