@@ -17,6 +17,166 @@
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6560822080596473" crossorigin="anonymous"></script>
+    <style>
+        .math-container {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        
+        .math-section {
+            background: #fff;
+            border-radius: 16px;
+            padding: 20px;
+        }
+        
+        .math-input-group {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+        
+        .math-input {
+            flex: 1;
+            min-width: 100px;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 15px;
+            background: #f8fafc;
+            transition: all 0.3s;
+        }
+        
+        .math-input:focus {
+            outline: none;
+            border-color: #ec4899;
+            background: #fff;
+        }
+        
+        .math-operator {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #ec4899, #f472b6);
+            border: none;
+            border-radius: 12px;
+            color: #fff;
+            font-size: 20px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        
+        .math-btn {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #ec4899, #f472b6);
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .math-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(236, 72, 153, 0.3);
+        }
+        
+        .result-section {
+            background: #fff;
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+            display: none;
+        }
+        
+        .result-section.show {
+            display: block;
+        }
+        
+        .result-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #1e293b;
+            margin: 16px 0;
+            word-break: break-all;
+        }
+        
+        .result-formula {
+            font-size: 14px;
+            color: #64748b;
+            margin-bottom: 16px;
+        }
+        
+        .copy-btn {
+            padding: 12px 32px;
+            background: #f1f5f9;
+            color: #475569;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .copy-btn:hover {
+            background: #e2e8f0;
+            color: #1e293b;
+        }
+        
+        .quick-btns {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        
+        .quick-btn {
+            padding: 8px 16px;
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #475569;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .quick-btn:hover {
+            background: #ec4899;
+            color: #fff;
+            border-color: #ec4899;
+        }
+        
+        .input-with-label {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        
+        .input-with-label label {
+            min-width: 80px;
+            font-size: 14px;
+            color: #64748b;
+        }
+        
+        .input-with-label input {
+            flex: 1;
+        }
+    </style>
 </head>
 <body>
 
@@ -49,111 +209,81 @@
                     <div class="color-section">
                         <div class="section-title">
                             <i class="fas fa-plus-minus"></i>
-                            <span>基础四则运算</span>
+                            <span>四则运算</span>
                         </div>
-                        <div class="format-grid">
-                            <div class="format-item">
-                                <label>数值1</label>
-                                <input type="number" id="num1" class="unit-input" value="10" placeholder="输入数字">
-                            </div>
-                            <div class="format-item">
-                                <label>运算符</label>
-                                <select id="operation" class="unit-select">
-                                    <option value="add">+</option>
-                                    <option value="subtract">-</option>
-                                    <option value="multiply">×</option>
-                                    <option value="divide">÷</option>
-                                    <option value="pow">^</option>
-                                    <option value="mod">%</option>
-                                </select>
-                            </div>
-                            <div class="format-item">
-                                <label>数值2</label>
-                                <input type="number" id="num2" class="unit-input" value="5" placeholder="输入数字">
-                            </div>
+                        <div class="math-input-group">
+                            <input type="number" id="num1" class="math-input" placeholder="输入数字" value="10">
+                            <div class="math-operator">+</div>
+                            <input type="number" id="num2" class="math-input" placeholder="输入数字" value="20">
                         </div>
-                        <button class="action-btn full" onclick="calculate()">
+                        <button class="math-btn" onclick="calculate('add')">
                             <i class="fas fa-equals"></i>
                             <span>计算</span>
                         </button>
-                        <div id="basicResult" class="result-area" style="display: none;">
-                            <div class="result-label">结果</div>
-                            <div class="result-value" id="basicResultValue"></div>
-                        </div>
                     </div>
 
-                    <!-- 三角函数区块 -->
+                    <!-- 快捷运算区块 -->
                     <div class="color-section">
                         <div class="section-title">
-                            <i class="fas fa-chart-line"></i>
-                            <span>三角函数</span>
+                            <i class="fas fa-bolt"></i>
+                            <span>快捷运算</span>
                         </div>
-                        <div class="format-grid">
-                            <div class="format-item">
-                                <label>角度（度）</label>
-                                <input type="number" id="angle" class="unit-input" value="45" placeholder="输入角度">
-                            </div>
-                            <div class="format-item">
-                                <label>函数类型</label>
-                                <select id="trigType" class="unit-select">
-                                    <option value="sin">sin</option>
-                                    <option value="cos">cos</option>
-                                    <option value="tan">tan</option>
-                                    <option value="asin">asin</option>
-                                    <option value="acos">acos</option>
-                                    <option value="atan">atan</option>
-                                </select>
-                            </div>
-                        </div>
-                        <button class="action-btn full" onclick="calculateTrig()">
-                            <i class="fas fa-equals"></i>
-                            <span>计算</span>
-                        </button>
-                        <div id="trigResult" class="result-area" style="display: none;">
-                            <div class="result-label">结果</div>
-                            <div class="result-value" id="trigResultValue"></div>
+                        <div class="quick-btns">
+                            <button class="quick-btn" onclick="setOperation('+')">+</button>
+                            <button class="quick-btn" onclick="setOperation('-')">-</button>
+                            <button class="quick-btn" onclick="setOperation('*')">×</button>
+                            <button class="quick-btn" onclick="setOperation('/')">÷</button>
+                            <button class="quick-btn" onclick="setOperation('**')">幂</button>
                         </div>
                     </div>
 
                     <!-- 函数计算区块 -->
                     <div class="color-section">
                         <div class="section-title">
-                            <i class="fas fa-magic"></i>
+                            <i class="fas fa-function"></i>
                             <span>函数计算</span>
                         </div>
-                        <div class="color-picker-box" style="margin-bottom: 16px;">
-                            <input type="number" id="calcNum" class="unit-input" value="16" placeholder="输入数字" style="width: 100%; text-align: center; font-size: 18px; padding: 16px;">
+                        <div class="input-with-label">
+                            <label>平方根</label>
+                            <input type="number" id="sqrtInput" class="math-input" placeholder="输入数字">
                         </div>
-                        <button class="action-btn full" onclick="calculateAdvanced()">
-                            <i class="fas fa-magic"></i>
-                            <span>全部计算</span>
+                        <button class="math-btn" onclick="calculateSqrt()" style="margin-bottom: 16px;">
+                            <i class="fas fa-square-root-alt"></i>
+                            <span>计算平方根</span>
                         </button>
-                        <div class="format-grid" style="margin-top: 16px;">
-                            <div class="format-item">
-                                <label>平方根</label>
-                                <div class="unit-input" style="background: var(--bg-tertiary);" id="sqrtResult">---</div>
-                            </div>
-                            <div class="format-item">
-                                <label>立方根</label>
-                                <div class="unit-input" style="background: var(--bg-tertiary);" id="cbrtResult">---</div>
-                            </div>
-                            <div class="format-item">
-                                <label>绝对值</label>
-                                <div class="unit-input" style="background: var(--bg-tertiary);" id="absResult">---</div>
-                            </div>
-                            <div class="format-item">
-                                <label>自然对数</label>
-                                <div class="unit-input" style="background: var(--bg-tertiary);" id="logResult">---</div>
-                            </div>
-                            <div class="format-item">
-                                <label>常用对数</label>
-                                <div class="unit-input" style="background: var(--bg-tertiary);" id="log10Result">---</div>
-                            </div>
-                            <div class="format-item">
-                                <label>e的幂</label>
-                                <div class="unit-input" style="background: var(--bg-tertiary);" id="expResult">---</div>
-                            </div>
+                        
+                        <div class="input-with-label">
+                            <label>绝对值</label>
+                            <input type="number" id="absInput" class="math-input" placeholder="输入数字">
                         </div>
+                        <button class="math-btn" onclick="calculateAbs()" style="margin-bottom: 16px;">
+                            <i class="fas fa-absolute"></i>
+                            <span>计算绝对值</span>
+                        </button>
+                        
+                        <div class="input-with-label">
+                            <label>三角函数</label>
+                            <input type="number" id="trigInput" class="math-input" placeholder="输入角度">
+                        </div>
+                        <div class="quick-btns">
+                            <button class="quick-btn" onclick="calculateTrig('sin')">sin</button>
+                            <button class="quick-btn" onclick="calculateTrig('cos')">cos</button>
+                            <button class="quick-btn" onclick="calculateTrig('tan')">tan</button>
+                        </div>
+                    </div>
+
+                    <!-- 计算结果区块 -->
+                    <div class="result-section" id="resultSection">
+                        <div class="section-title" style="justify-content: center;">
+                            <i class="fas fa-check-circle" style="color: #10b981;"></i>
+                            <span>计算结果</span>
+                        </div>
+                        <div class="result-value" id="resultValue">-</div>
+                        <div class="result-formula" id="resultFormula">-</div>
+                        <button class="copy-btn" onclick="copyResult()">
+                            <i class="fas fa-copy"></i>
+                            <span>复制结果</span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -169,6 +299,148 @@
 
     <div class="toast" id="toast"></div>
 
-    <script src="../js/tools/math.js"></script>
+    <script>
+        let currentOperator = '+';
+        let currentResult = '';
+
+        function setOperation(op) {
+            currentOperator = op;
+            document.querySelector('.math-operator').textContent = op === '**' ? 'xⁿ' : op;
+        }
+
+        function calculate(type) {
+            let num1, num2, result, formula;
+            
+            if (type === 'add') {
+                num1 = parseFloat(document.getElementById('num1').value);
+                num2 = parseFloat(document.getElementById('num2').value);
+                
+                if (isNaN(num1) || isNaN(num2)) {
+                    showToast('请输入有效的数字');
+                    return;
+                }
+                
+                switch (currentOperator) {
+                    case '+':
+                        result = num1 + num2;
+                        formula = `${num1} + ${num2}`;
+                        break;
+                    case '-':
+                        result = num1 - num2;
+                        formula = `${num1} - ${num2}`;
+                        break;
+                    case '*':
+                        result = num1 * num2;
+                        formula = `${num1} × ${num2}`;
+                        break;
+                    case '/':
+                        if (num2 === 0) {
+                            showToast('除数不能为零');
+                            return;
+                        }
+                        result = num1 / num2;
+                        formula = `${num1} ÷ ${num2}`;
+                        break;
+                    case '**':
+                        result = Math.pow(num1, num2);
+                        formula = `${num1} ^ ${num2}`;
+                        break;
+                }
+            }
+            
+            currentResult = result.toString();
+            document.getElementById('resultValue').textContent = result;
+            document.getElementById('resultFormula').textContent = `${formula} = ${result}`;
+            document.getElementById('resultSection').classList.add('show');
+        }
+
+        function calculateSqrt() {
+            const num = parseFloat(document.getElementById('sqrtInput').value);
+            
+            if (isNaN(num)) {
+                showToast('请输入有效的数字');
+                return;
+            }
+            
+            if (num < 0) {
+                showToast('平方根不能为负数');
+                return;
+            }
+            
+            const result = Math.sqrt(num);
+            currentResult = result.toString();
+            document.getElementById('resultValue').textContent = result;
+            document.getElementById('resultFormula').textContent = `√${num} = ${result}`;
+            document.getElementById('resultSection').classList.add('show');
+        }
+
+        function calculateAbs() {
+            const num = parseFloat(document.getElementById('absInput').value);
+            
+            if (isNaN(num)) {
+                showToast('请输入有效的数字');
+                return;
+            }
+            
+            const result = Math.abs(num);
+            currentResult = result.toString();
+            document.getElementById('resultValue').textContent = result;
+            document.getElementById('resultFormula').textContent = `|${num}| = ${result}`;
+            document.getElementById('resultSection').classList.add('show');
+        }
+
+        function calculateTrig(type) {
+            const degrees = parseFloat(document.getElementById('trigInput').value);
+            
+            if (isNaN(degrees)) {
+                showToast('请输入有效的角度');
+                return;
+            }
+            
+            const radians = degrees * Math.PI / 180;
+            let result, formula;
+            
+            switch (type) {
+                case 'sin':
+                    result = Math.sin(radians);
+                    formula = `sin(${degrees}°)`;
+                    break;
+                case 'cos':
+                    result = Math.cos(radians);
+                    formula = `cos(${degrees}°)`;
+                    break;
+                case 'tan':
+                    if (Math.cos(radians) === 0) {
+                        showToast('tan(90°) 无定义');
+                        return;
+                    }
+                    result = Math.tan(radians);
+                    formula = `tan(${degrees}°)`;
+                    break;
+            }
+            
+            currentResult = result.toString();
+            document.getElementById('resultValue').textContent = result.toFixed(6);
+            document.getElementById('resultFormula').textContent = `${formula} = ${result.toFixed(6)}`;
+            document.getElementById('resultSection').classList.add('show');
+        }
+
+        function copyResult() {
+            if (currentResult) {
+                navigator.clipboard.writeText(currentResult).then(() => {
+                    showToast('已复制到剪贴板');
+                });
+            }
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2000);
+        }
+    </script>
 </body>
 </html>
