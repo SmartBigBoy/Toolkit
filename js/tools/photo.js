@@ -421,7 +421,7 @@ async function convertWithTraditionalAlgorithm() {
     }
 
     // 第五步：再次膨胀确保边缘完整
-    for (let i = 0; i < 3; i++) dilateMask(mask, width, height, 1);
+    for (let i = 0; i < 6; i++) dilateMask(mask, width, height, 1);
 
     // 第六步：替换背景
     for (let y = 0; y < height; y++) {
@@ -448,6 +448,9 @@ async function convertWithTraditionalAlgorithm() {
     }
 
     tempCtx.putImageData(imageData, 0, 0);
+
+    // 第七步：边缘羽化 - 让头发边缘更自然
+    featherEdges(tempCanvas, mask, width, height, 6);
 
     // 绘制到目标尺寸
     const canvas = document.createElement('canvas');
@@ -606,4 +609,73 @@ function downloadPhoto() {
     link.download = `${targetSize.name}.png`;
     link.href = convertedCanvas.toDataURL('image/png');
     link.click();
+}
+
+function featherEdges(canvas, mask, width, height, radius) {
+    const ctx = canvas.getContext('2d');
+    const imageData = ctx.getImageData(0, 0, width, height);
+    const data = imageData.data;
+
+    const newMask = new Uint8Array(mask);
+    const queue = [];
+
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+            const idx = y * width + x;
+            if (newMask[idx] === 1) {
+                for (let dy = -radius; dy <= radius; dy++) {
+                    for (let dx = -radius; dx <= radius; dx++) {
+                        const nx = x + dx, ny = y + dy;
+                        if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                            const nidx = ny * width + nx;
+                            if (newMask[nidx] === 0) {
+                                newMask[nidx] = 2;
+                                queue.push([nx, ny]);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    while (queue.length > 0) {
+        const [x, y] = queue.shift();
+        const idx = y * width + x;
+        if (newMask[idx] !== 2) continue;
+
+        let subjectCount = 0;
+        let total = 0;
+        for (let dy = -1; dy <= 1; dy++) {
+            for (let dx = -1; dx <= 1; dx++) {
+                const nx = x + dx, ny = y + dy;
+                if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                    const nidx = ny * width + nx;
+                    if (newMask[nidx] === 1) subjectCount++;
+                    total++;
+                }
+            }
+        }
+
+        const ratio = subjectCount / total;
+        if (ratio > 0.2) {
+            newMask[idx] = 3;
+        }
+    }
+
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+            const idx = y * width + x;
+            const mval = newMask[idx];
+            if (mval >= 2 && mval <= 3) {
+                const blendFactor = (mval === 3) ? 0.3 : (mval - 2) * 0.3;
+                const i = idx * 4;
+                data[i] = Math.round(data[i] * blendFactor);
+                data[i + 1] = Math.round(data[i + 1] * blendFactor);
+                data[i + 2] = Math.round(data[i + 2] * blendFactor);
+            }
+        }
+    }
+
+    ctx.putImageData(imageData, 0, 0);
 }
