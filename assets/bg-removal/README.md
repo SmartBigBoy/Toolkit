@@ -1,28 +1,58 @@
-# 模型文件说明
+# Background Removal 模型说明
 
-## 当前方案：CDN + IndexedDB 缓存
+## 当前状态
 
-`@imgly/background-removal` 的 AI 模型工作机制：
+此目录包含 `@imgly/background-removal@1.7.0` 完整库文件。
 
-1. **首次使用**：从 CDN 下载模型文件（约 20-80MB），存储到浏览器 IndexedDB
-2. **后续使用**：从 IndexedDB 读取，秒开
-3. **缓存位置**：每个浏览器的 IndexedDB 中，不可导出到本地文件夹
+## 文件结构
 
-## 目录用途
+```
+bg-removal/
+├── dist/
+│   ├── index.mjs          # ES Module 主文件
+│   └── index.cjs           # CommonJS 主文件
+├── ort-wasm-simd-threaded.wasm  # ONNX Runtime Web WASM 文件（4.3MB）
+├── package.json
+└── README.md
+```
 
-此目录用于存放预下载的 onnxruntime-web WASM 文件，以加速首次加载。
+## 模型文件说明
 
-## 手动预加载模型
+AI 模型文件（.onnx，大约 20-80MB）**不在此目录中**，因为它们是动态下载的：
+- 首次使用时从 CDN 动态下载
+- 下载后自动缓存到用户浏览器的 IndexedDB 中
+- 后续使用从 IndexedDB 读取，无需再次下载
 
-如果想在部署后立即可用，可以：
+## 技术架构
 
-1. 部署网站
-2. 首次访问证件照转换页面
-3. 等待模型下载完成（约 30 秒）
-4. 后续所有用户都会从 CDN 加载（已缓存到浏览器）
+```
+background-removal@1.7.0
+├── dist/index.mjs    → 库主文件（已下载）
+├── dist/index.cjs    → 库主文件（已下载）
+├── ort-wasm-simd-threaded.wasm  → WASM 运行时（已下载）
+└── 模型文件（首次运行时从 CDN 下载）
+    └── 缓存到 IndexedDB
+```
 
-## 注意事项
+## 使用说明
 
-- AI 模型文件无法预先下载到 assets 文件夹
-- 模型存储在用户的浏览器中，不同浏览器需要单独下载
-- 清除浏览器数据会清除已缓存的模型
+在 `photo.js` 中配置：
+```javascript
+// 从本地加载库
+const { removeBackground } = await import('../assets/bg-removal/dist/index.mjs');
+
+// 首次调用会下载并缓存模型到 IndexedDB
+await removeBackground(imageFile, {
+    model: 'small',
+    progress: (key, current, total) => { ... }
+});
+```
+
+## 模型缓存
+
+用户首次使用时：
+1. 浏览器从 CDN 下载模型文件（约 30MB）
+2. 模型缓存到 IndexedDB
+3. 后续使用秒开
+
+如需清除缓存：浏览器开发者工具 → Application → IndexedDB → 删除

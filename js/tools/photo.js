@@ -26,32 +26,31 @@ async function loadBackgroundRemovalModel() {
     const statusText = document.getElementById('conversionStatus');
     
     try {
-        if (statusText) statusText.textContent = '从 CDN 加载 AI 模型中（首次约需 30 秒）...';
+        if (statusText) statusText.textContent = '加载 AI 模型中...';
         if (convertBtn) {
             convertBtn.textContent = '加载模型中...';
             convertBtn.disabled = true;
         }
         
-        // 动态导入 background-removal 库（使用 CDN）
-        // 模型会自动下载并缓存到浏览器 IndexedDB
-        const { removeBackground } = await import('https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.5/+esm');
+        // 动态导入 background-removal 库（使用本地文件）
+        const { removeBackground } = await import('../assets/bg-removal/dist/index.mjs');
         
         // 预热模型：用 1x1 透明 PNG 触发模型下载
         const tiny = await fetch('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==')
             .then(r => r.blob());
         
         await removeBackground(tiny, {
-            model: 'small',  // 'small' 模型最小，下载最快
+            model: 'small',
             progress: (key, current, total) => {
                 if (total > 0) {
                     const pct = Math.round(current / total * 100);
-                    if (statusText) statusText.textContent = `加载模型中 ${pct}%（下载后会自动缓存）...`;
+                    if (statusText) statusText.textContent = `加载模型中 ${pct}%...`;
                 }
             }
         });
         
         modelReady = true;
-        if (statusText) statusText.textContent = 'AI 模型已就绪（后续使用秒开）';
+        if (statusText) statusText.textContent = 'AI 模型已就绪';
         updateConvertButton();
         
         return true;
