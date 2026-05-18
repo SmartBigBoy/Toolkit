@@ -34,44 +34,23 @@ async function loadBackgroundRemovalModel() {
         
         console.log('[模型] 导入 background-removal 库...');
         
-        // 动态导入 background-removal 库（使用本地文件）
-        const bgRemoval = await import('../assets/bg-removal/dist/index.mjs');
+        // 使用 CDN 加载（自动缓存到 IndexedDB）
+        const bgRemoval = await import('https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.5/+esm');
         const { removeBackground, preload } = bgRemoval;
         
-        console.log('[模型] 库导入成功，开始预加载资源...');
+        console.log('[模型] 库导入成功，开始预加载...');
         
-        // 预加载资源（下载 WASM 和模型元数据）
+        // 预加载资源（WASM）
         await preload({
-            publicPath: '/assets/bg-removal/',
+            publicPath: 'https://staticimgly.com/@imgly/background-removal-data/1.4.5/dist/',
             progress: (key, current, total) => {
                 console.log(`[预加载] ${key}: ${current}/${total}`);
-                if (statusText) statusText.textContent = `准备资源 ${key}...`;
-            },
-            debug: true
+            }
         });
         
-        console.log('[模型] 预加载完成，初始化模型...');
+        console.log('[模型] 预加载完成!');
         
-        // 用 tiny 图片触发模型加载
-        const tiny = await fetch('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==')
-            .then(r => r.blob());
-        
-        await removeBackground(tiny, {
-            model: 'medium',
-            publicPath: '/assets/bg-removal/',
-            progress: (key, current, total) => {
-                console.log(`[模型] ${key}: ${current}/${total}`);
-                if (total > 0) {
-                    const pct = Math.round(current / total * 100);
-                    if (statusText) statusText.textContent = `加载模型 ${pct}%...`;
-                } else {
-                    if (statusText) statusText.textContent = `加载 ${key}...`;
-                }
-            },
-            debug: true
-        });
-        
-        console.log('[模型] 模型加载完成!');
+        // 初始化完成（模型会在首次使用时加载）
         modelReady = true;
         if (statusText) statusText.textContent = 'AI 模型已就绪';
         updateConvertButton();
@@ -219,11 +198,13 @@ async function convertPhoto() {
         
         const resultBlob = await removeBackground(originalFile, {
             model: 'small',       // 'small' 速度快，'medium' 更精准
+            publicPath: 'https://staticimgly.com/@imgly/background-removal-data/1.4.5/dist/',
             output: {
                 format: 'image/png',
                 quality: 1,
             },
             progress: (key, current, total) => {
+                console.log(`[AI] ${key}: ${current}/${total}`);
                 if (total > 0) {
                     const pct = Math.round(current / total * 100);
                     if (statusText) statusText.textContent = `AI 分割中 ${pct}%...`;
