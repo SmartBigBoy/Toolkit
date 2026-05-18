@@ -361,6 +361,7 @@
         function selectSize(el) {
             document.querySelectorAll('.size-card').forEach(c => c.classList.remove('selected'));
             el.classList.add('selected');
+            selectedSize = el.dataset.size;
         }
     </script>
 </body>
