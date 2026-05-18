@@ -9,43 +9,74 @@ const photoSizes = {
 };
 
 let originalImage = null;
+let originalFile = null;
 let convertedCanvas = null;
 let selectedSize = '1inch';
-let segmenter = null;
-let segmenterLoading = false;
+let bgRemovalBlob = null;  // 保存 AI 抠图结果
 
-// 初始化 MediaPipe Selfie Segmentation
-async function initSegmenter() {
-    if (segmenter) return segmenter;
-    if (segmenterLoading) {
-        // 等待加载完成
-        while (segmenterLoading) {
-            await new Promise(r => setTimeout(r, 100));
-        }
-        return segmenter;
-    }
+// 状态管理
+let modelReady = false;
+let processing = false;
 
-    segmenterLoading = true;
+// 加载背景移除模型
+async function loadBackgroundRemovalModel() {
+    if (modelReady) return true;
+    
+    const convertBtn = document.getElementById('convertBtn');
+    const statusText = document.getElementById('conversionStatus');
     
     try {
-        const { SelfieSegmentation } = await import('https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/selfie_segmentation.js');
+        if (statusText) statusText.textContent = '加载 AI 模型中...';
+        if (convertBtn) {
+            convertBtn.textContent = '加载模型中...';
+            convertBtn.disabled = true;
+        }
         
-        segmenter = new SelfieSegmentation({
-            locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/${file}`
+        // 动态导入 background-removal 库
+        const { removeBackground } = await import('https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.5/+esm');
+        
+        // 预热模型：用 1x1 透明 PNG
+        const tiny = await fetch('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==')
+            .then(r => r.blob());
+        
+        await removeBackground(tiny, {
+            model: 'small',
+            progress: (key, current, total) => {
+                if (total > 0) {
+                    const pct = Math.round(current / total * 100);
+                    if (statusText) statusText.textContent = `加载模型中 ${pct}%...`;
+                }
+            }
         });
-
-        segmenter.setOptions({
-            modelSelection: 1, // 0: general, 1: landscape
-            selfieMode: false
-        });
-
-        await segmenter.initialize();
-        segmenterLoading = false;
-        return segmenter;
+        
+        modelReady = true;
+        if (statusText) statusText.textContent = 'AI 模型就绪';
+        updateConvertButton();
+        
+        return true;
     } catch (error) {
-        console.error('MediaPipe 加载失败:', error);
-        segmenterLoading = false;
-        return null;
+        console.error('模型加载失败:', error);
+        if (statusText) statusText.textContent = 'AI 模型加载失败，将使用传统算法';
+        return false;
+    }
+}
+
+function updateConvertButton() {
+    const convertBtn = document.getElementById('convertBtn');
+    if (!convertBtn) return;
+    
+    if (!modelReady) {
+        convertBtn.textContent = '加载模型中...';
+        convertBtn.disabled = true;
+    } else if (!originalImage) {
+        convertBtn.textContent = '请先上传照片';
+        convertBtn.disabled = true;
+    } else if (processing) {
+        convertBtn.textContent = 'AI 分割中...';
+        convertBtn.disabled = true;
+    } else {
+        convertBtn.textContent = '开始转换';
+        convertBtn.disabled = false;
     }
 }
 
@@ -92,14 +123,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // 预加载分割模型
-    initSegmenter();
+    // 预加载模型
+    loadBackgroundRemovalModel();
 });
 
 function handlePhotoUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
 
+    originalFile = file;  // 保存原始文件用于 AI 处理
+    
     const reader = new FileReader();
     reader.onload = (e) => {
         const img = new Image();
@@ -112,9 +145,9 @@ function handlePhotoUpload(event) {
             `;
             document.getElementById('convertBtn').disabled = false;
             document.getElementById('downloadBtn').disabled = true;
+            bgRemovalBlob = null;  // 清空之前的抠图结果
             
-            // 预加载模型
-            initSegmenter();
+            updateConvertButton();
         };
         img.src = e.target.result;
     };
@@ -129,6 +162,11 @@ function selectBgColor(el) {
     el.classList.add('selected');
     selectedBgColor = el.dataset.color;
     selectedBgName = el.dataset.name;
+    
+    // 如果已有抠图结果，直接应用新背景
+    if (bgRemovalBlob) {
+        applyBackgroundToCanvas();
+    }
 }
 
 async function convertPhoto() {
@@ -138,106 +176,109 @@ async function convertPhoto() {
     }
 
     const convertBtn = document.getElementById('convertBtn');
-    const originalText = convertBtn.textContent;
-    convertBtn.textContent = 'AI 分割中...';
-    convertBtn.disabled = true;
+    const statusText = document.getElementById('conversionStatus');
+    
+    processing = true;
+    updateConvertButton();
+    if (statusText) statusText.textContent = '正在 AI 分割，请稍候...';
 
     try {
-        // 初始化/等待分割模型
-        const seg = await initSegmenter();
+        // 确保模型已加载
+        if (!modelReady) {
+            const loaded = await loadBackgroundRemovalModel();
+            if (!loaded) {
+                throw new Error('AI 模型加载失败');
+            }
+        }
+
+        // 使用 @imgly/background-removal 进行 AI 抠图
+        const { removeBackground } = await import('https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.5/+esm');
         
-        if (!seg) {
-            // 回退到传统算法
-            await convertWithTraditionalAlgorithm();
-            return;
-        }
+        const resultBlob = await removeBackground(originalFile, {
+            model: 'small',       // 'small' 速度快，'medium' 更精准
+            output: {
+                format: 'image/png',
+                quality: 1,
+            },
+            progress: (key, current, total) => {
+                if (total > 0) {
+                    const pct = Math.round(current / total * 100);
+                    if (statusText) statusText.textContent = `AI 分割中 ${pct}%...`;
+                }
+            }
+        });
 
-        const targetSize = photoSizes[selectedSize];
-        const targetColor = hexToRgb(selectedBgColor);
+        bgRemovalBlob = resultBlob;
+        
+        // 应用背景色并生成目标尺寸
+        await applyBackgroundToCanvas();
 
-        // 创建临时 canvas 用于处理
-        const tempCanvas = document.createElement('canvas');
-        tempCanvas.width = originalImage.width;
-        tempCanvas.height = originalImage.height;
-        const tempCtx = tempCanvas.getContext('2d');
-        tempCtx.drawImage(originalImage, 0, 0);
-
-        // 使用 MediaPipe 进行分割
-        const segmentationMask = await seg.segment(tempCanvas);
-
-        // 创建带透明度的结果
-        const resultCanvas = document.createElement('canvas');
-        resultCanvas.width = originalImage.width;
-        resultCanvas.height = originalImage.height;
-        const resultCtx = resultCanvas.getContext('2d');
-
-        // 绘制原图
-        resultCtx.drawImage(tempCanvas, 0, 0);
-
-        // 创建蒙版图像
-        const maskCanvas = document.createElement('canvas');
-        maskCanvas.width = originalImage.width;
-        maskCanvas.height = originalImage.height;
-        const maskCtx = maskCanvas.getContext('2d');
-
-        // 将分割结果绘制到蒙版
-        const maskData = maskCtx.createImageData(originalImage.width, originalImage.height);
-        for (let i = 0; i < segmentationMask.length; i++) {
-            const value = segmentationMask[i];
-            // value 是 0-1 的概率，表示背景概率
-            // 我们需要的是人物概率
-            const personProb = 1 - value;
-            const idx = i * 4;
-            maskData.data[idx] = 255;
-            maskData.data[idx + 1] = 255;
-            maskData.data[idx + 2] = 255;
-            maskData.data[idx + 3] = Math.round(personProb * 255);
-        }
-        maskCtx.putImageData(maskData, 0, 0);
-
-        // 应用蒙版
-        resultCtx.globalCompositeOperation = 'destination-in';
-        resultCtx.drawImage(maskCanvas, 0, 0);
-
-        // 创建目标尺寸 canvas
-        const canvas = document.createElement('canvas');
-        canvas.width = targetSize.width;
-        canvas.height = targetSize.height;
-        const ctx = canvas.getContext('2d');
-
-        // 填充目标背景色
-        ctx.fillStyle = selectedBgColor;
-        ctx.fillRect(0, 0, targetSize.width, targetSize.height);
-
-        // 绘制分割后的人像
-        const scale = Math.min(targetSize.width / originalImage.width, targetSize.height / originalImage.height);
-        const drawWidth = originalImage.width * scale;
-        const drawHeight = originalImage.height * scale;
-        const drawX = (targetSize.width - drawWidth) / 2;
-        const drawY = (targetSize.height - drawHeight) / 2;
-
-        ctx.drawImage(resultCanvas, drawX, drawY, drawWidth, drawHeight);
-
-        convertedCanvas = canvas;
-
-        const resultBox = document.getElementById('resultBox');
-        const resultPreview = document.getElementById('resultPreview');
-        resultBox.style.display = 'block';
-        resultPreview.innerHTML = `
-            <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px;">${selectedBgName} ${targetSize.name} - ${targetSize.width} × ${targetSize.height} 像素</p>
-            <img src="${canvas.toDataURL()}" alt="转换结果">
-        `;
-
-        document.getElementById('downloadBtn').disabled = false;
+        if (statusText) statusText.textContent = '转换完成 ✓';
 
     } catch (error) {
-        console.error('分割失败:', error);
+        console.error('AI 分割失败，回退到传统算法:', error);
+        if (statusText) statusText.textContent = 'AI 分割失败，使用传统算法...';
+        
         // 回退到传统算法
         await convertWithTraditionalAlgorithm();
     } finally {
-        convertBtn.textContent = originalText;
-        convertBtn.disabled = false;
+        processing = false;
+        updateConvertButton();
     }
+}
+
+// 应用背景色到抠图结果
+async function applyBackgroundToCanvas() {
+    if (!bgRemovalBlob || !originalImage) return;
+
+    const targetSize = photoSizes[selectedSize];
+    
+    return new Promise((resolve) => {
+        const url = URL.createObjectURL(bgRemovalBlob);
+        const img = new Image();
+        
+        img.onload = () => {
+            // 创建目标尺寸 canvas
+            const canvas = document.createElement('canvas');
+            canvas.width = targetSize.width;
+            canvas.height = targetSize.height;
+            const ctx = canvas.getContext('2d');
+
+            // 填充目标背景色
+            ctx.fillStyle = selectedBgColor;
+            ctx.fillRect(0, 0, targetSize.width, targetSize.height);
+
+            // 绘制 AI 抠图后的人像（保持透明通道）
+            const scale = Math.min(
+                targetSize.width / originalImage.width,
+                targetSize.height / originalImage.height
+            );
+            const drawWidth = originalImage.width * scale;
+            const drawHeight = originalImage.height * scale;
+            const drawX = (targetSize.width - drawWidth) / 2;
+            const drawY = (targetSize.height - drawHeight) / 2;
+
+            ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
+
+            convertedCanvas = canvas;
+
+            // 显示结果
+            const resultBox = document.getElementById('resultBox');
+            const resultPreview = document.getElementById('resultPreview');
+            resultBox.style.display = 'block';
+            resultPreview.innerHTML = `
+                <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px;">${selectedBgName} ${targetSize.name} - ${targetSize.width} × ${targetSize.height} 像素</p>
+                <img src="${canvas.toDataURL()}" alt="转换结果">
+            `;
+
+            document.getElementById('downloadBtn').disabled = false;
+
+            URL.revokeObjectURL(url);
+            resolve();
+        };
+        
+        img.src = url;
+    });
 }
 
 // 传统算法回退

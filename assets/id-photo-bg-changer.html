@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>证件照换底色</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ink: #1a1a1a;
+    --paper: #f5f0e8;
+    --accent: #c0392b;
+    --gold: #b8860b;
+    --rule: #1a1a1a;
+    --muted: #6b6560;
+    --border: 2px solid var(--ink);
+  }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Noto Serif SC', serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── Header ── */
+  header {
+    border-bottom: var(--border);
+    padding: 0 2rem;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 1rem;
+    position: relative;
+  }
+  header::after {
+    content: '';
+    position: absolute;
+    bottom: 4px;
+    left: 0; right: 0;
+    height: 1px;
+    background: var(--ink);
+  }
+  .header-left { font-family: 'JetBrains Mono', monospace; font-size: .7rem; color: var(--muted); letter-spacing: .1em; }
+  .header-title {
+    text-align: center;
+    padding: 1.2rem 2rem;
+    border-left: var(--border);
+    border-right: var(--border);
+  }
+  .header-title h1 { font-size: 1.4rem; font-weight: 700; letter-spacing: .15em; }
+  .header-title p { font-family: 'JetBrains Mono', monospace; font-size: .65rem; color: var(--muted); letter-spacing: .08em; margin-top: .2rem; }
+  .header-right { text-align: right; font-family: 'JetBrains Mono', monospace; font-size: .7rem; color: var(--muted); }
+
+  /* ── Main layout ── */
+  main {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    border-bottom: var(--border);
+  }
+
+  /* ── Sidebar ── */
+  aside {
+    border-right: var(--border);
+    padding: 1.8rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.8rem;
+  }
+  .section-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .65rem;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 1px solid var(--ink);
+    padding-bottom: .4rem;
+    margin-bottom: .8rem;
+  }
+
+  /* Upload zone */
+  .upload-zone {
+    border: 2px dashed var(--ink);
+    padding: 1.5rem 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: background .15s;
+    position: relative;
+  }
+  .upload-zone:hover { background: rgba(0,0,0,.04); }
+  .upload-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+  .upload-icon { font-size: 2rem; margin-bottom: .5rem; }
+  .upload-text { font-size: .8rem; color: var(--muted); line-height: 1.5; }
+
+  /* Color presets */
+  .color-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: .5rem;
+  }
+  .color-swatch {
+    aspect-ratio: 1;
+    border: 2px solid transparent;
+    cursor: pointer;
+    position: relative;
+    transition: transform .1s;
+  }
+  .color-swatch:hover { transform: scale(1.1); }
+  .color-swatch.active { border-color: var(--ink); }
+  .color-swatch.active::after {
+    content: '✓';
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .8rem;
+    color: white;
+    text-shadow: 0 0 3px rgba(0,0,0,.8);
+  }
+  .color-swatch-white.active::after { color: var(--ink); text-shadow: none; }
+
+  /* Custom color */
+  .custom-color-row {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    margin-top: .4rem;
+  }
+  .custom-color-row label { font-size: .8rem; color: var(--muted); flex: 1; }
+  .custom-color-row input[type=color] {
+    width: 2.2rem; height: 2.2rem;
+    border: 2px solid var(--ink);
+    padding: 1px;
+    cursor: pointer;
+    background: none;
+  }
+
+  /* Tolerance slider */
+  .slider-row { display: flex; flex-direction: column; gap: .4rem; }
+  .slider-row label { font-size: .8rem; display: flex; justify-content: space-between; }
+  .slider-row input[type=range] {
+    width: 100%;
+    accent-color: var(--accent);
+  }
+
+  /* Action button */
+  .btn-process {
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    padding: .9rem 1rem;
+    font-family: 'Noto Serif SC', serif;
+    font-size: .9rem;
+    letter-spacing: .1em;
+    cursor: pointer;
+    width: 100%;
+    transition: background .15s;
+    position: relative;
+    overflow: hidden;
+  }
+  .btn-process:hover { background: var(--accent); }
+  .btn-process:disabled { opacity: .5; cursor: not-allowed; }
+
+  .btn-download {
+    background: transparent;
+    color: var(--ink);
+    border: 2px solid var(--ink);
+    padding: .7rem 1rem;
+    font-family: 'Noto Serif SC', serif;
+    font-size: .85rem;
+    letter-spacing: .1em;
+    cursor: pointer;
+    width: 100%;
+    transition: all .15s;
+    display: none;
+  }
+  .btn-download:hover { background: var(--ink); color: var(--paper); }
+  .btn-download.visible { display: block; }
+
+  /* ── Canvas area ── */
+  .canvas-area {
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    background:
+      repeating-linear-gradient(0deg, transparent, transparent 31px, rgba(0,0,0,.05) 31px, rgba(0,0,0,.05) 32px),
+      repeating-linear-gradient(90deg, transparent, transparent 31px, rgba(0,0,0,.05) 31px, rgba(0,0,0,.05) 32px);
+  }
+
+  .canvas-placeholder {
+    border: 2px dashed rgba(0,0,0,.2);
+    padding: 4rem 3rem;
+    text-align: center;
+    color: var(--muted);
+    font-size: .85rem;
+    line-height: 2;
+  }
+
+  .canvas-wrapper {
+    display: none;
+    gap: 2rem;
+    align-items: flex-start;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .canvas-wrapper.visible { display: flex; }
+
+  .canvas-card {
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+    align-items: center;
+  }
+  .canvas-card-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .65rem;
+    letter-spacing: .1em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  canvas {
+    max-width: 300px;
+    max-height: 400px;
+    border: var(--border);
+    display: block;
+    box-shadow: 4px 4px 0 var(--ink);
+  }
+
+  /* Status bar */
+  .status-bar {
+    border-top: var(--border);
+    padding: .6rem 2rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .7rem;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: var(--paper);
+  }
+  .status-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--muted);
+    flex-shrink: 0;
+  }
+  .status-dot.loading { background: var(--gold); animation: pulse 1s infinite; }
+  .status-dot.ready { background: #2ecc71; }
+  .status-dot.error { background: var(--accent); }
+
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+  /* Progress bar */
+  .progress-wrap {
+    height: 2px;
+    background: rgba(0,0,0,.1);
+    position: relative;
+    overflow: hidden;
+    display: none;
+  }
+  .progress-wrap.visible { display: block; }
+  .progress-bar {
+    height: 100%;
+    background: var(--accent);
+    width: 0%;
+    transition: width .3s;
+  }
+
+  /* Decorative rule */
+  .deco-rule {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    margin: .2rem 0;
+  }
+  .deco-rule::before, .deco-rule::after { content: ''; flex: 1; height: 1px; background: var(--ink); opacity: .2; }
+  .deco-rule span { font-family: 'JetBrains Mono', monospace; font-size: .6rem; color: var(--muted); }
+
+  @media (max-width: 680px) {
+    main { grid-template-columns: 1fr; }
+    aside { border-right: none; border-bottom: var(--border); }
+    header { grid-template-columns: 1fr; }
+    .header-title { border: none; border-top: var(--border); border-bottom: var(--border); }
+    .header-left, .header-right { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">证件照处理工具<br>v1.0 · 本地运行</div>
+  <div class="header-title">
+    <h1>换底色</h1>
+    <p>BACKGROUND REPLACEMENT · LOCAL · PRIVACY FIRST</p>
+  </div>
+  <div class="header-right">无需上传服务器<br>数据不离开设备</div>
+</header>
+
+<div class="progress-wrap" id="progressWrap">
+  <div class="progress-bar" id="progressBar"></div>
+</div>
+
+<main>
+  <aside>
+    <!-- Upload -->
+    <div>
+      <div class="section-label">01 · 上传照片</div>
+      <div class="upload-zone" id="uploadZone">
+        <input type="file" id="fileInput" accept="image/*">
+        <div class="upload-icon">⬚</div>
+        <div class="upload-text">点击或拖拽上传<br>JPG · PNG · WEBP</div>
+      </div>
+    </div>
+
+    <!-- Color presets -->
+    <div>
+      <div class="section-label">02 · 选择底色</div>
+      <div class="color-grid" id="colorGrid">
+        <div class="color-swatch active" data-color="#ffffff" style="background:#ffffff;border:2px solid #ccc" title="白色"></div>
+        <div class="color-swatch" data-color="#4a90d9" style="background:#4a90d9" title="蓝色（标准）"></div>
+        <div class="color-swatch" data-color="#c0392b" style="background:#c0392b" title="红色（标准）"></div>
+        <div class="color-swatch" data-color="#e8f4f8" style="background:#e8f4f8;border:2px solid #ccc" title="浅蓝"></div>
+        <div class="color-swatch" data-color="#2980b9" style="background:#2980b9" title="深蓝"></div>
+        <div class="color-swatch" data-color="#27ae60" style="background:#27ae60" title="绿色"></div>
+        <div class="color-swatch" data-color="#f39c12" style="background:#f39c12" title="橙色"></div>
+        <div class="color-swatch" data-color="#1a1a1a" style="background:#1a1a1a" title="黑色"></div>
+      </div>
+      <div class="deco-rule"><span>自定义</span></div>
+      <div class="custom-color-row">
+        <label>自定义颜色</label>
+        <input type="color" id="customColor" value="#ffffff">
+      </div>
+    </div>
+
+    <!-- Process -->
+    <div>
+      <div class="section-label">03 · 生成</div>
+      <button class="btn-process" id="btnProcess" disabled>
+        加载模型中…
+      </button>
+      <div style="height:.6rem"></div>
+      <button class="btn-download" id="btnDownload">↓ 下载图片</button>
+    </div>
+
+    <!-- Tips -->
+    <div style="font-size:.75rem;color:var(--muted);line-height:1.8;border-top:1px solid rgba(0,0,0,.1);padding-top:1rem;">
+      <strong style="color:var(--ink);">使用说明</strong><br>
+      · 首次使用需下载模型（约 30MB）<br>
+      · 模型在本地运行，照片不上传<br>
+      · 支持渐变/复杂背景<br>
+      · 可处理发丝细节
+    </div>
+  </aside>
+
+  <section class="canvas-area">
+    <div class="canvas-placeholder" id="placeholder">
+      上传照片后<br>在此预览处理结果
+    </div>
+    <div class="canvas-wrapper" id="canvasWrapper">
+      <div class="canvas-card">
+        <div class="canvas-card-label">原图</div>
+        <canvas id="canvasOriginal"></canvas>
+      </div>
+      <div class="canvas-card">
+        <div class="canvas-card-label">换色结果</div>
+        <canvas id="canvasResult"></canvas>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div class="status-bar">
+  <div class="status-dot" id="statusDot"></div>
+  <span id="statusText">正在加载模型，请稍候…</span>
+</div>
+
+<!-- ════════════════════════════════════════
+     核心脚本
+     使用 @imgly/background-removal (CDN)
+     该库基于 ONNX Runtime Web + WASM，
+     完全在浏览器本地运行，无网络请求处理图片
+════════════════════════════════════════ -->
+<script type="module">
+// ── 1. 引入库 ─────────────────────────────────────────────────
+import { removeBackground } from 'https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.5/+esm';
+
+// ── 2. 状态 ───────────────────────────────────────────────────
+const state = {
+  modelReady: false,
+  imageFile: null,
+  selectedColor: '#ffffff',
+  processing: false,
+  resultBlob: null,          // 透明背景的抠图结果
+};
+
+// ── 3. DOM refs ───────────────────────────────────────────────
+const fileInput      = document.getElementById('fileInput');
+const uploadZone     = document.getElementById('uploadZone');
+const colorGrid      = document.getElementById('colorGrid');
+const customColor    = document.getElementById('customColor');
+const btnProcess     = document.getElementById('btnProcess');
+const btnDownload    = document.getElementById('btnDownload');
+const canvasOriginal = document.getElementById('canvasOriginal');
+const canvasResult   = document.getElementById('canvasResult');
+const canvasWrapper  = document.getElementById('canvasWrapper');
+const placeholder    = document.getElementById('placeholder');
+const statusDot      = document.getElementById('statusDot');
+const statusText     = document.getElementById('statusText');
+const progressWrap   = document.getElementById('progressWrap');
+const progressBar    = document.getElementById('progressBar');
+
+// ── 4. 状态 UI 更新 ───────────────────────────────────────────
+function setStatus(type, text) {
+  statusDot.className = 'status-dot ' + (type || '');
+  statusText.textContent = text;
+}
+function setProgress(pct) {
+  progressWrap.classList.toggle('visible', pct > 0 && pct < 100);
+  progressBar.style.width = pct + '%';
+}
+function updateProcessBtn() {
+  if (!state.modelReady) {
+    btnProcess.textContent = '加载模型中…';
+    btnProcess.disabled = true;
+  } else if (!state.imageFile) {
+    btnProcess.textContent = '请先上传照片';
+    btnProcess.disabled = true;
+  } else if (state.processing) {
+    btnProcess.textContent = '处理中…';
+    btnProcess.disabled = true;
+  } else {
+    btnProcess.textContent = '开始换色';
+    btnProcess.disabled = false;
+  }
+}
+
+// ── 5. 模型预热 ───────────────────────────────────────────────
+// @imgly/background-removal 会在第一次调用时下载并缓存模型
+// 这里提前预热，提升用户体验
+async function warmupModel() {
+  setStatus('loading', '正在加载模型，首次约需 30 秒，后续秒开…');
+  try {
+    // 用 1x1 透明 PNG 触发模型初始化
+    const tiny = await fetch('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==')
+      .then(r => r.blob());
+    await removeBackground(tiny, {
+      model: 'small',
+      progress: (key, current, total) => {
+        if (total > 0) setProgress(Math.round(current / total * 100));
+      }
+    });
+    state.modelReady = true;
+    setProgress(100);
+    setTimeout(() => setProgress(0), 400);
+    setStatus('ready', '模型就绪，可以处理照片');
+    updateProcessBtn();
+  } catch (e) {
+    setStatus('error', '模型加载失败：' + e.message);
+    console.error(e);
+  }
+}
+warmupModel();
+
+// ── 6. 上传处理 ───────────────────────────────────────────────
+fileInput.addEventListener('change', e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  loadImage(f);
+});
+
+// 拖拽支持
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.style.background = 'rgba(0,0,0,.08)'; });
+uploadZone.addEventListener('dragleave', () => { uploadZone.style.background = ''; });
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadZone.style.background = '';
+  const f = e.dataTransfer.files[0];
+  if (f && f.type.startsWith('image/')) loadImage(f);
+});
+
+function loadImage(file) {
+  state.imageFile = file;
+  state.resultBlob = null;
+  btnDownload.classList.remove('visible');
+
+  const url = URL.createObjectURL(file);
+  const img = new Image();
+  img.onload = () => {
+    // 绘制原图
+    const MAX = 600;
+    const scale = Math.min(1, MAX / img.width, MAX / img.height);
+    canvasOriginal.width  = img.width  * scale;
+    canvasOriginal.height = img.height * scale;
+    const ctx = canvasOriginal.getContext('2d');
+    ctx.drawImage(img, 0, 0, canvasOriginal.width, canvasOriginal.height);
+
+    // 同尺寸结果画布
+    canvasResult.width  = canvasOriginal.width;
+    canvasResult.height = canvasOriginal.height;
+    const ctx2 = canvasResult.getContext('2d');
+    ctx2.clearRect(0, 0, canvasResult.width, canvasResult.height);
+
+    placeholder.style.display = 'none';
+    canvasWrapper.classList.add('visible');
+
+    URL.revokeObjectURL(url);
+    updateProcessBtn();
+    setStatus('ready', '照片已加载，点击「开始换色」');
+  };
+  img.src = url;
+}
+
+// ── 7. 颜色选择 ───────────────────────────────────────────────
+colorGrid.querySelectorAll('.color-swatch').forEach(swatch => {
+  swatch.addEventListener('click', () => {
+    colorGrid.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+    swatch.classList.add('active');
+    state.selectedColor = swatch.dataset.color;
+    customColor.value = state.selectedColor;
+    // 若已有结果，即时更新底色
+    if (state.resultBlob) applyBackground();
+  });
+});
+
+customColor.addEventListener('input', e => {
+  state.selectedColor = e.target.value;
+  colorGrid.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+  if (state.resultBlob) applyBackground();
+});
+
+// ── 8. 核心：抠图 + 换色 ──────────────────────────────────────
+btnProcess.addEventListener('click', async () => {
+  if (!state.imageFile || !state.modelReady || state.processing) return;
+
+  state.processing = true;
+  updateProcessBtn();
+  setStatus('loading', '正在抠图，请稍候…');
+  setProgress(5);
+
+  try {
+    // 8-a. 调用 background-removal 抠图，返回含透明通道的 Blob
+    const resultBlob = await removeBackground(state.imageFile, {
+      model: 'small',       // 'small'(快) 或 'medium'(精准，更大)
+      output: {
+        format: 'image/png',
+        quality: 1,
+      },
+      progress: (key, current, total) => {
+        if (total > 0) setProgress(10 + Math.round(current / total * 80));
+      },
+    });
+
+    state.resultBlob = resultBlob;
+    setProgress(95);
+
+    // 8-b. 将抠图结果叠加到目标颜色背景
+    await applyBackground();
+
+    setProgress(100);
+    setTimeout(() => setProgress(0), 400);
+    setStatus('ready', '换色完成 ✓');
+    btnDownload.classList.add('visible');
+  } catch (err) {
+    setStatus('error', '处理失败：' + err.message);
+    console.error(err);
+  } finally {
+    state.processing = false;
+    updateProcessBtn();
+  }
+});
+
+// ── 9. 叠加背景色到结果 canvas ────────────────────────────────
+async function applyBackground() {
+  return new Promise(resolve => {
+    const url = URL.createObjectURL(state.resultBlob);
+    const img = new Image();
+    img.onload = () => {
+      const ctx = canvasResult.getContext('2d');
+      ctx.clearRect(0, 0, canvasResult.width, canvasResult.height);
+
+      // 先填充背景色
+      ctx.fillStyle = state.selectedColor;
+      ctx.fillRect(0, 0, canvasResult.width, canvasResult.height);
+
+      // 再绘制透明通道的人像
+      ctx.drawImage(img, 0, 0, canvasResult.width, canvasResult.height);
+
+      URL.revokeObjectURL(url);
+      resolve();
+    };
+    img.src = url;
+  });
+}
+
+// ── 10. 下载 ─────────────────────────────────────────────────
+btnDownload.addEventListener('click', () => {
+  canvasResult.toBlob(blob => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'id-photo-' + state.selectedColor.replace('#','') + '.png';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }, 'image/png');
+});
+
+updateProcessBtn();
+</script>
+</body>
+</html>
