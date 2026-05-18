@@ -19,6 +19,134 @@
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6560822080596473" crossorigin="anonymous"></script>
+    <style>
+        body { background: var(--bg-primary); margin: 0; padding: 0; }
+        .container-box {
+            max-width: 600px;
+            margin: 40px auto;
+            background: #fff;
+            border-radius: 24px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        .color-header {
+            background: linear-gradient(135deg, #ec4899, #f472b6);
+            padding: 30px 24px;
+            color: #fff;
+        }
+        .color-header h1 {
+            margin: 0 0 8px 0;
+            font-size: 24px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .color-header p {
+            margin: 0;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        .color-body { padding: 24px; }
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #6b7280;
+            margin-bottom: 12px;
+        }
+        .text-input {
+            width: 100%;
+            min-height: 100px;
+            padding: 14px;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 14px;
+            resize: vertical;
+            box-sizing: border-box;
+            margin-bottom: 16px;
+            font-family: inherit;
+        }
+        .text-input:focus { outline: none; border-color: #ec4899; }
+        .file-upload {
+            background: #f3f4f6;
+            border: 2px dashed #d1d5db;
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            cursor: pointer;
+            margin-bottom: 20px;
+            transition: border-color 0.2s;
+        }
+        .file-upload:hover { border-color: #ec4899; }
+        .file-upload i { font-size: 32px; color: #9ca3af; margin-bottom: 8px; }
+        .file-upload p { margin: 0; font-size: 14px; color: #6b7280; }
+        .file-upload span { font-size: 12px; color: #9ca3af; }
+        .file-upload input { display: none; }
+        .convert-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #ec4899, #f472b6);
+            border: none;
+            border-radius: 12px;
+            color: #fff;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(236, 72, 153, 0.3);
+        }
+        .convert-btn:hover { box-shadow: 0 4px 12px rgba(236, 72, 153, 0.4); }
+        .result-card {
+            background: #f3f4f6;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+        .result-card h3 {
+            margin: 0 0 10px 0;
+            font-size: 15px;
+            font-weight: 600;
+            color: #1f2937;
+        }
+        .result-card .value {
+            font-size: 13px;
+            color: #4b5563;
+            word-break: break-all;
+            margin-bottom: 10px;
+            min-height: 20px;
+            font-family: monospace;
+        }
+        .copy-btn {
+            padding: 8px 16px;
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: #6b7280;
+        }
+        .copy-btn:hover { background: #f9fafb; color: #374151; }
+        .footer-link {
+            text-align: center;
+            padding: 16px 24px 24px;
+        }
+        .footer-link a {
+            color: #6b7280;
+            text-decoration: none;
+            font-size: 13px;
+        }
+        .footer-link a:hover { color: #ec4899; }
+    </style>
+</head>
 <body>
     <header class="header">
         <div class="container">
@@ -30,71 +158,110 @@
     </header>
 
     <main class="main">
-        <div class="container">
-            <div class="hash-container">
-                <div class="hash-header">
-                    <h2><i class="fas fa-shield-alt"></i> 哈希计算工具</h2>
-                    <p>计算文本或文件的MD5、SHA-1、SHA-256哈希值</p>
+        <div class="container-box">
+            <div class="color-header">
+                <h1><i class="fas fa-shield-alt"></i> 哈希计算工具</h1>
+                <p>计算文本或文件的MD5、SHA-1、SHA-256哈希值</p>
+            </div>
+            
+            <div class="color-body">
+                <div class="section-title">
+                    <i class="fas fa-keyboard"></i>
+                    <span>输入文本</span>
                 </div>
-
-                <div class="hash-body">
-                    <div class="input-section">
-                        <div class="input-label">
-                            <i class="fas fa-keyboard"></i> 输入文本
-                        </div>
-                        <textarea id="inputText" class="hash-textarea" placeholder="输入要计算哈希的文本..."></textarea>
-                    </div>
-
-                    <div class="file-section">
-                        <div class="input-label">
-                            <i class="fas fa-file-upload"></i> 或上传文件
-                        </div>
-                        <div class="file-upload-area" onclick="document.getElementById('fileInput').click()">
-                            <i class="fas fa-cloud-upload-alt"></i>
-                            <div class="file-upload-text">点击选择文件</div>
-                            <div class="file-upload-hint">支持任意文件类型</div>
-                        </div>
-                        <input type="file" id="fileInput" accept="*" onchange="handleFileUpload(event)" style="display: none;">
-                    </div>
-
-                    <button class="action-btn" onclick="calculateHash()">
-                        <i class="fas fa-magic"></i> 计算哈希
+                <textarea id="inputText" class="text-input" placeholder="输入要计算哈希的文本..."></textarea>
+                
+                <div class="section-title">
+                    <i class="fas fa-file-alt"></i>
+                    <span>或上传文件</span>
+                </div>
+                <div class="file-upload" onclick="document.getElementById('fileInput').click()">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <p>点击选择文件</p>
+                    <span>支持任意文件类型</span>
+                    <input type="file" id="fileInput" onchange="handleFile(this)">
+                </div>
+                
+                <button class="convert-btn" onclick="calculateHash()">
+                    <i class="fas fa-pen"></i>
+                    <span>计算哈希</span>
+                </button>
+                
+                <div class="result-card">
+                    <h3># MD5</h3>
+                    <div class="value" id="md5Result">---</div>
+                    <button class="copy-btn" onclick="copyResult('md5Result')">
+                        <i class="fas fa-copy"></i> 复制
                     </button>
-
-                    <div class="results-grid">
-                        <div class="result-card">
-                            <span class="result-label"><i class="fas fa-hashtag"></i> MD5</span>
-                            <span class="result-value" id="md5Result">---</span>
-                            <button class="copy-btn" onclick="copyResult('md5Result')">
-                                <i class="fas fa-copy"></i> 复制
-                            </button>
-                        </div>
-                        <div class="result-card">
-                            <span class="result-label"><i class="fas fa-hashtag"></i> SHA-1</span>
-                            <span class="result-value" id="sha1Result">---</span>
-                            <button class="copy-btn" onclick="copyResult('sha1Result')">
-                                <i class="fas fa-copy"></i> 复制
-                            </button>
-                        </div>
-                        <div class="result-card">
-                            <span class="result-label"><i class="fas fa-hashtag"></i> SHA-256</span>
-                            <span class="result-value" id="sha256Result">---</span>
-                            <button class="copy-btn" onclick="copyResult('sha256Result')">
-                                <i class="fas fa-copy"></i> 复制
-                            </button>
-                        </div>
-                    </div>
                 </div>
+                
+                <div class="result-card">
+                    <h3># SHA-1</h3>
+                    <div class="value" id="sha1Result">---</div>
+                    <button class="copy-btn" onclick="copyResult('sha1Result')">
+                        <i class="fas fa-copy"></i> 复制
+                    </button>
+                </div>
+                
+                <div class="result-card">
+                    <h3># SHA-256</h3>
+                    <div class="value" id="sha256Result">---</div>
+                    <button class="copy-btn" onclick="copyResult('sha256Result')">
+                        <i class="fas fa-copy"></i> 复制
+                    </button>
+                </div>
+            </div>
+            
+            <div class="footer-link">
+                <a href="../index.html">← 返回首页</a> | <a href="../disclaimer.html">免责声明</a>
             </div>
         </div>
     </main>
 
     <footer class="footer">
         <div class="container">
-            <p>© 2025 在线工具箱 | 简洁高效的工具集合</p>
+            <p>© 2025 在线工具箱 | <a href="https://toolkit.skin">toolkit.skin</a></p>
         </div>
     </footer>
 
     <script src="../js/tools/hash.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <script>
+        function calculateHash() {
+            const text = document.getElementById('inputText').value;
+            if (!text) return;
+            document.getElementById('md5Result').textContent = CryptoJS.MD5(text).toString();
+            document.getElementById('sha1Result').textContent = CryptoJS.SHA1(text).toString();
+            document.getElementById('sha256Result').textContent = CryptoJS.SHA256(text).toString();
+        }
+        function handleFile(input) {
+            const file = input.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const text = e.target.result;
+                document.getElementById('inputText').value = '[文件: ' + file.name + ']';
+                document.getElementById('md5Result').textContent = CryptoJS.MD5(text).toString();
+                document.getElementById('sha1Result').textContent = CryptoJS.SHA1(text).toString();
+                document.getElementById('sha256Result').textContent = CryptoJS.SHA256(text).toString();
+            };
+            reader.readAsText(file);
+        }
+        function copyResult(id) {
+            const text = document.getElementById(id).textContent;
+            if (text && text !== '---') {
+                navigator.clipboard.writeText(text).then(() => {
+                    showToast('已复制到剪贴板');
+                });
+            }
+        }
+        function showToast(msg) {
+            const toast = document.createElement('div');
+            toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#10b981;color:#fff;padding:10px 20px;border-radius:8px;font-size:14px;z-index:9999;';
+            toast.textContent = msg;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2000);
+        }
+    </script>
 </body>
 </html>

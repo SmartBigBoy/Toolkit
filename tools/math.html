@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>数学计算 - TOOLKIT.SKIN</title>
-    <meta name="description" content="在线数学计算器，支持基础运算、科学计数、函数计算等多种数学计算功能，无需注册，完全免费。">
-    <meta name="keywords" content="在线计算器,数学计算,科学计算器,函数计算,在线工具">
+    <title>数学计算器 - TOOLKIT.SKIN</title>
+    <meta name="description" content="在线数学计算器，支持基础四则运算、三角函数、函数计算等多种数学计算功能。">
+    <meta name="keywords" content="在线计算器,数学计算,科学计算器,三角函数,开方,对数">
     <meta name="author" content="TOOLKIT.SKIN">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://toolkit.skin/tools/math.html">
-    <meta property="og:title" content="数学计算">
+    <meta property="og:title" content="数学计算器">
     <meta property="og:description" content="在线数学计算器，支持多种计算功能。">
     <meta property="og:url" content="https://toolkit.skin/tools/math.html">
     <meta property="og:type" content="website">
@@ -26,30 +26,33 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--bg-primary, #f8fafc);
             min-height: 100vh;
             padding: 20px;
         }
 
         .page-wrapper {
-            max-width: 400px;
+            max-width: 600px;
             margin: 0 auto;
         }
 
         /* 顶部标题栏 */
         .header {
-            background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
-            border-radius: 24px 24px 0 0;
+            background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+            border-radius: 20px 20px 0 0;
             padding: 20px;
             text-align: center;
-            box-shadow: 0 4px 20px rgba(139, 92, 246, 0.3);
         }
 
         .header h1 {
             color: #fff;
-            font-size: 22px;
+            font-size: 20px;
             font-weight: 700;
             margin-bottom: 4px;
+        }
+
+        .header h1 i {
+            margin-right: 8px;
         }
 
         .header p {
@@ -60,106 +63,233 @@
         /* 主体卡片 */
         .main-card {
             background: #fff;
-            border-radius: 0 0 24px 24px;
+            border-radius: 0 0 20px 20px;
             padding: 20px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
         }
 
-        /* 显示区 */
-        .display {
+        /* 模块通用样式 */
+        .calc-section {
             background: #f8fafc;
             border-radius: 16px;
-            padding: 20px;
+            padding: 16px;
             margin-bottom: 16px;
-            border-left: 4px solid #8b5cf6;
         }
 
-        .display-expression {
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
             font-size: 14px;
-            color: #64748b;
-            min-height: 20px;
-            text-align: right;
-            margin-bottom: 8px;
-            word-break: break-all;
-        }
-
-        .display-result {
-            font-size: 32px;
-            font-weight: 700;
-            color: #1e293b;
-            text-align: right;
-            word-break: break-all;
-            min-height: 40px;
-        }
-
-        /* 按键区 */
-        .keypad {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
-        }
-
-        .key {
-            padding: 18px;
-            font-size: 20px;
             font-weight: 600;
-            border: none;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.15s;
-            user-select: none;
-        }
-
-        .key:active {
-            transform: scale(0.95);
-        }
-
-        .key-number {
-            background: #f1f5f9;
             color: #1e293b;
+            margin-bottom: 12px;
         }
 
-        .key-number:hover {
-            background: #e2e8f0;
-        }
-
-        .key-operator {
-            background: #f1f5f9;
-            color: #8b5cf6;
-        }
-
-        .key-operator:hover {
-            background: #e2e8f0;
-        }
-
-        .key-function {
-            background: #f1f5f9;
-            color: #64748b;
+        .section-title i {
+            color: #10b981;
             font-size: 16px;
         }
 
-        .key-function:hover {
-            background: #e2e8f0;
+        /* 基础四则运算 */
+        .basic-calc {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
         }
 
-        .key-equals {
-            background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+        .calc-input {
+            flex: 1;
+            min-width: 80px;
+            padding: 12px 14px;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 16px;
+            text-align: center;
+            background: #fff;
+            transition: border-color 0.2s;
+        }
+
+        .calc-input:focus {
+            outline: none;
+            border-color: #10b981;
+        }
+
+        .calc-select {
+            padding: 12px 30px 12px 14px;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 16px;
+            background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M2 4l4 4 4-4'/%3E%3C/svg%3E") no-repeat right 12px center;
+            appearance: none;
+            cursor: pointer;
+        }
+
+        .calc-select:focus {
+            outline: none;
+            border-color: #10b981;
+        }
+
+        .calc-btn {
+            background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
             color: #fff;
+            border: none;
+            border-radius: 10px;
+            padding: 12px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+
+        .calc-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .basic-result {
+            margin-top: 10px;
+            padding: 12px;
+            background: #fff;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: 600;
+            color: #10b981;
+            border: 1px solid #e2e8f0;
+        }
+
+        /* 三角函数 */
+        .trig-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .trig-input {
+            padding: 12px 14px;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 16px;
+            background: #fff;
+            text-align: center;
+        }
+
+        .trig-input:focus {
+            outline: none;
+            border-color: #10b981;
+        }
+
+        .trig-label {
+            font-size: 12px;
+            color: #64748b;
+            margin-bottom: 4px;
+        }
+
+        .trig-select {
+            padding: 12px 30px 12px 14px;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 16px;
+            background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M2 4l4 4 4-4'/%3E%3C/svg%3E") no-repeat right 12px center;
+            appearance: none;
+            cursor: pointer;
+        }
+
+        .trig-select:focus {
+            outline: none;
+            border-color: #10b981;
+        }
+
+        .trig-btn {
             grid-column: span 2;
+            background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            padding: 14px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 4px;
         }
 
-        .key-equals:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+        .trig-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
         }
 
-        .key-clear {
-            background: #fee2e2;
-            color: #ef4444;
+        /* 函数计算 */
+        .func-input {
+            padding: 12px 14px;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 16px;
+            width: 100%;
+            text-align: center;
+            margin-bottom: 12px;
+            background: #fff;
         }
 
-        .key-clear:hover {
-            background: #fecaca;
+        .func-input:focus {
+            outline: none;
+            border-color: #10b981;
+        }
+
+        .func-btn {
+            background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            padding: 14px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .func-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .func-results {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        .func-result-item {
+            background: #fff;
+            border-radius: 10px;
+            padding: 12px;
+            text-align: center;
+            border: 1px solid #e2e8f0;
+        }
+
+        .func-result-label {
+            font-size: 12px;
+            color: #64748b;
+            margin-bottom: 4px;
+        }
+
+        .func-result-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: #10b981;
         }
 
         /* Toast */
@@ -182,49 +312,119 @@
         .toast.show {
             transform: translateX(-50%) translateY(0);
         }
+
+        /* 响应式 */
+        @media (max-width: 480px) {
+            .func-results {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .basic-calc {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .trig-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .trig-btn {
+                grid-column: span 1;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="page-wrapper">
         <!-- 顶部标题栏 -->
         <div class="header">
-            <h1>数学计算</h1>
-            <p>支持多种数学运算和函数</p>
+            <h1><i class="fas fa-square-root-alt"></i>数学计算器</h1>
+            <p>常用数学计算工具</p>
         </div>
 
         <!-- 主体卡片 -->
         <div class="main-card">
-            <!-- 显示区 -->
-            <div class="display">
-                <div class="display-expression" id="expression"></div>
-                <div class="display-result" id="result">0</div>
+            <!-- 基础四则运算 -->
+            <div class="calc-section">
+                <div class="section-title">
+                    <i class="fas fa-table"></i>基础四则运算
+                </div>
+                <div class="basic-calc">
+                    <input type="number" class="calc-input" id="num1" value="10">
+                    <select class="calc-select" id="operator">
+                        <option value="+">+</option>
+                        <option value="-">−</option>
+                        <option value="*">×</option>
+                        <option value="/">÷</option>
+                    </select>
+                    <input type="number" class="calc-input" id="num2" value="5">
+                    <button class="calc-btn" onclick="basicCalc()">
+                        <i class="fas fa-equals"></i>计算
+                    </button>
+                </div>
+                <div class="basic-result" id="basicResult">---</div>
             </div>
 
-            <!-- 按键区 -->
-            <div class="keypad">
-                <button class="key key-clear" onclick="clearAll()">C</button>
-                <button class="key key-function" onclick="backspace()">⌫</button>
-                <button class="key key-function" onclick="input('%')">%</button>
-                <button class="key key-operator" onclick="input('/')">÷</button>
+            <!-- 三角函数 -->
+            <div class="calc-section">
+                <div class="section-title">
+                    <i class="fas fa-wave-square"></i>三角函数
+                </div>
+                <div class="trig-grid">
+                    <div>
+                        <div class="trig-label">角度（度）</div>
+                        <input type="number" class="trig-input" id="angle" value="45">
+                    </div>
+                    <div>
+                        <div class="trig-label">函数类型</div>
+                        <select class="trig-select" id="trigFunc">
+                            <option value="sin">sin</option>
+                            <option value="cos">cos</option>
+                            <option value="tan">tan</option>
+                        </select>
+                    </div>
+                    <button class="trig-btn" onclick="trigCalc()">
+                        <i class="fas fa-equals"></i>计算
+                    </button>
+                </div>
+                <div class="basic-result" id="trigResult">---</div>
+            </div>
 
-                <button class="key key-number" onclick="input('7')">7</button>
-                <button class="key key-number" onclick="input('8')">8</button>
-                <button class="key key-number" onclick="input('9')">9</button>
-                <button class="key key-operator" onclick="input('*')">×</button>
-
-                <button class="key key-number" onclick="input('4')">4</button>
-                <button class="key key-number" onclick="input('5')">5</button>
-                <button class="key key-number" onclick="input('6')">6</button>
-                <button class="key key-operator" onclick="input('-')">−</button>
-
-                <button class="key key-number" onclick="input('1')">1</button>
-                <button class="key key-number" onclick="input('2')">2</button>
-                <button class="key key-number" onclick="input('3')">3</button>
-                <button class="key key-operator" onclick="input('+')">+</button>
-
-                <button class="key key-number" onclick="input('0')">0</button>
-                <button class="key key-number" onclick="input('.')">.</button>
-                <button class="key key-equals" onclick="calculate()">=</button>
+            <!-- 函数计算 -->
+            <div class="calc-section">
+                <div class="section-title">
+                    <i class="fas fa-function"></i>函数计算
+                </div>
+                <input type="number" class="func-input" id="funcNum" value="16" placeholder="输入数字">
+                <button class="func-btn" onclick="funcCalc()">
+                    <i class="fas fa-edit"></i>全部计算
+                </button>
+                <div class="func-results">
+                    <div class="func-result-item">
+                        <div class="func-result-label">平方根</div>
+                        <div class="func-result-value" id="sqrt">---</div>
+                    </div>
+                    <div class="func-result-item">
+                        <div class="func-result-label">立方根</div>
+                        <div class="func-result-value" id="cbrt">---</div>
+                    </div>
+                    <div class="func-result-item">
+                        <div class="func-result-label">绝对值</div>
+                        <div class="func-result-value" id="abs">---</div>
+                    </div>
+                    <div class="func-result-item">
+                        <div class="func-result-label">自然对数</div>
+                        <div class="func-result-value" id="log">---</div>
+                    </div>
+                    <div class="func-result-item">
+                        <div class="func-result-label">常用对数</div>
+                        <div class="func-result-value" id="log10">---</div>
+                    </div>
+                    <div class="func-result-item">
+                        <div class="func-result-label">e的幂</div>
+                        <div class="func-result-value" id="exp">---</div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -233,9 +433,6 @@
     <div class="toast" id="toast"></div>
 
     <script>
-        let expression = '';
-        let lastResult = '';
-
         function showToast(message) {
             const toast = document.getElementById('toast');
             toast.textContent = message;
@@ -243,77 +440,71 @@
             setTimeout(() => toast.classList.remove('show'), 2000);
         }
 
-        function updateDisplay() {
-            document.getElementById('expression').textContent = expression;
-        }
-
-        function input(value) {
-            // 如果刚计算完结果，用结果继续运算
-            if (lastResult && ['+', '-', '*', '/', '%'].includes(value)) {
-                expression = lastResult;
-                lastResult = '';
-            }
-            expression += value;
-            updateDisplay();
-        }
-
-        function clearAll() {
-            expression = '';
-            lastResult = '';
-            document.getElementById('expression').textContent = '';
-            document.getElementById('result').textContent = '0';
-        }
-
-        function backspace() {
-            expression = expression.slice(0, -1);
-            updateDisplay();
-        }
-
-        function calculate() {
-            if (!expression) return;
+        // 基础四则运算
+        function basicCalc() {
+            const num1 = parseFloat(document.getElementById('num1').value);
+            const num2 = parseFloat(document.getElementById('num2').value);
+            const op = document.getElementById('operator').value;
             
-            try {
-                // 安全计算
-                const result = Function('"use strict"; return (' + expression + ')')();
-                
-                if (isNaN(result) || !isFinite(result)) {
-                    document.getElementById('result').textContent = 'Error';
-                    return;
-                }
-
-                // 格式化结果
-                let formatted;
-                if (Number.isInteger(result)) {
-                    formatted = result.toString();
-                } else {
-                    formatted = parseFloat(result.toFixed(10)).toString();
-                }
-
-                lastResult = formatted;
-                document.getElementById('result').textContent = formatted;
-                expression = '';
-                updateDisplay();
-            } catch (e) {
-                document.getElementById('result').textContent = 'Error';
+            if (isNaN(num1) || isNaN(num2)) {
+                showToast('请输入有效的数字');
+                return;
             }
+            
+            let result;
+            switch(op) {
+                case '+': result = num1 + num2; break;
+                case '-': result = num1 - num2; break;
+                case '*': result = num1 * num2; break;
+                case '/': result = num2 !== 0 ? num1 / num2 : 'Error'; break;
+            }
+            
+            document.getElementById('basicResult').textContent = isNaN(result) ? 'Error' : result;
         }
 
-        // 键盘支持
-        document.addEventListener('keydown', function(e) {
-            if (e.key >= '0' && e.key <= '9') input(e.key);
-            else if (e.key === '.') input('.');
-            else if (e.key === '+') input('+');
-            else if (e.key === '-') input('-');
-            else if (e.key === '*') input('*');
-            else if (e.key === '/') input('/');
-            else if (e.key === '%') input('%');
-            else if (e.key === 'Enter' || e.key === '=') {
-                e.preventDefault();
-                calculate();
+        // 三角函数计算
+        function trigCalc() {
+            const angle = parseFloat(document.getElementById('angle').value);
+            const func = document.getElementById('trigFunc').value;
+            
+            if (isNaN(angle)) {
+                showToast('请输入有效的角度');
+                return;
             }
-            else if (e.key === 'Backspace') backspace();
-            else if (e.key === 'Escape') clearAll();
-        });
+            
+            const radians = angle * Math.PI / 180;
+            let result;
+            
+            switch(func) {
+                case 'sin': result = Math.sin(radians); break;
+                case 'cos': result = Math.cos(radians); break;
+                case 'tan': result = Math.tan(radians); break;
+            }
+            
+            document.getElementById('trigResult').textContent = isNaN(result) ? 'Error' : result.toFixed(6);
+        }
+
+        // 函数计算
+        function funcCalc() {
+            const num = parseFloat(document.getElementById('funcNum').value);
+            
+            if (isNaN(num)) {
+                showToast('请输入有效的数字');
+                return;
+            }
+            
+            document.getElementById('sqrt').textContent = Math.sqrt(num).toFixed(4);
+            document.getElementById('cbrt').textContent = Math.cbrt(num).toFixed(4);
+            document.getElementById('abs').textContent = Math.abs(num);
+            document.getElementById('log').textContent = num > 0 ? Math.log(num).toFixed(4) : 'N/A';
+            document.getElementById('log10').textContent = num > 0 ? Math.log10(num).toFixed(4) : 'N/A';
+            document.getElementById('exp').textContent = Math.exp(num).toFixed(4);
+        }
+
+        // 页面加载时执行一次
+        basicCalc();
+        trigCalc();
+        funcCalc();
     </script>
 </body>
 </html>

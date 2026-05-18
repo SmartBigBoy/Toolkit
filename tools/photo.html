@@ -3,22 +3,172 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>证件照转换 - 在线工具箱</title>
+    <title>证件照转换工具 - 在线工具箱</title>
     <meta name="description" content="在线工具箱提供 JSON格式化、时间戳转换、Base64编码、颜色拾取器、二维码生成等实用工具，无需注册，完全免费。">
     <meta name="keywords" content="在线工具,JSON格式化,时间戳转换,Base64编码,二维码生成,颜色转换,URL编码,工具箱">
     <meta name="author" content="TOOLKIT.SKIN">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://toolkit.skin/tools/photo.html">
-    <meta property="og:title" content="证件照转换 - 在线工具箱">
+    <meta property="og:title" content="证件照转换工具 - 在线工具箱">
     <meta property="og:description" content="免费在线工具箱，提供多种实用工具，包括JSON格式化、时间戳转换、Base64编码等。">
     <meta property="og:url" content="https://toolkit.skin/tools/photo.html">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="TOOLKIT.SKIN 在线工具箱">
     <meta name="twitter:card" content="summary">
-    <meta name="twitter:title" content="证件照转换 - 在线工具箱">
+    <meta name="twitter:title" content="证件照转换工具 - 在线工具箱">
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6560822080596473" crossorigin="anonymous"></script>
+    <style>
+        body { background: var(--bg-primary); margin: 0; padding: 0; }
+        .container-box {
+            max-width: 600px;
+            margin: 40px auto;
+            background: #fff;
+            border-radius: 24px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        .color-header {
+            background: linear-gradient(135deg, #8b5cf6, #a78bfa);
+            padding: 30px 24px;
+            color: #fff;
+        }
+        .color-header h1 {
+            margin: 0 0 8px 0;
+            font-size: 24px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .color-header p {
+            margin: 0;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        .color-body { padding: 24px; }
+        .upload-box {
+            background: #f3f4f6;
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            margin-bottom: 16px;
+            cursor: pointer;
+            border: 2px dashed #e5e7eb;
+            transition: all 0.3s;
+        }
+        .upload-box:hover { border-color: #8b5cf6; }
+        .upload-icon {
+            font-size: 36px;
+            color: #8b5cf6;
+            margin-bottom: 8px;
+        }
+        .upload-text { color: #374151; font-size: 14px; margin-bottom: 4px; }
+        .upload-hint { color: #9ca3af; font-size: 12px; margin-bottom: 12px; }
+        .upload-btn {
+            padding: 8px 20px;
+            background: linear-gradient(135deg, #8b5cf6, #a78bfa);
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .preview-box {
+            background: #f3f4f6;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        .card-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #6b7280;
+            margin-bottom: 12px;
+        }
+        .preview-image {
+            background: #fff;
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+            color: #9ca3af;
+            font-size: 14px;
+            min-height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .preview-image img {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 4px;
+        }
+        .size-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .size-card {
+            background: #f3f4f6;
+            border-radius: 10px;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        .size-card:hover { border-color: #c4b5fd; }
+        .size-card.selected { border-color: #8b5cf6; background: #ede9fe; }
+        .size-card .size-name { font-size: 13px; color: #374151; font-weight: 500; margin-bottom: 4px; }
+        .size-card .size-info { font-size: 11px; color: #6b7280; line-height: 1.4; }
+        .btn-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .btn-primary {
+            padding: 14px;
+            background: linear-gradient(135deg, #8b5cf6, #a78bfa);
+            border: none;
+            border-radius: 12px;
+            color: #fff;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-secondary {
+            padding: 14px;
+            background: #f3f4f6;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            color: #6b7280;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-primary:hover { box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
+        .footer-link {
+            text-align: center;
+            padding: 16px 24px 24px;
+        }
+        .footer-link a { color: #6b7280; text-decoration: none; font-size: 13px; }
+        .footer-link a:hover { color: #8b5cf6; }
+    </style>
+</head>
 <body>
     <header class="header">
         <div class="container">
@@ -30,93 +180,98 @@
     </header>
 
     <main class="main">
-        <div class="container">
-            <div class="photo-container">
-                <div class="photo-header">
-                    <h2><i class="fas fa-camera"></i> 证件照转换工具</h2>
-                    <p>上传证件照并转换为指定尺寸</p>
+        <div class="container-box">
+            <div class="color-header">
+                <h1><i class="fas fa-camera"></i> 证件照转换工具</h1>
+                <p>上传证件照并转换为指定尺寸</p>
+            </div>
+            
+            <div class="color-body">
+                <div class="upload-box" onclick="document.getElementById('photoUpload').click()">
+                    <input type="file" id="photoUpload" accept="image/*" onchange="handlePhotoUpload(event)" style="display:none;">
+                    <div class="upload-icon"><i class="fas fa-cloud-upload-alt"></i></div>
+                    <div class="upload-text">点击或拖拽上传照片</div>
+                    <div class="upload-hint">支持JPG、PNG格式，建议分辨率不低于300dpi</div>
+                    <button class="upload-btn" onclick="event.stopPropagation();document.getElementById('photoUpload').click()">选择照片</button>
                 </div>
-
-                <div class="photo-body">
-                    <div class="upload-section">
-                        <div class="upload-area" id="uploadArea">
-                            <input type="file" id="photoUpload" accept="image/*" onchange="handlePhotoUpload(event)" style="display: none;">
-                            <div class="upload-icon">📷</div>
-                            <div class="upload-text">点击或拖拽上传照片</div>
-                            <div class="upload-hint">支持 JPG、PNG 格式，建议分辨率不低于 300dpi</div>
-                            <button class="upload-btn" onclick="document.getElementById('photoUpload').click()">选择照片</button>
-                        </div>
+                
+                <div class="preview-box">
+                    <div class="card-title">
+                        <i class="fas fa-eye"></i>
+                        <span>照片预览</span>
                     </div>
-
-                    <div class="preview-section">
-                        <div class="preview-title">
-                            <i class="fas fa-eye"></i> 照片预览
-                        </div>
-                        <div id="photoPreview" class="image-preview">
-                            <div style="color: var(--text-tertiary);">暂无照片</div>
-                        </div>
-                    </div>
-
-                    <div class="size-section">
-                        <div class="preview-title">
-                            <i class="fas fa-ruler"></i> 选择目标尺寸
-                        </div>
-                        
-                        <div class="size-grid">
-                            <div class="size-option" data-size="1inch">
-                                <div class="size-name">一寸照片</div>
-                                <div class="size-dimensions">25×35mm<br>295×413px</div>
-                            </div>
-                            <div class="size-option" data-size="small1inch">
-                                <div class="size-name">小一寸</div>
-                                <div class="size-dimensions">22×32mm<br>260×378px</div>
-                            </div>
-                            <div class="size-option" data-size="large1inch">
-                                <div class="size-name">大一寸</div>
-                                <div class="size-dimensions">33×48mm<br>390×567px</div>
-                            </div>
-                            <div class="size-option" data-size="2inch">
-                                <div class="size-name">二寸照片</div>
-                                <div class="size-dimensions">35×49mm<br>413×579px</div>
-                            </div>
-                            <div class="size-option" data-size="small2inch">
-                                <div class="size-name">小二寸</div>
-                                <div class="size-dimensions">33×48mm<br>390×567px</div>
-                            </div>
-                            <div class="size-option" data-size="idcard">
-                                <div class="size-name">身份证</div>
-                                <div class="size-dimensions">26×32mm<br>358×441px</div>
-                            </div>
-                            <div class="size-option" data-size="passport">
-                                <div class="size-name">护照/签证</div>
-                                <div class="size-dimensions">33×48mm<br>390×567px</div>
-                            </div>
-                        </div>
-
-                        <div class="selected-size-info" id="selectedSizeInfo" style="display: none;">
-                            <p>已选择：<strong id="selectedSizeName"></strong></p>
-                        </div>
-                    </div>
-
-                    <div class="actions-section">
-                        <button class="action-btn primary" onclick="convertPhoto()" id="convertBtn" disabled>
-                            <i class="fas fa-magic"></i> 转换照片
-                        </button>
-                        <button class="action-btn secondary" onclick="downloadPhoto()" id="downloadBtn" disabled>
-                            <i class="fas fa-download"></i> 下载照片
-                        </button>
+                    <div class="preview-image" id="photoPreview">
+                        暂无照片
                     </div>
                 </div>
+                
+                <div class="preview-box">
+                    <div class="card-title">
+                        <i class="fas fa-pen"></i>
+                        <span>选择目标尺寸</span>
+                    </div>
+                    <div class="size-grid">
+                        <div class="size-card selected" data-size="1inch" onclick="selectSize(this)">
+                            <div class="size-name">一寸照片</div>
+                            <div class="size-info">25×35mm<br>295×413px</div>
+                        </div>
+                        <div class="size-card" data-size="small1inch" onclick="selectSize(this)">
+                            <div class="size-name">小一寸</div>
+                            <div class="size-info">22×32mm<br>260×378px</div>
+                        </div>
+                        <div class="size-card" data-size="large1inch" onclick="selectSize(this)">
+                            <div class="size-name">大一寸</div>
+                            <div class="size-info">33×48mm<br>390×567px</div>
+                        </div>
+                        <div class="size-card" data-size="2inch" onclick="selectSize(this)">
+                            <div class="size-name">二寸照片</div>
+                            <div class="size-info">35×49mm<br>413×579px</div>
+                        </div>
+                        <div class="size-card" data-size="small2inch" onclick="selectSize(this)">
+                            <div class="size-name">小二寸</div>
+                            <div class="size-info">33×48mm<br>390×567px</div>
+                        </div>
+                        <div class="size-card" data-size="idcard" onclick="selectSize(this)">
+                            <div class="size-name">身份证</div>
+                            <div class="size-info">26×32mm<br>358×441px</div>
+                        </div>
+                        <div class="size-card" data-size="passport" onclick="selectSize(this)">
+                            <div class="size-name">护照/签证</div>
+                            <div class="size-info">33×48mm<br>390×567px</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="btn-row">
+                    <button class="btn-primary" id="convertBtn" onclick="convertPhoto()">
+                        <i class="fas fa-magic"></i>
+                        <span>转换照片</span>
+                    </button>
+                    <button class="btn-secondary" id="downloadBtn" onclick="downloadPhoto()">
+                        <i class="fas fa-download"></i>
+                        <span>下载照片</span>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="footer-link">
+                <a href="../index.html">← 返回首页</a> | <a href="../disclaimer.html">免责声明</a>
             </div>
         </div>
     </main>
 
     <footer class="footer">
         <div class="container">
-            <p>© 2025 在线工具箱 | 简洁高效的工具集合</p>
+            <p>© 2025 在线工具箱 | <a href="https://toolkit.skin">toolkit.skin</a></p>
         </div>
     </footer>
 
     <script src="../js/tools/photo.js"></script>
+    <script>
+        function selectSize(el) {
+            document.querySelectorAll('.size-card').forEach(c => c.classList.remove('selected'));
+            el.classList.add('selected');
+        }
+    </script>
 </body>
 </html>

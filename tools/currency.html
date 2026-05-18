@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>汇率换算 - TOOLKIT.SKIN</title>
-    <meta name="description" content="在线汇率换算工具，支持多种法定货币和虚拟货币之间的实时汇率转换，无需注册，完全免费。">
+    <meta name="description" content="在线汇率换算工具，支持多种货币之间的实时汇率转换。">
     <meta name="keywords" content="汇率换算,货币转换,外汇换算,在线工具">
     <meta name="author" content="TOOLKIT.SKIN">
     <meta name="robots" content="index, follow">
@@ -18,385 +18,209 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6560822080596473" crossorigin="anonymous"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
-
-        .page-wrapper {
-            max-width: 600px;
-            margin: 0 auto;
-        }
-
-        /* 顶部标题栏 */
-        .header {
-            background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
-            border-radius: 24px 24px 0 0;
-            padding: 24px 20px;
-            text-align: center;
-            box-shadow: 0 4px 20px rgba(139, 92, 246, 0.3);
-        }
-
-        .header h1 {
-            color: #fff;
-            font-size: 24px;
-            font-weight: 700;
-            margin-bottom: 6px;
-        }
-
-        .header p {
-            color: rgba(255, 255, 255, 0.85);
-            font-size: 14px;
-        }
-
-        /* 主体卡片 */
-        .main-card {
-            background: #fff;
-            border-radius: 0 0 24px 24px;
-            padding: 24px 20px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; min-height: 100vh; }
+        .page-container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        
+        /* 导航栏 */
+        .navbar { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: #fff; border-radius: 16px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .logo { display: flex; align-items: center; gap: 8px; text-decoration: none; color: #1e293b; font-weight: 700; font-size: 18px; }
+        .logo i { color: #8b5cf6; font-size: 20px; }
+        .nav-links { display: flex; gap: 8px; margin-left: auto; }
+        .nav-links a { color: #64748b; text-decoration: none; padding: 8px 12px; border-radius: 8px; font-size: 14px; transition: all 0.2s; }
+        .nav-links a:hover { background: #f1f5f9; color: #8b5cf6; }
+        
+        /* 主卡片 */
+        .main-card { background: #fff; border-radius: 24px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        
+        /* 标题栏 */
+        .header { background: linear-gradient(135deg, #9333ea 0%, #a855f7 100%); padding: 28px 20px; text-align: center; }
+        .header h1 { color: #fff; font-size: 24px; font-weight: 700; margin-bottom: 6px; }
+        .header p { color: rgba(255,255,255,0.85); font-size: 14px; }
+        
+        /* 主体内容 */
+        .card-body { padding: 24px 20px; }
+        
         /* 提示框 */
-        .notice-box {
-            background: #f8fafc;
-            border-radius: 12px;
-            padding: 14px 16px;
-            margin-bottom: 20px;
-            border-left: 4px solid #8b5cf6;
-        }
-
-        .notice-box p {
-            font-size: 13px;
-            color: #64748b;
-            line-height: 1.6;
-        }
-
+        .notice-box { background: #f3e8ff; border-radius: 12px; padding: 14px 16px; margin-bottom: 20px; display: flex; align-items: flex-start; gap: 10px; }
+        .notice-box i { color: #9333ea; font-size: 18px; margin-top: 2px; }
+        .notice-box p { font-size: 13px; color: #6b21a8; line-height: 1.5; }
+        
         /* 转换区域 */
-        .conversion-box {
-            background: #f8fafc;
-            border-radius: 16px;
-            padding: 20px;
-            position: relative;
-            border-left: 4px solid #8b5cf6;
-        }
-
-        .conversion-grid {
-            display: grid;
-            grid-template-columns: 1fr auto 1fr;
-            gap: 16px;
-            align-items: end;
-            margin-bottom: 20px;
-        }
-
-        .currency-group {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .currency-label {
-            font-size: 13px;
-            color: #64748b;
-            font-weight: 500;
-        }
-
-        .currency-input {
-            width: 100%;
-            padding: 14px 16px;
-            border: 2px solid #e2e8f0;
-            border-radius: 12px;
-            font-size: 16px;
-            background: #fff;
-            color: #1e293b;
-            transition: all 0.3s;
-        }
-
-        .currency-input:focus {
-            outline: none;
-            border-color: #8b5cf6;
-        }
-
-        .currency-select {
-            width: 100%;
-            padding: 12px 16px;
-            border: 2px solid #e2e8f0;
-            border-radius: 12px;
-            font-size: 14px;
-            background: #fff;
-            color: #1e293b;
-            cursor: pointer;
-            transition: all 0.3s;
-            appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2364748b' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 16px center;
-            padding-right: 40px;
-        }
-
-        .currency-select:focus {
-            outline: none;
-            border-color: #8b5cf6;
-        }
-
+        .exchange-section { background: #f8fafc; border-radius: 16px; padding: 20px; }
+        .section-title { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; color: #334155; margin-bottom: 16px; }
+        .section-title i { color: #9333ea; }
+        
+        .exchange-grid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px; align-items: end; margin-bottom: 20px; }
+        
+        .currency-group { display: flex; flex-direction: column; gap: 8px; }
+        .currency-label { font-size: 13px; color: #64748b; }
+        .currency-input { width: 100%; padding: 14px 16px; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 16px; background: #fff; transition: all 0.3s; }
+        .currency-input:focus { outline: none; border-color: #9333ea; }
+        
+        .currency-select { width: 100%; padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 14px; background: #fff; cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2364748b' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 16px center; padding-right: 40px; }
+        .currency-select:focus { outline: none; border-color: #9333ea; }
+        
         /* 交换按钮 */
-        .swap-btn {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
-            border: none;
-            color: #fff;
-            font-size: 18px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s;
-            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
-            margin-bottom: 2px;
-        }
-
-        .swap-btn:hover {
-            transform: scale(1.1);
-            box-shadow: 0 6px 16px rgba(139, 92, 246, 0.4);
-        }
-
-        .swap-btn:active {
-            transform: scale(0.95);
-        }
-
+        .swap-btn { width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #9333ea 0%, #a855f7 100%); border: none; color: #fff; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(147, 51, 234, 0.3); margin-bottom: 2px; transition: all 0.3s; }
+        .swap-btn:hover { transform: scale(1.1); }
+        .swap-btn:active { transform: scale(0.95); }
+        
         /* 转换按钮 */
-        .convert-btn {
-            width: 100%;
-            padding: 16px 24px;
-            background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
-            border: none;
-            border-radius: 14px;
-            color: #fff;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            transition: all 0.3s;
-            box-shadow: 0 4px 16px rgba(139, 92, 246, 0.3);
-        }
-
-        .convert-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
-        }
-
-        .convert-btn:active {
-            transform: translateY(0);
-        }
-
-        .convert-btn i {
-            font-size: 18px;
-        }
-
+        .convert-btn { width: 100%; padding: 16px; background: linear-gradient(135deg, #9333ea 0%, #a855f7 100%); border: none; border-radius: 14px; color: #fff; font-size: 16px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 4px 16px rgba(147, 51, 234, 0.3); transition: all 0.3s; }
+        .convert-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(147, 51, 234, 0.4); }
+        .convert-btn:active { transform: translateY(0); }
+        
         /* Toast */
-        .toast {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%) translateY(-100px);
-            background: #10b981;
-            color: #fff;
-            padding: 12px 24px;
-            border-radius: 10px;
-            font-size: 14px;
-            font-weight: 500;
-            z-index: 9999;
-            transition: transform 0.3s;
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-        }
-
-        .toast.show {
-            transform: translateX(-50%) translateY(0);
-        }
+        .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-100px); background: #10b981; color: #fff; padding: 12px 24px; border-radius: 10px; font-size: 14px; font-weight: 500; z-index: 9999; transition: transform 0.3s ease; }
+        .toast.show { transform: translateX(-50%) translateY(0); }
+        
+        /* 底部 */
+        .footer { text-align: center; padding: 20px; margin-top: 20px; }
+        .footer a { color: #8b5cf6; text-decoration: none; font-size: 14px; }
+        .footer a:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
-    <div class="page-wrapper">
-        <!-- 顶部标题栏 -->
-        <div class="header">
-            <h1>汇率换算</h1>
-            <p>支持多种法定货币和虚拟货币实时转换</p>
-        </div>
-
-        <!-- 主体卡片 -->
+    <div class="page-container">
+        <!-- 导航栏 -->
+        <nav class="navbar">
+            <a href="../index.html" class="logo"><i class="fas fa-tools"></i> TOOLKIT</a>
+            <div class="nav-links">
+                <a href="../index.html">首页</a>
+                <a href="../disclaimer.html">免责声明</a>
+            </div>
+        </nav>
+        
         <div class="main-card">
-            <!-- 提示框 -->
-            <div class="notice-box">
-                <p><i class="fas fa-info-circle"></i> 汇率为参考值，实际交易以银行汇率为准</p>
+            <!-- 标题栏 -->
+            <div class="header">
+                <i class="fas fa-exchange-alt" style="font-size: 28px; color: #fff; margin-bottom: 8px;"></i>
+                <h1>汇率换算工具</h1>
+                <p>实时汇率换算，支持多种货币</p>
             </div>
-
-            <!-- 转换区域 -->
-            <div class="conversion-box">
-                <div class="conversion-grid">
-                    <!-- 源货币 -->
-                    <div class="currency-group">
-                        <span class="currency-label">源货币</span>
-                        <input type="number" class="currency-input" id="fromAmount" value="1" placeholder="输入金额">
-                        <select class="currency-select" id="fromCurrency"></select>
-                    </div>
-
-                    <!-- 交换按钮 -->
-                    <button class="swap-btn" onclick="swapCurrencies()" title="交换货币">
-                        <i class="fas fa-exchange-alt"></i>
-                    </button>
-
-                    <!-- 目标货币 -->
-                    <div class="currency-group">
-                        <span class="currency-label">目标货币</span>
-                        <input type="text" class="currency-input" id="toAmount" readonly placeholder="---">
-                        <select class="currency-select" id="toCurrency"></select>
-                    </div>
+            
+            <div class="card-body">
+                <!-- 提示框 -->
+                <div class="notice-box">
+                    <i class="fas fa-lightbulb"></i>
+                    <p>网络正常时获取实时汇率，离线时自动切换为离线前保存的参考汇率</p>
                 </div>
-
-                <!-- 转换按钮 -->
-                <button class="convert-btn" onclick="convertCurrency()">
-                    <i class="fas fa-calculator"></i>
-                    <span>开始换算</span>
-                </button>
+                
+                <!-- 货币兑换区域 -->
+                <div class="exchange-section">
+                    <div class="section-title">
+                        <i class="fas fa-exchange-alt"></i>
+                        <span>货币兑换</span>
+                    </div>
+                    
+                    <div class="exchange-grid">
+                        <div class="currency-group">
+                            <span class="currency-label">源货币</span>
+                            <input type="number" id="amount" class="currency-input" value="1" min="0">
+                            <select id="fromCurrency" class="currency-select">
+                                <option value="CNY" selected>人民币 (CNY)</option>
+                                <option value="USD">美元 (USD)</option>
+                                <option value="EUR">欧元 (EUR)</option>
+                                <option value="GBP">英镑 (GBP)</option>
+                                <option value="JPY">日元 (JPY)</option>
+                                <option value="KRW">韩元 (KRW)</option>
+                                <option value="HKD">港币 (HKD)</option>
+                                <option value="TWD">新台币 (TWD)</option>
+                                <option value="SGD">新加坡元 (SGD)</option>
+                                <option value="THB">泰铢 (THB)</option>
+                            </select>
+                        </div>
+                        
+                        <button class="swap-btn" onclick="swapCurrencies()">
+                            <i class="fas fa-exchange-alt"></i>
+                        </button>
+                        
+                        <div class="currency-group">
+                            <span class="currency-label">目标货币</span>
+                            <div id="result" class="currency-input">---</div>
+                            <select id="toCurrency" class="currency-select">
+                                <option value="CNY">人民币 (CNY)</option>
+                                <option value="USD" selected>美元 (USD)</option>
+                                <option value="EUR">欧元 (EUR)</option>
+                                <option value="GBP">英镑 (GBP)</option>
+                                <option value="JPY">日元 (JPY)</option>
+                                <option value="KRW">韩元 (KRW)</option>
+                                <option value="HKD">港币 (HKD)</option>
+                                <option value="TWD">新台币 (TWD)</option>
+                                <option value="SGD">新加坡元 (SGD)</option>
+                                <option value="THB">泰铢 (THB)</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <button class="convert-btn" onclick="convertCurrency()">
+                        <i class="fas fa-calculator"></i>
+                        <span>开始换算</span>
+                    </button>
+                </div>
             </div>
+        </div>
+        
+        <!-- 底部 -->
+        <div class="footer">
+            <a href="../index.html">返回首页</a> · <a href="../disclaimer.html">免责声明</a>
         </div>
     </div>
-
+    
     <!-- Toast -->
-    <div class="toast" id="toast"></div>
-
+    <div id="toast" class="toast">复制成功</div>
+    
     <script>
-        // 货币数据 (相对于 USD)
-        const currencyRates = {
-            'USD': 1,
-            'CNY': 7.24,
-            'HKD': 7.82,
-            'EUR': 0.92,
-            'GBP': 0.79,
-            'JPY': 149.50,
-            'KRW': 1320.00,
-            'AUD': 1.53,
-            'CAD': 1.36,
-            'CHF': 0.88,
-            'SGD': 1.34,
-            'TWD': 31.50,
-            'THB': 35.20,
-            'MYR': 4.72,
-            'PHP': 55.80,
-            'VND': 24500,
-            'INR': 83.10,
-            'RUB': 92.50,
-            'BRL': 4.97,
-            'MXN': 17.15,
-            'BTC': 0.000016,
-            'ETH': 0.00042
+        // 汇率数据（离线参考汇率）
+        const exchangeRates = {
+            'CNY': 1,
+            'USD': 7.24,
+            'EUR': 7.85,
+            'GBP': 9.15,
+            'JPY': 0.048,
+            'KRW': 0.0054,
+            'HKD': 0.93,
+            'TWD': 0.23,
+            'SGD': 5.36,
+            'THB': 0.21
         };
-
-        const currencyNames = {
-            'USD': '美元 (USD)',
-            'CNY': '人民币 (CNY)',
-            'HKD': '港币 (HKD)',
-            'EUR': '欧元 (EUR)',
-            'GBP': '英镑 (GBP)',
-            'JPY': '日元 (JPY)',
-            'KRW': '韩元 (KRW)',
-            'AUD': '澳元 (AUD)',
-            'CAD': '加元 (CAD)',
-            'CHF': '瑞士法郎 (CHF)',
-            'SGD': '新加坡元 (SGD)',
-            'TWD': '新台币 (TWD)',
-            'THB': '泰铢 (THB)',
-            'MYR': '马来西亚林吉特 (MYR)',
-            'PHP': '菲律宾比索 (PHP)',
-            'VND': '越南盾 (VND)',
-            'INR': '印度卢比 (INR)',
-            'RUB': '俄罗斯卢布 (RUB)',
-            'BRL': '巴西雷亚尔 (BRL)',
-            'MXN': '墨西哥比索 (MXN)',
-            'BTC': '比特币 (BTC)',
-            'ETH': '以太坊 (ETH)'
-        };
-
+        
+        function convertCurrency() {
+            const amount = parseFloat(document.getElementById('amount').value) || 0;
+            const fromCurrency = document.getElementById('fromCurrency').value;
+            const toCurrency = document.getElementById('toCurrency').value;
+            
+            if (amount <= 0) {
+                showToast('请输入有效金额');
+                return;
+            }
+            
+            // 计算汇率
+            const fromRate = exchangeRates[fromCurrency];
+            const toRate = exchangeRates[toCurrency];
+            const result = (amount / fromRate) * toRate;
+            
+            document.getElementById('result').textContent = result.toFixed(2);
+        }
+        
+        function swapCurrencies() {
+            const fromSelect = document.getElementById('fromCurrency');
+            const toSelect = document.getElementById('toCurrency');
+            const temp = fromSelect.value;
+            fromSelect.value = toSelect.value;
+            toSelect.value = temp;
+        }
+        
         function showToast(message) {
             const toast = document.getElementById('toast');
             toast.textContent = message;
             toast.classList.add('show');
             setTimeout(() => toast.classList.remove('show'), 2000);
         }
-
-        function initCurrencySelects() {
-            const fromSelect = document.getElementById('fromCurrency');
-            const toSelect = document.getElementById('toCurrency');
-
-            for (const [code, name] of Object.entries(currencyNames)) {
-                fromSelect.innerHTML += `<option value="${code}">${name}</option>`;
-                toSelect.innerHTML += `<option value="${code}">${name}</option>`;
-            }
-
-            // 默认选择
-            fromSelect.value = 'USD';
-            toSelect.value = 'CNY';
-        }
-
-        function swapCurrencies() {
-            const fromCurrency = document.getElementById('fromCurrency');
-            const toCurrency = document.getElementById('toCurrency');
-            const fromAmount = document.getElementById('fromAmount');
-            const toAmount = document.getElementById('toAmount');
-
-            const tempCurrency = fromCurrency.value;
-            fromCurrency.value = toCurrency.value;
-            toCurrency.value = tempCurrency;
-
-            if (toAmount.value && toAmount.value !== '---') {
-                fromAmount.value = toAmount.value;
-            }
-
-            convertCurrency();
-        }
-
-        function convertCurrency() {
-            const amount = parseFloat(document.getElementById('fromAmount').value);
-            const fromCurrency = document.getElementById('fromCurrency').value;
-            const toCurrency = document.getElementById('toCurrency').value;
-
-            if (isNaN(amount)) {
-                document.getElementById('toAmount').value = '';
-                return;
-            }
-
-            // 转换为 USD，再转换为目标货币
-            const usdAmount = amount / currencyRates[fromCurrency];
-            const result = usdAmount * currencyRates[toCurrency];
-
-            const formatted = result.toLocaleString('en-US', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            });
-            document.getElementById('toAmount').value = formatted;
-        }
-
-        // 初始化
-        initCurrencySelects();
+        
+        // 页面加载时自动转换
         convertCurrency();
-
-        // 输入时自动转换
-        document.getElementById('fromAmount').addEventListener('input', convertCurrency);
-        document.getElementById('fromCurrency').addEventListener('change', convertCurrency);
-        document.getElementById('toCurrency').addEventListener('change', convertCurrency);
     </script>
 </body>
 </html>

@@ -19,6 +19,153 @@
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6560822080596473" crossorigin="anonymous"></script>
+    <style>
+        body { background: var(--bg-primary); margin: 0; padding: 0; }
+        .container-box {
+            max-width: 600px;
+            margin: 40px auto;
+            background: #fff;
+            border-radius: 24px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        .color-header {
+            background: linear-gradient(135deg, #f97316, #fb923c);
+            padding: 30px 24px;
+            color: #fff;
+        }
+        .color-header h1 {
+            margin: 0 0 8px 0;
+            font-size: 24px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .color-header p {
+            margin: 0;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        .color-body { padding: 24px; }
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #6b7280;
+            margin-bottom: 12px;
+        }
+        .input-area {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .input-group { flex: 1; }
+        .input-group label {
+            display: block;
+            font-size: 12px;
+            color: #9ca3af;
+            margin-bottom: 6px;
+        }
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 14px;
+            box-sizing: border-box;
+            background: #fff;
+        }
+        .input-group select { cursor: pointer; }
+        .swap-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #f97316, #fb923c);
+            border: none;
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 20px;
+            transition: transform 0.2s;
+        }
+        .swap-btn:hover { transform: scale(1.1); }
+        .convert-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #f97316, #fb923c);
+            border: none;
+            border-radius: 12px;
+            color: #fff;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(249, 115, 22, 0.3);
+        }
+        .convert-btn:hover { box-shadow: 0 4px 12px rgba(249, 115, 22, 0.4); }
+        .result-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+        .result-card {
+            background: #f3f4f6;
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+        }
+        .result-card h3 {
+            margin: 0 0 8px 0;
+            font-size: 14px;
+            font-weight: 500;
+            color: #374151;
+        }
+        .result-card .value {
+            font-size: 16px;
+            color: #1f2937;
+            margin-bottom: 10px;
+            min-height: 24px;
+        }
+        .copy-btn {
+            padding: 8px 16px;
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: #6b7280;
+        }
+        .copy-btn:hover { background: #f9fafb; color: #374151; }
+        .footer-link {
+            text-align: center;
+            padding: 16px 24px 24px;
+        }
+        .footer-link a {
+            color: #6b7280;
+            text-decoration: none;
+            font-size: 13px;
+        }
+        .footer-link a:hover { color: #f97316; }
+        @media (max-width: 480px) {
+            .input-area { flex-direction: column; }
+            .swap-btn { margin: 0; transform: rotate(90deg); }
+            .result-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
 <body>
     <header class="header">
         <div class="container">
@@ -30,88 +177,130 @@
     </header>
 
     <main class="main">
-        <div class="container">
-            <div class="convert-container">
-                <div class="convert-header">
-                    <h2><i class="fas fa-calculator"></i> 进制转换工具</h2>
-                    <p>二进制、八进制、十进制、十六进制之间的相互转换</p>
+        <div class="container-box">
+            <div class="color-header">
+                <h1><i class="fas fa-calculator"></i> 进制转换工具</h1>
+                <p>二进制、八进制、十进制、十六进制之间的相互转换</p>
+            </div>
+            
+            <div class="color-body">
+                <div class="section-title">
+                    <i class="fas fa-arrow-right"></i>
+                    <span>输入值与目标进制</span>
                 </div>
-
-                <div class="convert-body">
-                    <div class="input-section">
-                        <div class="input-row">
-                            <div class="input-item">
-                                <label>输入值</label>
-                                <input type="text" id="inputValue" class="convert-input" placeholder="输入数字">
-                                <select id="fromBase" class="convert-select">
-                                    <option value="2">二进制</option>
-                                    <option value="8">八进制</option>
-                                    <option value="10" selected>十进制</option>
-                                    <option value="16">十六进制</option>
-                                </select>
-                            </div>
-                            
-                            <button class="swap-btn" onclick="swapBases()" title="互换进制">
-                                <i class="fas fa-exchange-alt"></i>
-                            </button>
-                            
-                            <div class="input-item">
-                                <label>目标进制</label>
-                                <select id="toBase" class="convert-select">
-                                    <option value="2">二进制</option>
-                                    <option value="8">八进制</option>
-                                    <option value="10">十进制</option>
-                                    <option value="16" selected>十六进制</option>
-                                </select>
-                            </div>
-                        </div>
+                
+                <div class="input-area">
+                    <div class="input-group">
+                        <label>输入值</label>
+                        <input type="text" id="inputValue" placeholder="输入数字">
                     </div>
-
-                    <button class="action-btn" onclick="convertBase()">
-                        <i class="fas fa-magic"></i> 开始转换
+                    <button class="swap-btn" onclick="swapBases()" title="互换">
+                        <i class="fas fa-exchange-alt"></i>
                     </button>
-
-                    <div class="results-grid">
-                        <div class="result-card">
-                            <span class="result-label">二进制</span>
-                            <span class="result-value" id="binaryResult">---</span>
-                            <button class="copy-btn" onclick="copyResult('binaryResult')">
-                                <i class="fas fa-copy"></i> 复制
-                            </button>
-                        </div>
-                        <div class="result-card">
-                            <span class="result-label">八进制</span>
-                            <span class="result-value" id="octalResult">---</span>
-                            <button class="copy-btn" onclick="copyResult('octalResult')">
-                                <i class="fas fa-copy"></i> 复制
-                            </button>
-                        </div>
-                        <div class="result-card">
-                            <span class="result-label">十进制</span>
-                            <span class="result-value" id="decimalResult">---</span>
-                            <button class="copy-btn" onclick="copyResult('decimalResult')">
-                                <i class="fas fa-copy"></i> 复制
-                            </button>
-                        </div>
-                        <div class="result-card">
-                            <span class="result-label">十六进制</span>
-                            <span class="result-value" id="hexResult">---</span>
-                            <button class="copy-btn" onclick="copyResult('hexResult')">
-                                <i class="fas fa-copy"></i> 复制
-                            </button>
-                        </div>
+                    <div class="input-group">
+                        <label>目标进制</label>
+                        <select id="toBase">
+                            <option value="2">二进制</option>
+                            <option value="8">八进制</option>
+                            <option value="10">十进制</option>
+                            <option value="16">十六进制</option>
+                        </select>
                     </div>
                 </div>
+                
+                <button class="convert-btn" onclick="convertBase()">
+                    <i class="fas fa-magic"></i>
+                    <span>开始转换</span>
+                </button>
+                
+                <div class="section-title">
+                    <i class="fas fa-eye"></i>
+                    <span>转换结果</span>
+                </div>
+                
+                <div class="result-grid">
+                    <div class="result-card">
+                        <h3>二进制</h3>
+                        <div class="value" id="binaryResult">---</div>
+                        <button class="copy-btn" onclick="copyResult('binaryResult')">
+                            <i class="fas fa-copy"></i> 复制
+                        </button>
+                    </div>
+                    <div class="result-card">
+                        <h3>八进制</h3>
+                        <div class="value" id="octalResult">---</div>
+                        <button class="copy-btn" onclick="copyResult('octalResult')">
+                            <i class="fas fa-copy"></i> 复制
+                        </button>
+                    </div>
+                    <div class="result-card">
+                        <h3>十进制</h3>
+                        <div class="value" id="decimalResult">---</div>
+                        <button class="copy-btn" onclick="copyResult('decimalResult')">
+                            <i class="fas fa-copy"></i> 复制
+                        </button>
+                    </div>
+                    <div class="result-card">
+                        <h3>十六进制</h3>
+                        <div class="value" id="hexResult">---</div>
+                        <button class="copy-btn" onclick="copyResult('hexResult')">
+                            <i class="fas fa-copy"></i> 复制
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="footer-link">
+                <a href="../index.html">← 返回首页</a> | <a href="../disclaimer.html">免责声明</a>
             </div>
         </div>
     </main>
 
     <footer class="footer">
         <div class="container">
-            <p>© 2025 在线工具箱 | 简洁高效的工具集合</p>
+            <p>© 2025 在线工具箱 | <a href="https://toolkit.skin">toolkit.skin</a></p>
         </div>
     </footer>
 
     <script src="../js/tools/convert.js"></script>
+    <script>
+        function convertBase() {
+            const input = document.getElementById('inputValue').value.trim();
+            const toBase = parseInt(document.getElementById('toBase').value);
+            if (!input) return;
+            try {
+                const decimal = parseInt(input, toBase);
+                if (isNaN(decimal)) throw new Error('Invalid input');
+                document.getElementById('binaryResult').textContent = decimal.toString(2);
+                document.getElementById('octalResult').textContent = decimal.toString(8);
+                document.getElementById('decimalResult').textContent = decimal.toString(10);
+                document.getElementById('hexResult').textContent = decimal.toString(16).toUpperCase();
+            } catch (e) {
+                alert('请输入有效的数字');
+            }
+        }
+        function swapBases() {
+            const select = document.getElementById('toBase');
+            const options = select.options;
+            const currentIndex = select.selectedIndex;
+            const nextIndex = (currentIndex + 1) % options.length;
+            select.selectedIndex = nextIndex;
+        }
+        function copyResult(id) {
+            const text = document.getElementById(id).textContent;
+            if (text && text !== '---') {
+                navigator.clipboard.writeText(text).then(() => {
+                    showToast('已复制到剪贴板');
+                });
+            }
+        }
+        function showToast(msg) {
+            const toast = document.createElement('div');
+            toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#10b981;color:#fff;padding:10px 20px;border-radius:8px;font-size:14px;z-index:9999;';
+            toast.textContent = msg;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2000);
+        }
+    </script>
 </body>
 </html>
