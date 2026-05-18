@@ -70,14 +70,11 @@ function updateConvertButton() {
     const convertBtn = document.getElementById('convertBtn');
     if (!convertBtn) return;
     
-    if (!modelReady) {
-        convertBtn.textContent = '加载模型中...';
+    if (processing) {
+        convertBtn.textContent = 'AI 分割中...';
         convertBtn.disabled = true;
     } else if (!originalImage) {
         convertBtn.textContent = '请先上传照片';
-        convertBtn.disabled = true;
-    } else if (processing) {
-        convertBtn.textContent = 'AI 分割中...';
         convertBtn.disabled = true;
     } else {
         convertBtn.textContent = '开始转换';
