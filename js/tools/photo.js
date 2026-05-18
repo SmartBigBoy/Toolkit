@@ -283,7 +283,7 @@ async function applyBackgroundToCanvas() {
     });
 }
 
-// 传统算法回退
+// 传统算法 - 完全重写，更激进的边缘处理
 async function convertWithTraditionalAlgorithm() {
     const targetSize = photoSizes[selectedSize];
     const targetColor = hexToRgb(selectedBgColor);
@@ -302,13 +302,14 @@ async function convertWithTraditionalAlgorithm() {
     // 检测背景色
     const bgColor = detectBackgroundColor(data, width, height);
 
-    // 容差
-    const tolerance = 35;
+    // 提高容差以捕获更多边缘
+    const tolerance = 50;
+    const edgeTolerance = 65;
 
     // 创建蒙版
     const mask = new Uint8Array(width * height);
 
-    // 基于肤色和背景色的判断
+    // 第一步：基于肤色、头发和背景色的粗略判断
     for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; x++) {
             const idx = (y * width + x) * 4;
@@ -320,45 +321,44 @@ async function convertWithTraditionalAlgorithm() {
             const isSkin = isSkinColor(r, g, b);
             const isHair = isHairColor(r, g, b, bgColor);
 
-            if (isSkin || isHair || bgDist > tolerance * 1.2) {
+            // 放宽条件：只要不是接近背景色就标记为主体
+            if (isSkin || isHair || bgDist > tolerance) {
                 mask[y * width + x] = 1;
             }
         }
     }
 
-    // 区域生长
+    // 第二步：区域生长 - 从已标记的像素向外扩展
     let changed = true;
     let iterations = 0;
-    while (changed && iterations < 30) {
+    while (changed && iterations < 50) {
         changed = false;
         iterations++;
 
-        for (let y = 1; y < height - 1; y++) {
-            for (let x = 1; x < width - 1; x++) {
+        for (let y = 2; y < height - 2; y++) {
+            for (let x = 2; x < width - 2; x++) {
                 const idx = y * width + x;
                 if (mask[idx]) continue;
 
+                // 检查周围有多少是主体像素
                 let neighborCount = 0;
-                let maxNeighborDist = 0;
+                let minNeighborDist = Infinity;
+                const pixel = { r: data[idx * 4], g: data[idx * 4 + 1], b: data[idx * 4 + 2] };
 
-                for (let dy = -1; dy <= 1; dy++) {
-                    for (let dx = -1; dx <= 1; dx++) {
-                        if (dx === 0 && dy === 0) continue;
+                for (let dy = -2; dy <= 2; dy++) {
+                    for (let dx = -2; dx <= 2; dx++) {
                         const nidx = (y + dy) * width + (x + dx);
                         if (mask[nidx]) {
                             neighborCount++;
                             const nIdx4 = nidx * 4;
-                            const cIdx4 = idx * 4;
-                            const dist = colorDistance(
-                                { r: data[cIdx4], g: data[cIdx4 + 1], b: data[cIdx4 + 2] },
-                                { r: data[nIdx4], g: data[nIdx4 + 1], b: data[nIdx4 + 2] }
-                            );
-                            maxNeighborDist = Math.max(maxNeighborDist, dist);
+                            const dist = colorDistance(pixel, { r: data[nIdx4], g: data[nIdx4 + 1], b: data[nIdx4 + 2] });
+                            minNeighborDist = Math.min(minNeighborDist, dist);
                         }
                     }
                 }
 
-                if (neighborCount >= 3 && maxNeighborDist < tolerance) {
+                // 放宽条件：2个邻居 + 颜色差异不太大
+                if (neighborCount >= 2 && minNeighborDist < edgeTolerance) {
                     mask[idx] = 1;
                     changed = true;
                 }
@@ -366,25 +366,80 @@ async function convertWithTraditionalAlgorithm() {
         }
     }
 
-    // 形态学清理
-    for (let i = 0; i < 3; i++) dilateMask(mask, width, height, 1);
-    for (let i = 0; i < 2; i++) erodeMask(mask, width, height, 1);
+    // 第三步：闭运算 - 先膨胀再腐蚀，填充头发缝隙
+    for (let i = 0; i < 5; i++) dilateMask(mask, width, height, 1);
+    for (let i = 0; i < 3; i++) erodeMask(mask, width, height, 1);
 
-    // 边缘羽化替换
+    // 第四步：从中心向外洪水填充，确保主体完整
+    const queue = [];
+    const centerX = Math.floor(width / 2);
+    const centerY = Math.floor(height / 2);
+    
+    // 从多个起点开始洪水填充
+    const startPoints = [
+        [centerX, centerY],
+        [centerX, Math.floor(height * 0.3)],
+        [centerX, Math.floor(height * 0.7)],
+        [Math.floor(width * 0.4), centerY],
+        [Math.floor(width * 0.6), centerY]
+    ];
+
+    for (const [sx, sy] of startPoints) {
+        if (!mask[sy * width + sx]) {
+            queue.push([sx, sy]);
+            mask[sy * width + sx] = 2; // 标记为洪水填充
+        }
+    }
+
+    // BFS 洪水填充
+    while (queue.length > 0) {
+        const [x, y] = queue.shift();
+        
+        for (let dy = -2; dy <= 2; dy++) {
+            for (let dx = -2; dx <= 2; dx++) {
+                const nx = x + dx;
+                const ny = y + dy;
+                if (nx < 0 || nx >= width || ny < 0 || ny >= height) continue;
+                
+                const nidx = ny * width + nx;
+                if (mask[nidx] > 0) continue;
+                
+                const idx = (y * width + x) * 4;
+                const nIdx = (ny * width + nx) * 4;
+                const dist = colorDistance(
+                    { r: data[idx], g: data[idx + 1], b: data[idx + 2] },
+                    { r: data[nIdx], g: data[nIdx + 1], b: data[nIdx + 2] }
+                );
+                
+                // 如果颜色接近，且在边缘区域内
+                if (dist < edgeTolerance * 1.2) {
+                    mask[nidx] = 2;
+                    queue.push([nx, ny]);
+                }
+            }
+        }
+    }
+
+    // 第五步：再次膨胀确保边缘完整
+    for (let i = 0; i < 3; i++) dilateMask(mask, width, height, 1);
+
+    // 第六步：替换背景
     for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; x++) {
             const idx = (y * width + x) * 4;
             const pixel = { r: data[idx], g: data[idx + 1], b: data[idx + 2] };
+            const bgDist = colorDistance(pixel, bgColor);
 
             if (mask[y * width + x]) {
-                const bgDist = colorDistance(pixel, bgColor);
-                if (bgDist < tolerance * 1.5) {
-                    const blendFactor = Math.min(1, bgDist / (tolerance * 1.5));
-                    data[idx] = Math.round(pixel.r * blendFactor + targetColor.r * (1 - blendFactor) * 0.5);
-                    data[idx + 1] = Math.round(pixel.g * blendFactor + targetColor.g * (1 - blendFactor) * 0.5);
-                    data[idx + 2] = Math.round(pixel.b * blendFactor + targetColor.b * (1 - blendFactor) * 0.5);
+                // 主体区域：接近背景色的边缘像素进行混合
+                if (bgDist < tolerance * 2) {
+                    const blendFactor = Math.min(1, bgDist / (tolerance * 2));
+                    data[idx] = Math.round(pixel.r * blendFactor + targetColor.r * (1 - blendFactor));
+                    data[idx + 1] = Math.round(pixel.g * blendFactor + targetColor.g * (1 - blendFactor));
+                    data[idx + 2] = Math.round(pixel.b * blendFactor + targetColor.b * (1 - blendFactor));
                 }
             } else {
+                // 背景区域：直接替换
                 data[idx] = targetColor.r;
                 data[idx + 1] = targetColor.g;
                 data[idx + 2] = targetColor.b;
@@ -394,6 +449,7 @@ async function convertWithTraditionalAlgorithm() {
 
     tempCtx.putImageData(imageData, 0, 0);
 
+    // 绘制到目标尺寸
     const canvas = document.createElement('canvas');
     canvas.width = targetSize.width;
     canvas.height = targetSize.height;
