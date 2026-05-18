@@ -78,6 +78,16 @@ function handlePhotoUpload(event) {
     reader.readAsDataURL(file);
 }
 
+let selectedBgColor = '#FFFFFF';
+let selectedBgName = '白底';
+
+function selectBgColor(el) {
+    document.querySelectorAll('.bg-color-card').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+    selectedBgColor = el.dataset.color;
+    selectedBgName = el.dataset.name;
+}
+
 function convertPhoto() {
     if (!originalImage) {
         alert('请先上传照片');
@@ -92,7 +102,8 @@ function convertPhoto() {
 
     const ctx = canvas.getContext('2d');
     
-    ctx.fillStyle = '#ffffff';
+    // 使用选中的底色
+    ctx.fillStyle = selectedBgColor;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     const scale = Math.min(canvas.width / originalImage.width, canvas.height / originalImage.height);
@@ -103,12 +114,13 @@ function convertPhoto() {
 
     convertedCanvas = canvas;
 
-    const preview = document.getElementById('photoPreview');
-    preview.innerHTML += `
-        <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border);">
-            <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px;">转换后尺寸: ${targetSize.width} × ${targetSize.height} 像素 (${targetSize.name})</p>
-            <img src="${canvas.toDataURL()}" alt="转换后">
-        </div>
+    // 显示结果区域
+    const resultBox = document.getElementById('resultBox');
+    const resultPreview = document.getElementById('resultPreview');
+    resultBox.style.display = 'block';
+    resultPreview.innerHTML = `
+        <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px;">${selectedBgName} ${targetSize.name} - ${targetSize.width} × ${targetSize.height} 像素</p>
+        <img src="${canvas.toDataURL()}" alt="转换结果">
     `;
 
     document.getElementById('downloadBtn').disabled = false;
