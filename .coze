@@ -1,4 +1,6 @@
 [project]
+sub_id = "1afd75b2"
+name = "tools-box"
 requires = []
 project_type = "web"
 
@@ -16,6 +18,3 @@ run = ["bash", "scripts/coze-deploy-run.sh"]
 [deploy.profile]
 kind = "service"
 flavor = "web"
-
-[subprojects]
-path = ["Tools"]

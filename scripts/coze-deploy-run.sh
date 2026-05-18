@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # 静态 HTML 项目目录
-PROJECT_DIR="/workspace/projects/Tools"
+PROJECT_DIR="/workspace/projects"
 
 # 显式声明关键环境变量
 export PORT=5000
