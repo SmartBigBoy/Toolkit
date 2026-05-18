@@ -12,6 +12,13 @@ let originalImage = null;
 let convertedCanvas = null;
 let selectedSize = '1inch';
 
+// WebGL 相关
+let gl = null;
+let program = null;
+let texture = null;
+let positionBuffer = null;
+let texCoordBuffer = null;
+
 document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.size-option').forEach(option => {
         option.addEventListener('click', () => {
@@ -72,6 +79,9 @@ function handlePhotoUpload(event) {
             `;
             document.getElementById('convertBtn').disabled = false;
             document.getElementById('downloadBtn').disabled = true;
+
+            // 初始化 WebGL
+            initWebGL();
         };
         img.src = e.target.result;
     };
@@ -86,8 +96,267 @@ function selectBgColor(el) {
     el.classList.add('selected');
     selectedBgColor = el.dataset.color;
     selectedBgName = el.dataset.name;
+
+    // 实时更新 WebGL 渲染
+    if (gl && texture) {
+        updateWebGLRender();
+    }
 }
 
+// ========== WebGL 初始化 ==========
+function initWebGL() {
+    const canvas = document.createElement('canvas');
+    canvas.width = originalImage.width;
+    canvas.height = originalImage.height;
+
+    gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+    if (!gl) {
+        console.warn('WebGL 不可用，使用 Canvas 2D 回退');
+        return false;
+    }
+
+    // 顶点着色器
+    const vsSource = `
+        attribute vec4 aPosition;
+        attribute vec2 aTexCoord;
+        varying vec2 vTexCoord;
+        void main() {
+            gl_Position = aPosition;
+            vTexCoord = aTexCoord;
+        }
+    `;
+
+    // 片段着色器 - GPU 加速背景替换
+    const fsSource = `
+        precision highp float;
+        varying vec2 vTexCoord;
+        uniform sampler2D uTexture;
+        uniform vec2 uTextureSize;
+        uniform vec3 uBgColor;
+        uniform vec3 uTargetColor;
+        uniform float uTolerance;
+
+        // 计算颜色距离
+        float colorDistance(vec3 c1, vec3 c2) {
+            vec3 d = c1 - c2;
+            return sqrt(dot(d, d));
+        }
+
+        // 检测是否为边缘
+        bool isEdge(vec2 uv, vec3 bgColor, float tol) {
+            vec2 texel = 1.0 / uTextureSize;
+            vec3 center = texture2D(uTexture, uv).rgb;
+
+            // 检查上下左右四个邻居
+            float sumDist = 0.0;
+            int count = 0;
+
+            vec3 left = texture2D(uTexture, uv + vec2(-texel.x, 0.0)).rgb;
+            vec3 right = texture2D(uTexture, uv + vec2(texel.x, 0.0)).rgb;
+            vec3 top = texture2D(uTexture, uv + vec2(0.0, texel.y)).rgb;
+            vec3 bottom = texture2D(uTexture, uv + vec2(0.0, -texel.y)).rgb;
+
+            float d1 = colorDistance(left, center);
+            float d2 = colorDistance(right, center);
+            float d3 = colorDistance(top, center);
+            float d4 = colorDistance(bottom, center);
+
+            return (d1 + d2 + d3 + d4) > tol * 4.0;
+        }
+
+        void main() {
+            vec4 color = texture2D(uTexture, vTexCoord);
+            vec3 rgb = color.rgb;
+
+            // 计算与背景色的距离
+            float dist = colorDistance(rgb, uBgColor);
+
+            // 边缘检测 - 检查是否为边缘像素
+            bool onEdge = isEdge(vTexCoord, uBgColor, uTolerance * 0.5);
+
+            // 主体蒙版计算
+            // 如果颜色接近背景，标记为需要替换
+            float bgWeight = smoothstep(uTolerance * 0.5, uTolerance * 1.5, dist);
+
+            // 边缘区域进行混合
+            if (onEdge && dist < uTolerance * 1.8) {
+                // 边缘处进行平滑过渡
+                float blendFactor = dist / (uTolerance * 1.8);
+                vec3 mixedColor = mix(uTargetColor, rgb, blendFactor);
+                gl_FragColor = vec4(mixedColor, 1.0);
+            } else if (bgWeight < 0.1) {
+                // 纯背景区域
+                gl_FragColor = vec4(uTargetColor, 1.0);
+            } else {
+                // 主体区域
+                gl_FragColor = vec4(rgb, 1.0);
+            }
+        }
+    `;
+
+    // 编译着色器
+    const vs = compileShader(gl.VERTEX_SHADER, vsSource);
+    const fs = compileShader(gl.FRAGMENT_SHADER, fsSource);
+
+    program = gl.createProgram();
+    gl.attachShader(program, vs);
+    gl.attachShader(program, fs);
+    gl.linkProgram(program);
+
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+        console.error('着色器链接失败:', gl.getProgramInfoLog(program));
+        return false;
+    }
+
+    // 创建纹理
+    texture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, originalImage);
+
+    // 创建顶点缓冲区
+    positionBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+        -1, -1,
+         1, -1,
+        -1,  1,
+        -1,  1,
+         1, -1,
+         1,  1
+    ]), gl.STATIC_DRAW);
+
+    texCoordBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+        0, 1,
+        1, 1,
+        0, 0,
+        0, 0,
+        1, 1,
+        1, 0
+    ]), gl.STATIC_DRAW);
+
+    return true;
+}
+
+function compileShader(type, source) {
+    const shader = gl.createShader(type);
+    gl.shaderSource(shader, source);
+    gl.compileShader(shader);
+
+    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+        console.error('着色器编译失败:', gl.getShaderInfoLog(shader));
+        gl.deleteShader(shader);
+        return null;
+    }
+
+    return shader;
+}
+
+// ========== WebGL 渲染 ==========
+function updateWebGLRender() {
+    if (!gl || !program) return;
+
+    const targetColor = hexToRgb(selectedBgColor);
+
+    // 使用原图四角采样估算背景色
+    const bgColor = detectBgColorFromImage();
+
+    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+    gl.useProgram(program);
+
+    // 设置 uniforms
+    const uTexture = gl.getUniformLocation(program, 'uTexture');
+    const uTextureSize = gl.getUniformLocation(program, 'uTextureSize');
+    const uBgColor = gl.getUniformLocation(program, 'uBgColor');
+    const uTargetColor = gl.getUniformLocation(program, 'uTargetColor');
+    const uTolerance = gl.getUniformLocation(program, 'uTolerance');
+
+    gl.uniform1i(uTexture, 0);
+    gl.uniform2f(uTextureSize, gl.canvas.width, gl.canvas.height);
+    gl.uniform3f(uBgColor, bgColor.r, bgColor.g, bgColor.b);
+    gl.uniform3f(uTargetColor, targetColor.r / 255.0, targetColor.g / 255.0, targetColor.b / 255.0);
+    gl.uniform1f(uTolerance, 50.0);
+
+    // 绑定纹理
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+
+    // 绑定顶点
+    const aPosition = gl.getAttribLocation(program, 'aPosition');
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+    gl.enableVertexAttribArray(aPosition);
+    gl.vertexAttribPointer(aPosition, 2, gl.FLOAT, false, 0, 0);
+
+    const aTexCoord = gl.getAttribLocation(program, 'aTexCoord');
+    gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
+    gl.enableVertexAttribArray(aTexCoord);
+    gl.vertexAttribPointer(aTexCoord, 2, gl.FLOAT, false, 0, 0);
+
+    // 绘制
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+}
+
+// 从图像数据检测背景色
+function detectBgColorFromImage() {
+    if (!originalImage) return { r: 200, g: 200, b: 200 };
+
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = originalImage.width;
+    tempCanvas.height = originalImage.height;
+    const ctx = tempCanvas.getContext('2d');
+    ctx.drawImage(originalImage, 0, 0);
+
+    const imageData = ctx.getImageData(0, 0, originalImage.width, originalImage.height);
+    const data = imageData.data;
+
+    const cornerSize = Math.floor(Math.min(originalImage.width, originalImage.height) * 0.15);
+    const samples = [];
+
+    // 四角采样
+    for (let y = 0; y < cornerSize; y += 3) {
+        for (let x = 0; x < cornerSize; x += 3) {
+            const idx = (y * originalImage.width + x) * 4;
+            samples.push({ r: data[idx], g: data[idx + 1], b: data[idx + 2] });
+        }
+    }
+    for (let y = 0; y < cornerSize; y += 3) {
+        for (let x = originalImage.width - cornerSize; x < originalImage.width; x += 3) {
+            const idx = (y * originalImage.width + x) * 4;
+            samples.push({ r: data[idx], g: data[idx + 1], b: data[idx + 2] });
+        }
+    }
+    for (let y = originalImage.height - cornerSize; y < originalImage.height; y += 3) {
+        for (let x = 0; x < cornerSize; x += 3) {
+            const idx = (y * originalImage.width + x) * 4;
+            samples.push({ r: data[idx], g: data[idx + 1], b: data[idx + 2] });
+        }
+    }
+    for (let y = originalImage.height - cornerSize; y < originalImage.height; y += 3) {
+        for (let x = originalImage.width - cornerSize; x < originalImage.width; x += 3) {
+            const idx = (y * originalImage.width + x) * 4;
+            samples.push({ r: data[idx], g: data[idx + 1], b: data[idx + 2] });
+        }
+    }
+
+    // 计算中位数
+    const sortedR = samples.map(c => c.r).sort((a, b) => a - b);
+    const sortedG = samples.map(c => c.g).sort((a, b) => a - b);
+    const sortedB = samples.map(c => c.b).sort((a, b) => a - b);
+    const mid = Math.floor(samples.length / 2);
+
+    return {
+        r: sortedR[mid],
+        g: sortedG[mid],
+        b: sortedB[mid]
+    };
+}
+
+// ========== 转换功能 ==========
 function convertPhoto() {
     if (!originalImage) {
         alert('请先上传照片');
@@ -95,6 +364,7 @@ function convertPhoto() {
     }
 
     const targetSize = photoSizes[selectedSize];
+    const targetColor = hexToRgb(selectedBgColor);
 
     // 创建目标尺寸的 canvas
     const canvas = document.createElement('canvas');
@@ -102,71 +372,21 @@ function convertPhoto() {
     canvas.height = targetSize.height;
     const ctx = canvas.getContext('2d');
 
-    // 创建原图尺寸的临时 canvas
-    const tempCanvas = document.createElement('canvas');
-    tempCanvas.width = originalImage.width;
-    tempCanvas.height = originalImage.height;
-    const tempCtx = tempCanvas.getContext('2d');
-    tempCtx.drawImage(originalImage, 0, 0);
+    // 检测背景色
+    const bgColor = detectBgColorFromImage();
 
-    // 获取图像数据
-    const imageData = tempCtx.getImageData(0, 0, originalImage.width, originalImage.height);
-    const data = imageData.data;
-    const width = originalImage.width;
-    const height = originalImage.height;
+    // 如果 WebGL 可用，使用 WebGL 处理
+    if (gl && program) {
+        // 更新 WebGL uniforms
+        updateWebGLRenderWithBgColor(bgColor, targetColor);
 
-    // ========== 步骤1：检测背景色 ==========
-    const bgColor = detectBackgroundColor(data, width, height);
-
-    // 目标颜色
-    const targetColor = hexToRgb(selectedBgColor);
-
-    // ========== 步骤2：计算容差 ==========
-    const tolerance = calculateTolerance(data, width, height, bgColor);
-
-    // ========== 步骤3：从中心洪水填充主体 ==========
-    const subjectMask = floodFillSubject(data, width, height, bgColor, tolerance);
-
-    // ========== 步骤4：扩展蒙版（填充头发等接近主体颜色的区域） ==========
-    expandMaskWithEdgeDetection(data, width, height, subjectMask, bgColor, tolerance);
-
-    // ========== 步骤5：替换背景 ==========
-    for (let i = 0; i < width * height; i++) {
-        if (subjectMask[i]) {
-            // 主体像素：检查边缘是否接近背景色，进行渐变混合
-            const pixel = { r: data[i * 4], g: data[i * 4 + 1], b: data[i * 4 + 2] };
-            const dist = colorDistance(pixel, bgColor);
-
-            // 边缘区域进行平滑过渡
-            if (dist < tolerance * 1.2) {
-                const blendFactor = Math.max(0, (dist - tolerance * 0.5) / (tolerance * 0.7));
-                data[i * 4] = Math.round(pixel.r * blendFactor + targetColor.r * (1 - blendFactor));
-                data[i * 4 + 1] = Math.round(pixel.g * blendFactor + targetColor.g * (1 - blendFactor));
-                data[i * 4 + 2] = Math.round(pixel.b * blendFactor + targetColor.b * (1 - blendFactor));
-            }
-        } else {
-            // 背景像素，直接替换
-            data[i * 4] = targetColor.r;
-            data[i * 4 + 1] = targetColor.g;
-            data[i * 4 + 2] = targetColor.b;
-            data[i * 4 + 3] = 255;
-        }
+        // 获取 WebGL 处理后的图像
+        const glCanvas = gl.canvas;
+        ctx.drawImage(glCanvas, 0, 0, targetSize.width, targetSize.height);
+    } else {
+        // 回退到 Canvas 2D 处理
+        processWithCanvas2D(ctx, targetSize, bgColor, targetColor);
     }
-
-    // 将处理后的图像放回临时 canvas
-    tempCtx.putImageData(imageData, 0, 0);
-
-    // ========== 步骤6：绘制到目标尺寸 ==========
-    ctx.fillStyle = selectedBgColor;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    const scale = Math.min(canvas.width / originalImage.width, canvas.height / originalImage.height);
-    const drawWidth = originalImage.width * scale;
-    const drawHeight = originalImage.height * scale;
-    const drawX = (canvas.width - drawWidth) / 2;
-    const drawY = (canvas.height - drawHeight) / 2;
-
-    ctx.drawImage(tempCanvas, drawX, drawY, drawWidth, drawHeight);
 
     convertedCanvas = canvas;
 
@@ -182,264 +402,156 @@ function convertPhoto() {
     document.getElementById('downloadBtn').disabled = false;
 }
 
-// ========== 辅助函数 ==========
+function updateWebGLRenderWithBgColor(bgColor, targetColor) {
+    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+    gl.useProgram(program);
 
-// 检测背景色
-function detectBackgroundColor(data, width, height) {
-    const samples = [];
-    const cornerSize = Math.floor(Math.min(width, height) * 0.2);
+    const uTexture = gl.getUniformLocation(program, 'uTexture');
+    const uTextureSize = gl.getUniformLocation(program, 'uTextureSize');
+    const uBgColor = gl.getUniformLocation(program, 'uBgColor');
+    const uTargetColor = gl.getUniformLocation(program, 'uTargetColor');
+    const uTolerance = gl.getUniformLocation(program, 'uTolerance');
 
-    // 四角区域采样
-    // 左上角
-    for (let y = 0; y < cornerSize; y += 3) {
-        for (let x = 0; x < cornerSize; x += 3) {
-            const idx = y * width + x;
-            samples.push({ r: data[idx * 4], g: data[idx * 4 + 1], b: data[idx * 4 + 2] });
-        }
-    }
+    gl.uniform1i(uTexture, 0);
+    gl.uniform2f(uTextureSize, gl.canvas.width, gl.canvas.height);
+    gl.uniform3f(uBgColor, bgColor.r / 255.0, bgColor.g / 255.0, bgColor.b / 255.0);
+    gl.uniform3f(uTargetColor, targetColor.r / 255.0, targetColor.g / 255.0, targetColor.b / 255.0);
+    gl.uniform1f(uTolerance, 50.0);
 
-    // 右上角
-    for (let y = 0; y < cornerSize; y += 3) {
-        for (let x = width - cornerSize; x < width; x += 3) {
-            const idx = y * width + x;
-            samples.push({ r: data[idx * 4], g: data[idx * 4 + 1], b: data[idx * 4 + 2] });
-        }
-    }
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, texture);
 
-    // 左下角
-    for (let y = height - cornerSize; y < height; y += 3) {
-        for (let x = 0; x < cornerSize; x += 3) {
-            const idx = y * width + x;
-            samples.push({ r: data[idx * 4], g: data[idx * 4 + 1], b: data[idx * 4 + 2] });
-        }
-    }
+    const aPosition = gl.getAttribLocation(program, 'aPosition');
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+    gl.enableVertexAttribArray(aPosition);
+    gl.vertexAttribPointer(aPosition, 2, gl.FLOAT, false, 0, 0);
 
-    // 右下角
-    for (let y = height - cornerSize; y < height; y += 3) {
-        for (let x = width - cornerSize; x < width; x += 3) {
-            const idx = y * width + x;
-            samples.push({ r: data[idx * 4], g: data[idx * 4 + 1], b: data[idx * 4 + 2] });
-        }
-    }
+    const aTexCoord = gl.getAttribLocation(program, 'aTexCoord');
+    gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
+    gl.enableVertexAttribArray(aTexCoord);
+    gl.vertexAttribPointer(aTexCoord, 2, gl.FLOAT, false, 0, 0);
 
-    // 四边中点
-    for (let x = Math.floor(width / 4); x < Math.floor(width * 3 / 4); x += 5) {
-        const idx = x;
-        samples.push({ r: data[idx * 4], g: data[idx * 4 + 1], b: data[idx * 4 + 2] });
-        const idx2 = (height - 1) * width + x;
-        samples.push({ r: data[idx2 * 4], g: data[idx2 * 4 + 1], b: data[idx2 * 4 + 2] });
-    }
-    for (let y = Math.floor(height / 4); y < Math.floor(height * 3 / 4); y += 5) {
-        const idx = y * width;
-        samples.push({ r: data[idx * 4], g: data[idx * 4 + 1], b: data[idx * 4 + 2] });
-        const idx2 = y * width + (width - 1);
-        samples.push({ r: data[idx2 * 4], g: data[idx2 * 4 + 1], b: data[idx2 * 4 + 2] });
-    }
-
-    // 使用中位数
-    const sortedR = samples.map(c => c.r).sort((a, b) => a - b);
-    const sortedG = samples.map(c => c.g).sort((a, b) => a - b);
-    const sortedB = samples.map(c => c.b).sort((a, b) => a - b);
-    const mid = Math.floor(samples.length / 2);
-
-    return {
-        r: sortedR[mid],
-        g: sortedG[mid],
-        b: sortedB[mid]
-    };
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
 }
 
-// 计算容差
-function calculateTolerance(data, width, height, bgColor) {
-    const samples = [];
-    const cornerSize = Math.floor(Math.min(width, height) * 0.15);
+// Canvas 2D 回退处理
+function processWithCanvas2D(ctx, targetSize, bgColor, targetColor) {
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = originalImage.width;
+    tempCanvas.height = originalImage.height;
+    const tempCtx = tempCanvas.getContext('2d');
+    tempCtx.drawImage(originalImage, 0, 0);
 
-    // 采集边缘样本
-    for (let y = 0; y < cornerSize; y += 2) {
-        for (let x = 0; x < cornerSize; x += 2) {
-            const idx = y * width + x;
-            samples.push(colorDistance(
-                { r: data[idx * 4], g: data[idx * 4 + 1], b: data[idx * 4 + 2] },
-                bgColor
-            ));
-        }
-        for (let x = width - cornerSize; x < width; x += 2) {
-            const idx = y * width + x;
-            samples.push(colorDistance(
-                { r: data[idx * 4], g: data[idx * 4 + 1], b: data[idx * 4 + 2] },
-                bgColor
-            ));
-        }
-    }
-    for (let y = height - cornerSize; y < height; y += 2) {
-        for (let x = 0; x < cornerSize; x += 2) {
-            const idx = y * width + x;
-            samples.push(colorDistance(
-                { r: data[idx * 4], g: data[idx * 4 + 1], b: data[idx * 4 + 2] },
-                bgColor
-            ));
-        }
-        for (let x = width - cornerSize; x < width; x += 2) {
-            const idx = y * width + x;
-            samples.push(colorDistance(
-                { r: data[idx * 4], g: data[idx * 4 + 1], b: data[idx * 4 + 2] },
-                bgColor
-            ));
-        }
+    const imageData = tempCtx.getImageData(0, 0, originalImage.width, originalImage.height);
+    const data = imageData.data;
+    const width = originalImage.width;
+    const height = originalImage.height;
+
+    const tolerance = 50;
+
+    // 洪水填充从中心扩展主体
+    const mask = floodFillSubject(data, width, height, bgColor, tolerance);
+
+    // 扩展蒙版
+    for (let iter = 0; iter < 3; iter++) {
+        expandMask(data, width, height, mask, bgColor, tolerance);
     }
 
-    if (samples.length === 0) return 60;
+    // 替换背景
+    for (let i = 0; i < width * height; i++) {
+        const pixel = { r: data[i * 4], g: data[i * 4 + 1], b: data[i * 4 + 2] };
+        const dist = colorDistance(pixel, bgColor);
 
-    // 计算标准差
-    const mean = samples.reduce((a, b) => a + b, 0) / samples.length;
-    const variance = samples.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / samples.length;
-    const stdDev = Math.sqrt(variance);
+        if (!mask[i]) {
+            data[i * 4] = targetColor.r;
+            data[i * 4 + 1] = targetColor.g;
+            data[i * 4 + 2] = targetColor.b;
+        } else if (dist < tolerance * 1.5) {
+            const blendFactor = Math.max(0, (dist - tolerance * 0.5) / (tolerance));
+            data[i * 4] = Math.round(pixel.r * blendFactor + targetColor.r * (1 - blendFactor));
+            data[i * 4 + 1] = Math.round(pixel.g * blendFactor + targetColor.g * (1 - blendFactor));
+            data[i * 4 + 2] = Math.round(pixel.b * blendFactor + targetColor.b * (1 - blendFactor));
+        }
+    }
 
-    // 容差 = 平均值 + 标准差 + 余量
-    return Math.max(50, Math.min(100, mean + stdDev + 15));
+    tempCtx.putImageData(imageData, 0, 0);
+
+    // 绘制到目标尺寸
+    ctx.fillStyle = `rgb(${targetColor.r}, ${targetColor.g}, ${targetColor.b})`;
+    ctx.fillRect(0, 0, targetSize.width, targetSize.height);
+
+    const scale = Math.min(targetSize.width / originalImage.width, targetSize.height / originalImage.height);
+    const drawWidth = originalImage.width * scale;
+    const drawHeight = originalImage.height * scale;
+    const drawX = (targetSize.width - drawWidth) / 2;
+    const drawY = (targetSize.height - drawHeight) / 2;
+
+    ctx.drawImage(tempCanvas, drawX, drawY, drawWidth, drawHeight);
 }
 
-// 从中心洪水填充主体
 function floodFillSubject(data, width, height, bgColor, tolerance) {
     const mask = new Uint8Array(width * height);
     const visited = new Uint8Array(width * height);
-
-    // 从图像中心附近多个点开始
-    const startPoints = [
-        [Math.floor(width / 2), Math.floor(height / 2)],
-        [Math.floor(width / 2), Math.floor(height / 3)],
-        [Math.floor(width / 2), Math.floor(height * 2 / 3)]
-    ];
-
     const queue = [];
 
-    for (const [sx, sy] of startPoints) {
-        const sidx = sy * width + sx;
-        const pixel = { r: data[sidx * 4], g: data[sidx * 4 + 1], b: data[sidx * 4 + 2] };
+    // 从中心开始
+    const sx = Math.floor(width / 2);
+    const sy = Math.floor(height / 2);
+    queue.push([sx, sy]);
+    visited[sy * width + sx] = 1;
 
-        // 如果起始点不是背景，加入队列
-        if (colorDistance(pixel, bgColor) > tolerance * 0.8) {
-            queue.push([sx, sy]);
-            visited[sidx] = 1;
-        }
-    }
-
-    // 如果中心点都是背景，向外扩展找肤色/主体
-    if (queue.length === 0) {
-        for (let r = 10; r < Math.min(width, height) / 3; r += 10) {
-            for (let angle = 0; angle < Math.PI * 2; angle += 0.3) {
-                const sx = Math.floor(width / 2 + Math.cos(angle) * r);
-                const sy = Math.floor(height / 2 + Math.sin(angle) * r);
-                if (sx >= 0 && sx < width && sy >= 0 && sy < height) {
-                    const sidx = sy * width + sx;
-                    const pixel = { r: data[sidx * 4], g: data[sidx * 4 + 1], b: data[sidx * 4 + 2] };
-                    if (colorDistance(pixel, bgColor) > tolerance * 0.5) {
-                        queue.push([sx, sy]);
-                        visited[sidx] = 1;
-                        break;
-                    }
-                }
-            }
-            if (queue.length > 0) break;
-        }
-    }
-
-    // 洪水填充：4邻域
     while (queue.length > 0) {
         const [x, y] = queue.shift();
         const idx = y * width + x;
+        const pixel = { r: data[idx * 4], g: data[idx * 4 + 1], b: data[idx * 4 + 2] };
 
-        const neighbors = [
-            [x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1]
-        ];
+        if (colorDistance(pixel, bgColor) > tolerance * 0.5) {
+            mask[idx] = 1;
 
-        for (const [nx, ny] of neighbors) {
-            if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
-                const nidx = ny * width + nx;
-                if (!visited[nidx]) {
-                    const pixel = { r: data[nidx * 4], g: data[nidx * 4 + 1], b: data[nidx * 4 + 2] };
-                    const dist = colorDistance(pixel, bgColor);
-
-                    // 只要不是纯背景色就加入（使用较大容差）
-                    if (dist > tolerance * 0.5) {
-                        visited[nidx] = 1;
-                        queue.push([nx, ny]);
+            const neighbors = [[x-1,y], [x+1,y], [x,y-1], [x,y+1]];
+            for (const [nx, ny] of neighbors) {
+                if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                    const nidx = ny * width + nx;
+                    if (!visited[nidx]) {
+                        const np = { r: data[nidx * 4], g: data[nidx * 4 + 1], b: data[nidx * 4 + 2] };
+                        if (colorDistance(np, bgColor) > tolerance * 0.4) {
+                            visited[nidx] = 1;
+                            queue.push([nx, ny]);
+                        }
                     }
                 }
             }
         }
-    }
-
-    // 复制到蒙版
-    for (let i = 0; i < width * height; i++) {
-        mask[i] = visited[i];
     }
 
     return mask;
 }
 
-// 边缘扩展蒙版
-function expandMaskWithEdgeDetection(data, width, height, mask, bgColor, tolerance) {
-    // 多次迭代扩展蒙版
-    for (let iter = 0; iter < 5; iter++) {
-        const newMask = new Uint8Array(mask.length);
+function expandMask(data, width, height, mask, bgColor, tolerance) {
+    const newMask = new Uint8Array(mask.length);
 
-        for (let y = 1; y < height - 1; y++) {
-            for (let x = 1; x < width - 1; x++) {
-                const idx = y * width + x;
-
-                if (mask[idx]) {
-                    newMask[idx] = 1;
-                } else {
-                    // 检查周围8邻域有多少是主体
-                    let subjectNeighbors = 0;
-                    let totalNeighbors = 0;
-
-                    for (let dy = -1; dy <= 1; dy++) {
-                        for (let dx = -1; dx <= 1; dx++) {
-                            if (dx === 0 && dy === 0) continue;
-                            const nidx = (y + dy) * width + (x + dx);
-                            if (mask[nidx]) subjectNeighbors++;
-                            totalNeighbors++;
-                        }
-                    }
-
-                    // 如果周围超过60%是主体，这个像素也加入
-                    if (subjectNeighbors / totalNeighbors > 0.6) {
-                        newMask[idx] = 1;
+    for (let y = 1; y < height - 1; y++) {
+        for (let x = 1; x < width - 1; x++) {
+            const idx = y * width + x;
+            if (mask[idx]) {
+                newMask[idx] = 1;
+            } else {
+                let count = 0;
+                for (let dy = -1; dy <= 1; dy++) {
+                    for (let dx = -1; dx <= 1; dx++) {
+                        if (mask[(y+dy) * width + (x+dx)]) count++;
                     }
                 }
+                if (count >= 5) newMask[idx] = 1;
             }
         }
+    }
 
-        // 检查是否已达到边界
-        let reachedEdge = false;
-        for (let x = 0; x < width; x++) {
-            if (newMask[x] || newMask[(height - 1) * width + x]) {
-                reachedEdge = true;
-                break;
-            }
-        }
-        if (!reachedEdge) {
-            for (let y = 0; y < height; y++) {
-                if (newMask[y * width] || newMask[y * width + width - 1]) {
-                    reachedEdge = true;
-                    break;
-                }
-            }
-        }
-
-        // 如果已到达边界，停止扩展
-        if (reachedEdge && iter > 0) break;
-
-        // 更新蒙版
-        for (let i = 0; i < mask.length; i++) {
-            mask[i] = newMask[i];
-        }
+    for (let i = 0; i < mask.length; i++) {
+        mask[i] = newMask[i];
     }
 }
 
-// 计算颜色距离
 function colorDistance(c1, c2) {
     const dr = c1.r - c2.r;
     const dg = c1.g - c2.g;
@@ -447,7 +559,6 @@ function colorDistance(c1, c2) {
     return Math.sqrt(dr * dr + dg * dg + db * db);
 }
 
-// Hex转RGB
 function hexToRgb(hex) {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
     return result ? {
