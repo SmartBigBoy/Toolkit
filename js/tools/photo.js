@@ -289,6 +289,8 @@ async function applyBackgroundToCanvas() {
 
 // 传统算法 - 完全重写，更激进的边缘处理
 async function convertWithTraditionalAlgorithm() {
+    const targetSize = photoSizes[selectedSize];
+    
     // 如果选择保持原色，直接裁剪尺寸
     if (selectedBgName === 'keep') {
         const canvas = document.createElement('canvas');
