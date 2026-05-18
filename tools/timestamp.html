@@ -131,18 +131,29 @@
         .convert-btn:hover { box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4); }
         .date-inputs {
             display: grid;
-            grid-template-columns: repeat(6, 1fr);
-            gap: 8px;
+            grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr;
+            gap: 6px;
             margin-bottom: 12px;
         }
         .date-inputs input {
-            padding: 10px 8px;
+            padding: 10px 4px;
             border: 1px solid #e5e7eb;
             border-radius: 10px;
-            font-size: 14px;
+            font-size: 12px;
             text-align: center;
+            min-width: 0;
         }
         .date-inputs input:focus { outline: none; border-color: #f97316; }
+        .date-inputs .input-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .date-inputs .input-label {
+            font-size: 11px;
+            color: #9ca3af;
+            margin-bottom: 4px;
+        }
         .result-display {
             background: #f3f4f6;
             border-radius: 12px;
@@ -171,6 +182,29 @@
         .footer-link a:hover { color: #f97316; }
         @media (max-width: 480px) {
             .date-inputs { grid-template-columns: repeat(3, 1fr); }
+        }
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+        .input-label {
+            font-size: 11px;
+            color: #94a3b8;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            text-align: center;
+            background: white;
+        }
+        .input-group input:focus {
+            outline: none;
+            border-color: #8b5cf6;
         }
     </style>
 </head>
@@ -237,12 +271,30 @@
                         <span>日期 → 时间戳</span>
                     </div>
                     <div class="date-inputs">
-                        <input type="number" id="year" placeholder="年" value="2025">
-                        <input type="number" id="month" placeholder="月" value="1">
-                        <input type="number" id="day" placeholder="日" value="1">
-                        <input type="number" id="hour" placeholder="时" value="0">
-                        <input type="number" id="minute" placeholder="分" value="0">
-                        <input type="number" id="second" placeholder="秒" value="0">
+                        <div class="input-group">
+                            <span class="input-label">年</span>
+                            <input type="number" id="year" value="2025">
+                        </div>
+                        <div class="input-group">
+                            <span class="input-label">月</span>
+                            <input type="number" id="month" value="1">
+                        </div>
+                        <div class="input-group">
+                            <span class="input-label">日</span>
+                            <input type="number" id="day" value="1">
+                        </div>
+                        <div class="input-group">
+                            <span class="input-label">时</span>
+                            <input type="number" id="hour" value="0">
+                        </div>
+                        <div class="input-group">
+                            <span class="input-label">分</span>
+                            <input type="number" id="minute" value="0">
+                        </div>
+                        <div class="input-group">
+                            <span class="input-label">秒</span>
+                            <input type="number" id="second" value="0">
+                        </div>
                     </div>
                     <button class="convert-btn" onclick="dateToTimestamp()">
                         <i class="fas fa-pen"></i>
