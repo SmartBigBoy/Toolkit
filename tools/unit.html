@@ -3,44 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>单位换算 - 在线工具箱</title>
-    <meta name="description" content="在线工具箱提供 JSON格式化、时间戳转换、Base64编码、颜色拾取器、二维码生成等实用工具，无需注册，完全免费。">
-    <meta name="keywords" content="在线工具,JSON格式化,时间戳转换,Base64编码,二维码生成,颜色转换,URL编码,工具箱">
+    <title>单位换算 - TOOLKIT.SKIN</title>
+    <meta name="description" content="在线单位换算工具，支持长度、重量、温度、压力、体积、速度、时间、功率等单位之间的相互转换，无需注册，完全免费。">
+    <meta name="keywords" content="单位换算,长度转换,重量转换,温度转换,在线工具">
     <meta name="author" content="TOOLKIT.SKIN">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://toolkit.skin/tools/unit.html">
-    <meta property="og:title" content="单位换算 - 在线工具箱">
-    <meta property="og:description" content="免费在线工具箱，提供多种实用工具，包括JSON格式化、时间戳转换、Base64编码等。">
+    <meta property="og:title" content="单位换算">
+    <meta property="og:description" content="在线单位换算工具，支持多种单位之间的相互转换。">
     <meta property="og:url" content="https://toolkit.skin/tools/unit.html">
     <meta property="og:type" content="website">
-    <meta property="og:site_name" content="TOOLKIT.SKIN 在线工具箱">
     <meta name="twitter:card" content="summary">
-    <meta name="twitter:title" content="单位换算 - 在线工具箱">
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6560822080596473" crossorigin="anonymous"></script>
+</head>
 <body>
+
     <header class="header">
         <div class="container">
             <a href="../index.html" class="logo">
                 <i class="fas fa-wrench"></i>
                 <h1>在线工具箱</h1>
             </a>
+            <div class="search-box">
+                <input type="text" id="search" placeholder="搜索工具...">
+                <i class="fas fa-search"></i>
+            </div>
         </div>
     </header>
 
     <main class="main">
         <div class="container">
-            <div class="unit-container">
-                <div class="unit-header">
-                    <h2><i class="fas fa-ruler"></i> 单位换算工具</h2>
-                    <p>常用单位之间的相互转换</p>
+            <div class="tool-container">
+                <div class="color-header">
+                    <div class="color-title">
+                        <i class="fas fa-ruler-combined"></i>
+                        <h1>单位换算工具</h1>
+                    </div>
+                    <p class="color-desc">常用单位之间的相互转换，支持长度、重量、温度等</p>
                 </div>
 
-                <div class="unit-body">
-                    <div class="category-section">
-                        <div class="category-label">
-                            <i class="fas fa-th-large"></i> 选择换算类别
+                <div class="color-content">
+                    <!-- 选择类别区块 -->
+                    <div class="color-section">
+                        <div class="section-title">
+                            <i class="fas fa-th-large"></i>
+                            <span>选择换算类别</span>
                         </div>
                         <select id="unitCategory" class="category-select" onchange="updateUnits()">
                             <option value="length">长度</option>
@@ -54,38 +63,43 @@
                         </select>
                     </div>
 
-                    <div class="conversion-block">
-                        <div class="block-title">
-                            <i class="fas fa-exchange-alt"></i> 单位转换
+                    <!-- 单位转换区块 -->
+                    <div class="color-section">
+                        <div class="section-title">
+                            <i class="fas fa-exchange-alt"></i>
+                            <span>单位转换</span>
                         </div>
-                        
-                        <div class="convert-row">
-                            <div class="unit-item">
+                        <div class="format-grid">
+                            <div class="format-item">
                                 <label>源单位</label>
-                                <input type="number" id="inputValue" class="unit-input" value="1" min="0" step="any">
+                                <input type="number" id="inputValue" class="unit-input" value="1" min="0" step="any" placeholder="输入数值">
                                 <select id="fromUnit" class="unit-select"></select>
                             </div>
-                            
-                            <button class="swap-btn" onclick="swapUnits()" title="互换单位">
-                                <i class="fas fa-exchange-alt"></i>
-                            </button>
-                            
-                            <div class="unit-item">
+                            <div class="format-item">
                                 <label>目标单位</label>
                                 <input type="number" id="targetValue" class="unit-input" readonly placeholder="---">
                                 <select id="toUnit" class="unit-select"></select>
                             </div>
                         </div>
-
-                        <button class="action-btn" onclick="convertUnit()">
-                            <i class="fas fa-calculator"></i> 开始转换
+                        <button class="action-btn full" onclick="convertUnit()">
+                            <i class="fas fa-sync-alt"></i>
+                            <span>开始转换</span>
                         </button>
+                    </div>
 
-                        <div id="unitResult" class="result-area" style="display: none;">
-                            <div class="result-label">换算结果</div>
-                            <div class="result-value" id="resultValue"></div>
+                    <!-- 转换结果区块 -->
+                    <div class="color-section" id="resultSection" style="display: none;">
+                        <div class="section-title">
+                            <i class="fas fa-check-circle"></i>
+                            <span>换算结果</span>
+                        </div>
+                        <div class="preview-box">
+                            <div class="preview-color" id="resultDisplay">1</div>
+                        </div>
+                        <div class="copy-actions">
                             <button class="copy-btn" onclick="copyResult()">
-                                <i class="fas fa-copy"></i> 复制结果
+                                <i class="fas fa-copy"></i>
+                                <span>复制结果</span>
                             </button>
                         </div>
                     </div>
@@ -96,10 +110,32 @@
 
     <footer class="footer">
         <div class="container">
-            <p>© 2025 在线工具箱 | 简洁高效的工具集合</p>
+            <p><a href="../index.html">首页</a> | <a href="../disclaimer.html">免责声明</a></p>
+            <p>© 2025 TOOLKIT.SKIN | 简洁高效的工具集合</p>
         </div>
     </footer>
 
+    <div class="toast" id="toast"></div>
+
     <script src="../js/tools/unit.js"></script>
+    <script>
+        function copyResult() {
+            const result = document.getElementById('targetValue').value;
+            if (result) {
+                navigator.clipboard.writeText(result).then(() => {
+                    showToast('已复制到剪贴板');
+                });
+            }
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2000);
+        }
+    </script>
 </body>
 </html>

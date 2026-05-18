@@ -3,79 +3,97 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>汇率换算 - 在线工具箱</title>
-    <meta name="description" content="在线工具箱提供 JSON格式化、时间戳转换、Base64编码、颜色拾取器、二维码生成等实用工具，无需注册，完全免费。">
-    <meta name="keywords" content="在线工具,JSON格式化,时间戳转换,Base64编码,二维码生成,颜色转换,URL编码,工具箱">
+    <title>汇率换算 - TOOLKIT.SKIN</title>
+    <meta name="description" content="在线汇率换算工具，实时汇率，支持多种货币之间的相互转换，无需注册，完全免费。">
+    <meta name="keywords" content="汇率换算,货币转换,在线汇率,外汇换算,在线工具">
     <meta name="author" content="TOOLKIT.SKIN">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://toolkit.skin/tools/currency.html">
-    <meta property="og:title" content="汇率换算 - 在线工具箱">
-    <meta property="og:description" content="免费在线工具箱，提供多种实用工具，包括JSON格式化、时间戳转换、Base64编码等。">
+    <meta property="og:title" content="汇率换算">
+    <meta property="og:description" content="在线汇率换算工具，实时汇率，支持多种货币。">
     <meta property="og:url" content="https://toolkit.skin/tools/currency.html">
     <meta property="og:type" content="website">
-    <meta property="og:site_name" content="TOOLKIT.SKIN 在线工具箱">
     <meta name="twitter:card" content="summary">
-    <meta name="twitter:title" content="汇率换算 - 在线工具箱">
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6560822080596473" crossorigin="anonymous"></script>
+</head>
 <body>
+
     <header class="header">
         <div class="container">
             <a href="../index.html" class="logo">
                 <i class="fas fa-wrench"></i>
                 <h1>在线工具箱</h1>
             </a>
+            <div class="search-box">
+                <input type="text" id="search" placeholder="搜索工具...">
+                <i class="fas fa-search"></i>
+            </div>
         </div>
     </header>
 
     <main class="main">
         <div class="container">
-            <div class="currency-container">
-                <div class="currency-header">
-                    <h2><i class="fas fa-coins"></i> 汇率换算工具</h2>
-                    <p>实时汇率换算，支持多种货币</p>
+            <div class="tool-container">
+                <div class="color-header">
+                    <div class="color-title">
+                        <i class="fas fa-coins"></i>
+                        <h1>汇率换算工具</h1>
+                    </div>
+                    <p class="color-desc">实时汇率换算，支持多种世界货币</p>
                 </div>
 
-                <div class="currency-body">
-                    <div class="rate-hint">
-                        <i class="fas fa-info-circle" style="color: #8b5cf6; margin-right: 8px;"></i>
-                        💡 如果网络连接正常，您将看到实时汇率；如果离线，则使用离线前保存的参考汇率。
+                <div class="color-content">
+                    <!-- 汇率提示区块 -->
+                    <div class="color-section">
+                        <div class="section-title">
+                            <i class="fas fa-info-circle"></i>
+                            <span>汇率说明</span>
+                        </div>
+                        <div class="rate-hint">
+                            💡 如果网络连接正常，您将看到实时汇率；如果离线，则使用离线前保存的参考汇率。
+                        </div>
                     </div>
 
-                    <div class="conversion-block">
-                        <div class="block-title">
-                            <i class="fas fa-exchange-alt"></i> 货币兑换
+                    <!-- 货币兑换区块 -->
+                    <div class="color-section">
+                        <div class="section-title">
+                            <i class="fas fa-exchange-alt"></i>
+                            <span>货币兑换</span>
                         </div>
-                        
-                        <div class="convert-row">
-                            <div class="currency-item">
+                        <div class="format-grid">
+                            <div class="format-item">
                                 <label>源货币</label>
-                                <input type="number" id="amount" class="currency-input" value="1" min="0" step="0.01">
-                                <select id="fromCurrency" class="currency-select"></select>
+                                <input type="number" id="amount" class="unit-input" value="1" min="0" step="0.01" placeholder="输入金额">
+                                <select id="fromCurrency" class="unit-select"></select>
                             </div>
-                            
-                            <button class="swap-btn" onclick="swapCurrencies()" title="互换货币">
-                                <i class="fas fa-exchange-alt"></i>
-                            </button>
-                            
-                            <div class="currency-item">
+                            <div class="format-item">
                                 <label>目标货币</label>
-                                <input type="number" id="targetAmount" class="currency-input" readonly placeholder="---">
-                                <select id="toCurrency" class="currency-select"></select>
+                                <input type="number" id="targetAmount" class="unit-input" readonly placeholder="---">
+                                <select id="toCurrency" class="unit-select"></select>
                             </div>
                         </div>
-
-                        <button class="action-btn" onclick="convertCurrency()">
-                            <i class="fas fa-calculator"></i> 开始换算
+                        <button class="action-btn full" onclick="convertCurrency()">
+                            <i class="fas fa-sync-alt"></i>
+                            <span>开始换算</span>
                         </button>
+                    </div>
 
-                        <div id="currencyResult" class="result-area" style="display: none;">
-                            <div class="result-label">换算结果</div>
-                            <div class="result-value" id="resultValue"></div>
-                            <div class="result-rate" id="rateInfo"></div>
+                    <!-- 换算结果区块 -->
+                    <div class="color-section" id="currencyResult" style="display: none;">
+                        <div class="section-title">
+                            <i class="fas fa-check-circle"></i>
+                            <span>换算结果</span>
+                        </div>
+                        <div class="preview-box">
+                            <div class="preview-color" id="resultDisplay">1</div>
+                        </div>
+                        <div class="result-rate" id="rateInfo"></div>
+                        <div class="copy-actions">
                             <button class="copy-btn" onclick="copyResult()">
-                                <i class="fas fa-copy"></i> 复制结果
+                                <i class="fas fa-copy"></i>
+                                <span>复制结果</span>
                             </button>
                         </div>
                     </div>
@@ -86,10 +104,32 @@
 
     <footer class="footer">
         <div class="container">
-            <p>© 2025 在线工具箱 | 简洁高效的工具集合</p>
+            <p><a href="../index.html">首页</a> | <a href="../disclaimer.html">免责声明</a></p>
+            <p>© 2025 TOOLKIT.SKIN | 简洁高效的工具集合</p>
         </div>
     </footer>
 
+    <div class="toast" id="toast"></div>
+
     <script src="../js/tools/currency.js"></script>
+    <script>
+        function copyResult() {
+            const result = document.getElementById('targetAmount').value;
+            if (result) {
+                navigator.clipboard.writeText(result).then(() => {
+                    showToast('已复制到剪贴板');
+                });
+            }
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2000);
+        }
+    </script>
 </body>
 </html>
