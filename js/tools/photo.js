@@ -298,7 +298,18 @@ async function convertWithTraditionalAlgorithm() {
         canvas.height = targetSize.height;
         const ctx = canvas.getContext('2d');
         
-        ctx.drawImage(originalImage, 0, 0, targetSize.width, targetSize.height);
+        // 填充白色背景
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, targetSize.width, targetSize.height);
+        
+        // 计算缩放比例，保持宽高比并填满（裁剪多余部分）
+        const scale = Math.max(targetSize.width / originalImage.width, targetSize.height / originalImage.height);
+        const scaledWidth = originalImage.width * scale;
+        const scaledHeight = originalImage.height * scale;
+        const drawX = (targetSize.width - scaledWidth) / 2;
+        const drawY = (targetSize.height - scaledHeight) / 2;
+        
+        ctx.drawImage(originalImage, drawX, drawY, scaledWidth, scaledHeight);
         
         convertedCanvas = canvas;
         
