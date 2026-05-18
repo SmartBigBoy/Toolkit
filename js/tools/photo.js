@@ -127,8 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // 预加载模型
-    loadBackgroundRemovalModel();
+    // 模型将在用户点击"开始转换"时按需加载
 });
 
 function handlePhotoUpload(event) {
