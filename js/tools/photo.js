@@ -183,46 +183,43 @@ async function convertPhoto() {
     
     processing = true;
     updateConvertButton();
-    if (progressText) progressText.textContent = '正在 AI 分割，请稍候... 0%';
+    if (progressText) progressText.textContent = '正在处理，请稍候...';
 
     try {
-        // 确保模型已加载
-        if (!modelReady) {
-            const loaded = await loadBackgroundRemovalModel();
-            if (!loaded) {
-                throw new Error('AI 模型加载失败');
-            }
-        }
-
-        // 使用 @imgly/background-removal 进行 AI 抠图
-        const { removeBackground } = await import('https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.5/+esm');
-        
-        const resultBlob = await removeBackground(originalFile, {
-            model: 'small',       // 'small' 速度快，'medium' 更精准
-            publicPath: 'https://staticimgly.com/@imgly/background-removal-data/1.4.5/dist/',
-            output: {
-                format: 'image/png',
-                quality: 1,
-            },
-            progress: (key, current, total) => {
-                console.log(`[AI] ${key}: ${current}/${total}`);
-                if (total > 0) {
-                    const pct = Math.round(current / total * 100);
-                    if (progressText) progressText.textContent = `AI 分割中... ${pct}%`;
+        // 尝试 AI 分割（如果模型可用）
+        if (modelReady) {
+            if (progressText) progressText.textContent = 'AI 分割中... 0%';
+            
+            const { removeBackground } = await import('../../assets/bg-removal/dist/index.mjs');
+            
+            const resultBlob = await removeBackground(originalFile, {
+                model: 'small',
+                publicPath: '../../assets/bg-removal/',
+                output: {
+                    format: 'image/png',
+                    quality: 1,
+                },
+                progress: (key, current, total) => {
+                    if (total > 0) {
+                        const pct = Math.round(current / total * 100);
+                        if (progressText) progressText.textContent = `AI 分割中... ${pct}%`;
+                    }
                 }
-            }
-        });
+            });
 
-        bgRemovalBlob = resultBlob;
-        
-        // 应用背景色并生成目标尺寸
-        await applyBackgroundToCanvas();
+            bgRemovalBlob = resultBlob;
+            await applyBackgroundToCanvas();
+        } else {
+            // 模型未加载，直接使用传统算法
+            if (progressText) progressText.textContent = '使用传统算法处理...';
+            await convertWithTraditionalAlgorithm();
+        }
 
         if (progressText) progressText.textContent = '转换完成 ✓';
 
     } catch (error) {
-        console.error('AI 分割失败，回退到传统算法:', error);
-        if (progressText) progressText.textContent = 'AI 分割失败，使用传统算法...';
+        console.error('处理失败，使用传统算法:', error);
+        if (progressText) progressText.textContent = '使用传统算法处理...';
         
         // 回退到传统算法
         await convertWithTraditionalAlgorithm();
