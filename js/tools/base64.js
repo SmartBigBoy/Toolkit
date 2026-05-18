@@ -68,7 +68,7 @@ function handleImageUpload(event) {
         
         const preview = document.getElementById('imagePreview');
         preview.innerHTML = `
-            <img src="${imageBase64}" alt="预览" style="max-width: 300px; max-height: 300px;">
+            <img src="${imageBase64}" alt="预览">
             <p>文件大小: ${(file.size / 1024).toFixed(2)} KB</p>
             <p>Base64长度: ${imageBase64.length} 字符</p>
         `;
