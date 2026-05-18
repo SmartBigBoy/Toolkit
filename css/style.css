@@ -815,7 +815,7 @@ body {
 
 /* 图片转Base64区域特殊布局 */
 .tool-container.image-section {
-    max-width: 700px;
+    max-width: 900px;
     margin: 24px auto 0;
     padding: 24px 28px;
 }
@@ -849,50 +849,31 @@ body {
 
 .image-actions .action-btn {
     flex: 1;
-    min-width: 120px;
-    padding: 12px 20px;
+    min-width: 140px;
+    max-width: 200px;
+    padding: 10px 20px;
     border: none;
     border-radius: 10px;
     cursor: pointer;
     font-size: 14px;
-    font-weight: 500;
+    font-weight: 600;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
-    transition: all 0.3s ease;
-}
-
-.image-actions .action-btn.primary {
-    background: linear-gradient(135deg, #f97316, #fb923c);
+    transition: all 0.2s;
+    background: var(--primary-gradient);
     color: white;
-    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
 }
 
-.image-actions .action-btn.primary:hover {
-    background: linear-gradient(135deg, #ea580c, #f97316);
+.image-actions .action-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(249, 115, 22, 0.4);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
 }
 
-.image-actions .action-btn:not(.primary) {
-    background: linear-gradient(135deg, #6366f1, #8b5cf6);
-    color: white;
-    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
-}
-
-.image-actions .action-btn:not(.primary):hover:not(:disabled) {
-    background: linear-gradient(135deg, #4f46e5, #6366f1);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
-}
-
-.image-actions .action-btn:disabled {
-    background: #6b7280;
-    cursor: not-allowed;
-    opacity: 0.6;
-    box-shadow: none;
-    transform: none;
+.image-actions .action-btn:active {
+    transform: scale(0.98);
 }
 
 .image-actions .action-btn i {

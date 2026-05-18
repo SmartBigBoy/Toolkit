@@ -90,6 +90,6 @@ function copyBase64Image() {
     if (!imageBase64) return;
     
     navigator.clipboard.writeText(imageBase64).then(() => {
-        alert('Base64图片已复制');
+        alert('Base64结果已复制');
     });
 }
