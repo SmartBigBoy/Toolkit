@@ -4,189 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>颜色转换 - 在线工具箱</title>
+    <meta name="description" content="在线工具箱提供 JSON格式化、时间戳转换、Base64编码、颜色拾取器、二维码生成等实用工具，无需注册，完全免费。">
+    <meta name="keywords" content="在线工具,JSON格式化,时间戳转换,Base64编码,二维码生成,颜色转换,URL编码,工具箱">
+    <meta name="author" content="TOOLKIT.SKIN">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://toolkit.skin/tools/color.html">
+    <meta property="og:title" content="颜色转换 - 在线工具箱">
+    <meta property="og:description" content="免费在线工具箱，提供多种实用工具，包括JSON格式化、时间戳转换、Base64编码等。">
+    <meta property="og:url" content="https://toolkit.skin/tools/color.html">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="TOOLKIT.SKIN 在线工具箱">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="颜色转换 - 在线工具箱">
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <style>
-        .color-container {
-            max-width: 650px;
-            margin: 0 auto;
-            background: var(--bg-secondary);
-            border-radius: 20px;
-            box-shadow: var(--shadow-lg);
-            overflow: hidden;
-            border: 1px solid var(--border);
-        }
-
-        .color-header {
-            padding: 28px 32px;
-            background: linear-gradient(135deg, #ec4899 0%, #f472b6 100%);
-            color: white;
-            text-align: center;
-        }
-
-        .color-header h2 {
-            font-size: 24px;
-            font-weight: 700;
-            margin: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-        }
-
-        .color-header p {
-            margin: 8px 0 0;
-            font-size: 14px;
-            opacity: 0.9;
-        }
-
-        .color-body {
-            padding: 32px;
-        }
-
-        .picker-section {
-            margin-bottom: 28px;
-        }
-
-        .input-title {
-            font-size: 15px;
-            font-weight: 600;
-            color: var(--text-primary);
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .picker-area {
-            text-align: center;
-            padding: 24px;
-            background: var(--bg-tertiary);
-            border-radius: 16px;
-            border: 2px dashed var(--border);
-        }
-
-        .picker-area input[type="color"] {
-            width: 100px;
-            height: 100px;
-            border: none;
-            border-radius: 12px;
-            cursor: pointer;
-            background: none;
-        }
-
-        .picker-area input[type="color"]::-webkit-color-swatch-wrapper {
-            padding: 4px;
-        }
-
-        .picker-area input[type="color"]::-webkit-color-swatch {
-            border-radius: 8px;
-            border: 2px solid var(--border);
-        }
-
-        .format-section {
-            margin-bottom: 28px;
-        }
-
-        .format-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 16px;
-        }
-
-        .format-item {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .format-item label {
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-
-        .format-item input {
-            padding: 14px 16px;
-            border: 2px solid var(--border);
-            border-radius: 10px;
-            font-size: 14px;
-            background: var(--bg-primary);
-            transition: all 0.2s;
-            font-family: 'SF Mono', 'Monaco', 'Menlo', monospace;
-        }
-
-        .format-item input:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
-            background: var(--bg-secondary);
-        }
-
-        .preview-section {
-            margin-bottom: 28px;
-        }
-
-        .color-preview {
-            height: 180px;
-            border-radius: 16px;
-            box-shadow: var(--shadow-md);
-            border: 4px solid var(--bg-secondary);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-
-        .actions-section {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 16px;
-        }
-
-        .action-btn {
-            padding: 16px;
-            border: none;
-            border-radius: 12px;
-            font-size: 15px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            background: var(--bg-tertiary);
-            color: var(--text-primary);
-            border: 1px solid var(--border);
-        }
-
-        .action-btn:hover {
-            background: var(--border);
-            transform: translateY(-2px);
-        }
-
-        .action-btn:active {
-            transform: translateY(0);
-        }
-
-        @media (max-width: 600px) {
-            .color-body {
-                padding: 20px;
-            }
-
-            .format-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .actions-section {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
-</head>
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6560822080596473" crossorigin="anonymous"></script>
 <body>
     <header class="header">
         <div class="container">
