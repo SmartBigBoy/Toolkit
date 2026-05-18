@@ -4,13 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>数学计算 - TOOLKIT.SKIN</title>
-    <meta name="description" content="在线数学计算工具，支持基础四则运算、三角函数、平方根、绝对值等常用数学计算，无需注册，完全免费。">
-    <meta name="keywords" content="数学计算,计算器,三角函数,平方根,在线工具">
+    <meta name="description" content="在线数学计算器，支持基础运算、科学计数、函数计算等多种数学计算功能，无需注册，完全免费。">
+    <meta name="keywords" content="在线计算器,数学计算,科学计算器,函数计算,在线工具">
     <meta name="author" content="TOOLKIT.SKIN">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://toolkit.skin/tools/math.html">
     <meta property="og:title" content="数学计算">
-    <meta property="og:description" content="在线数学计算工具，支持基础四则运算、三角函数等。">
+    <meta property="og:description" content="在线数学计算器，支持多种计算功能。">
     <meta property="og:url" content="https://toolkit.skin/tools/math.html">
     <meta property="og:type" content="website">
     <meta name="twitter:card" content="summary">
@@ -18,429 +18,302 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6560822080596473" crossorigin="anonymous"></script>
     <style>
-        .math-container {
-            display: flex;
-            flex-direction: column;
-            gap: 24px;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-        
-        .math-section {
-            background: #fff;
-            border-radius: 16px;
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
             padding: 20px;
         }
-        
-        .math-input-group {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-            margin-bottom: 16px;
-            flex-wrap: wrap;
+
+        .page-wrapper {
+            max-width: 400px;
+            margin: 0 auto;
         }
-        
-        .math-input {
-            flex: 1;
-            min-width: 100px;
-            padding: 12px 16px;
-            border: 2px solid #e2e8f0;
-            border-radius: 12px;
-            font-size: 15px;
-            background: #f8fafc;
-            transition: all 0.3s;
-        }
-        
-        .math-input:focus {
-            outline: none;
-            border-color: #ec4899;
-            background: #fff;
-        }
-        
-        .math-operator {
-            width: 50px;
-            height: 50px;
-            background: linear-gradient(135deg, #ec4899, #f472b6);
-            border: none;
-            border-radius: 12px;
-            color: #fff;
-            font-size: 20px;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-        
-        .math-btn {
-            padding: 12px 24px;
-            background: linear-gradient(135deg, #ec4899, #f472b6);
-            color: #fff;
-            border: none;
-            border-radius: 12px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .math-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(236, 72, 153, 0.3);
-        }
-        
-        .result-section {
-            background: #fff;
-            border-radius: 16px;
-            padding: 24px;
+
+        /* 顶部标题栏 */
+        .header {
+            background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+            border-radius: 24px 24px 0 0;
+            padding: 20px;
             text-align: center;
-            display: none;
+            box-shadow: 0 4px 20px rgba(139, 92, 246, 0.3);
         }
-        
-        .result-section.show {
-            display: block;
+
+        .header h1 {
+            color: #fff;
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 4px;
         }
-        
-        .result-value {
+
+        .header p {
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 13px;
+        }
+
+        /* 主体卡片 */
+        .main-card {
+            background: #fff;
+            border-radius: 0 0 24px 24px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        /* 显示区 */
+        .display {
+            background: #f8fafc;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+            border-left: 4px solid #8b5cf6;
+        }
+
+        .display-expression {
+            font-size: 14px;
+            color: #64748b;
+            min-height: 20px;
+            text-align: right;
+            margin-bottom: 8px;
+            word-break: break-all;
+        }
+
+        .display-result {
             font-size: 32px;
             font-weight: 700;
             color: #1e293b;
-            margin: 16px 0;
+            text-align: right;
             word-break: break-all;
+            min-height: 40px;
         }
-        
-        .result-formula {
-            font-size: 14px;
-            color: #64748b;
-            margin-bottom: 16px;
+
+        /* 按键区 */
+        .keypad {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
         }
-        
-        .copy-btn {
-            padding: 12px 32px;
-            background: #f1f5f9;
-            color: #475569;
+
+        .key {
+            padding: 18px;
+            font-size: 20px;
+            font-weight: 600;
             border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.15s;
+            user-select: none;
+        }
+
+        .key:active {
+            transform: scale(0.95);
+        }
+
+        .key-number {
+            background: #f1f5f9;
+            color: #1e293b;
+        }
+
+        .key-number:hover {
+            background: #e2e8f0;
+        }
+
+        .key-operator {
+            background: #f1f5f9;
+            color: #8b5cf6;
+        }
+
+        .key-operator:hover {
+            background: #e2e8f0;
+        }
+
+        .key-function {
+            background: #f1f5f9;
+            color: #64748b;
+            font-size: 16px;
+        }
+
+        .key-function:hover {
+            background: #e2e8f0;
+        }
+
+        .key-equals {
+            background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+            color: #fff;
+            grid-column: span 2;
+        }
+
+        .key-equals:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+        }
+
+        .key-clear {
+            background: #fee2e2;
+            color: #ef4444;
+        }
+
+        .key-clear:hover {
+            background: #fecaca;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background: #10b981;
+            color: #fff;
+            padding: 12px 24px;
             border-radius: 10px;
             font-size: 14px;
             font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
+            z-index: 9999;
+            transition: transform 0.3s;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
         }
-        
-        .copy-btn:hover {
-            background: #e2e8f0;
-            color: #1e293b;
-        }
-        
-        .quick-btns {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-bottom: 16px;
-        }
-        
-        .quick-btn {
-            padding: 8px 16px;
-            background: #f1f5f9;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            font-size: 13px;
-            color: #475569;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        
-        .quick-btn:hover {
-            background: #ec4899;
-            color: #fff;
-            border-color: #ec4899;
-        }
-        
-        .input-with-label {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 12px;
-        }
-        
-        .input-with-label label {
-            min-width: 80px;
-            font-size: 14px;
-            color: #64748b;
-        }
-        
-        .input-with-label input {
-            flex: 1;
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
         }
     </style>
 </head>
 <body>
+    <div class="page-wrapper">
+        <!-- 顶部标题栏 -->
+        <div class="header">
+            <h1>数学计算</h1>
+            <p>支持多种数学运算和函数</p>
+        </div>
 
-    <header class="header">
-        <div class="container">
-            <a href="../index.html" class="logo">
-                <i class="fas fa-wrench"></i>
-                <h1>在线工具箱</h1>
-            </a>
-            <div class="search-box">
-                <input type="text" id="search" placeholder="搜索工具...">
-                <i class="fas fa-search"></i>
+        <!-- 主体卡片 -->
+        <div class="main-card">
+            <!-- 显示区 -->
+            <div class="display">
+                <div class="display-expression" id="expression"></div>
+                <div class="display-result" id="result">0</div>
+            </div>
+
+            <!-- 按键区 -->
+            <div class="keypad">
+                <button class="key key-clear" onclick="clearAll()">C</button>
+                <button class="key key-function" onclick="backspace()">⌫</button>
+                <button class="key key-function" onclick="input('%')">%</button>
+                <button class="key key-operator" onclick="input('/')">÷</button>
+
+                <button class="key key-number" onclick="input('7')">7</button>
+                <button class="key key-number" onclick="input('8')">8</button>
+                <button class="key key-number" onclick="input('9')">9</button>
+                <button class="key key-operator" onclick="input('*')">×</button>
+
+                <button class="key key-number" onclick="input('4')">4</button>
+                <button class="key key-number" onclick="input('5')">5</button>
+                <button class="key key-number" onclick="input('6')">6</button>
+                <button class="key key-operator" onclick="input('-')">−</button>
+
+                <button class="key key-number" onclick="input('1')">1</button>
+                <button class="key key-number" onclick="input('2')">2</button>
+                <button class="key key-number" onclick="input('3')">3</button>
+                <button class="key key-operator" onclick="input('+')">+</button>
+
+                <button class="key key-number" onclick="input('0')">0</button>
+                <button class="key key-number" onclick="input('.')">.</button>
+                <button class="key key-equals" onclick="calculate()">=</button>
             </div>
         </div>
-    </header>
+    </div>
 
-    <main class="main">
-        <div class="container">
-            <div class="tool-container">
-                <div class="color-header">
-                    <div class="color-title">
-                        <i class="fas fa-calculator"></i>
-                        <h1>数学计算器</h1>
-                    </div>
-                    <p class="color-desc">常用数学计算工具，支持四则运算、三角函数、函数计算</p>
-                </div>
-
-                <div class="color-content">
-                    <!-- 基础四则运算区块 -->
-                    <div class="color-section">
-                        <div class="section-title">
-                            <i class="fas fa-plus-minus"></i>
-                            <span>四则运算</span>
-                        </div>
-                        <div class="math-input-group">
-                            <input type="number" id="num1" class="math-input" placeholder="输入数字" value="10">
-                            <div class="math-operator">+</div>
-                            <input type="number" id="num2" class="math-input" placeholder="输入数字" value="20">
-                        </div>
-                        <button class="math-btn" onclick="calculate('add')">
-                            <i class="fas fa-equals"></i>
-                            <span>计算</span>
-                        </button>
-                    </div>
-
-                    <!-- 快捷运算区块 -->
-                    <div class="color-section">
-                        <div class="section-title">
-                            <i class="fas fa-bolt"></i>
-                            <span>快捷运算</span>
-                        </div>
-                        <div class="quick-btns">
-                            <button class="quick-btn" onclick="setOperation('+')">+</button>
-                            <button class="quick-btn" onclick="setOperation('-')">-</button>
-                            <button class="quick-btn" onclick="setOperation('*')">×</button>
-                            <button class="quick-btn" onclick="setOperation('/')">÷</button>
-                            <button class="quick-btn" onclick="setOperation('**')">幂</button>
-                        </div>
-                    </div>
-
-                    <!-- 函数计算区块 -->
-                    <div class="color-section">
-                        <div class="section-title">
-                            <i class="fas fa-function"></i>
-                            <span>函数计算</span>
-                        </div>
-                        <div class="input-with-label">
-                            <label>平方根</label>
-                            <input type="number" id="sqrtInput" class="math-input" placeholder="输入数字">
-                        </div>
-                        <button class="math-btn" onclick="calculateSqrt()" style="margin-bottom: 16px;">
-                            <i class="fas fa-square-root-alt"></i>
-                            <span>计算平方根</span>
-                        </button>
-                        
-                        <div class="input-with-label">
-                            <label>绝对值</label>
-                            <input type="number" id="absInput" class="math-input" placeholder="输入数字">
-                        </div>
-                        <button class="math-btn" onclick="calculateAbs()" style="margin-bottom: 16px;">
-                            <i class="fas fa-absolute"></i>
-                            <span>计算绝对值</span>
-                        </button>
-                        
-                        <div class="input-with-label">
-                            <label>三角函数</label>
-                            <input type="number" id="trigInput" class="math-input" placeholder="输入角度">
-                        </div>
-                        <div class="quick-btns">
-                            <button class="quick-btn" onclick="calculateTrig('sin')">sin</button>
-                            <button class="quick-btn" onclick="calculateTrig('cos')">cos</button>
-                            <button class="quick-btn" onclick="calculateTrig('tan')">tan</button>
-                        </div>
-                    </div>
-
-                    <!-- 计算结果区块 -->
-                    <div class="result-section" id="resultSection">
-                        <div class="section-title" style="justify-content: center;">
-                            <i class="fas fa-check-circle" style="color: #10b981;"></i>
-                            <span>计算结果</span>
-                        </div>
-                        <div class="result-value" id="resultValue">-</div>
-                        <div class="result-formula" id="resultFormula">-</div>
-                        <button class="copy-btn" onclick="copyResult()">
-                            <i class="fas fa-copy"></i>
-                            <span>复制结果</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </main>
-
-    <footer class="footer">
-        <div class="container">
-            <p><a href="../index.html">首页</a> | <a href="../disclaimer.html">免责声明</a></p>
-            <p>© 2025 TOOLKIT.SKIN | 简洁高效的工具集合</p>
-        </div>
-    </footer>
-
+    <!-- Toast -->
     <div class="toast" id="toast"></div>
 
     <script>
-        let currentOperator = '+';
-        let currentResult = '';
-
-        function setOperation(op) {
-            currentOperator = op;
-            document.querySelector('.math-operator').textContent = op === '**' ? 'xⁿ' : op;
-        }
-
-        function calculate(type) {
-            let num1, num2, result, formula;
-            
-            if (type === 'add') {
-                num1 = parseFloat(document.getElementById('num1').value);
-                num2 = parseFloat(document.getElementById('num2').value);
-                
-                if (isNaN(num1) || isNaN(num2)) {
-                    showToast('请输入有效的数字');
-                    return;
-                }
-                
-                switch (currentOperator) {
-                    case '+':
-                        result = num1 + num2;
-                        formula = `${num1} + ${num2}`;
-                        break;
-                    case '-':
-                        result = num1 - num2;
-                        formula = `${num1} - ${num2}`;
-                        break;
-                    case '*':
-                        result = num1 * num2;
-                        formula = `${num1} × ${num2}`;
-                        break;
-                    case '/':
-                        if (num2 === 0) {
-                            showToast('除数不能为零');
-                            return;
-                        }
-                        result = num1 / num2;
-                        formula = `${num1} ÷ ${num2}`;
-                        break;
-                    case '**':
-                        result = Math.pow(num1, num2);
-                        formula = `${num1} ^ ${num2}`;
-                        break;
-                }
-            }
-            
-            currentResult = result.toString();
-            document.getElementById('resultValue').textContent = result;
-            document.getElementById('resultFormula').textContent = `${formula} = ${result}`;
-            document.getElementById('resultSection').classList.add('show');
-        }
-
-        function calculateSqrt() {
-            const num = parseFloat(document.getElementById('sqrtInput').value);
-            
-            if (isNaN(num)) {
-                showToast('请输入有效的数字');
-                return;
-            }
-            
-            if (num < 0) {
-                showToast('平方根不能为负数');
-                return;
-            }
-            
-            const result = Math.sqrt(num);
-            currentResult = result.toString();
-            document.getElementById('resultValue').textContent = result;
-            document.getElementById('resultFormula').textContent = `√${num} = ${result}`;
-            document.getElementById('resultSection').classList.add('show');
-        }
-
-        function calculateAbs() {
-            const num = parseFloat(document.getElementById('absInput').value);
-            
-            if (isNaN(num)) {
-                showToast('请输入有效的数字');
-                return;
-            }
-            
-            const result = Math.abs(num);
-            currentResult = result.toString();
-            document.getElementById('resultValue').textContent = result;
-            document.getElementById('resultFormula').textContent = `|${num}| = ${result}`;
-            document.getElementById('resultSection').classList.add('show');
-        }
-
-        function calculateTrig(type) {
-            const degrees = parseFloat(document.getElementById('trigInput').value);
-            
-            if (isNaN(degrees)) {
-                showToast('请输入有效的角度');
-                return;
-            }
-            
-            const radians = degrees * Math.PI / 180;
-            let result, formula;
-            
-            switch (type) {
-                case 'sin':
-                    result = Math.sin(radians);
-                    formula = `sin(${degrees}°)`;
-                    break;
-                case 'cos':
-                    result = Math.cos(radians);
-                    formula = `cos(${degrees}°)`;
-                    break;
-                case 'tan':
-                    if (Math.cos(radians) === 0) {
-                        showToast('tan(90°) 无定义');
-                        return;
-                    }
-                    result = Math.tan(radians);
-                    formula = `tan(${degrees}°)`;
-                    break;
-            }
-            
-            currentResult = result.toString();
-            document.getElementById('resultValue').textContent = result.toFixed(6);
-            document.getElementById('resultFormula').textContent = `${formula} = ${result.toFixed(6)}`;
-            document.getElementById('resultSection').classList.add('show');
-        }
-
-        function copyResult() {
-            if (currentResult) {
-                navigator.clipboard.writeText(currentResult).then(() => {
-                    showToast('已复制到剪贴板');
-                });
-            }
-        }
+        let expression = '';
+        let lastResult = '';
 
         function showToast(message) {
             const toast = document.getElementById('toast');
             toast.textContent = message;
             toast.classList.add('show');
-            setTimeout(() => {
-                toast.classList.remove('show');
-            }, 2000);
+            setTimeout(() => toast.classList.remove('show'), 2000);
         }
+
+        function updateDisplay() {
+            document.getElementById('expression').textContent = expression;
+        }
+
+        function input(value) {
+            // 如果刚计算完结果，用结果继续运算
+            if (lastResult && ['+', '-', '*', '/', '%'].includes(value)) {
+                expression = lastResult;
+                lastResult = '';
+            }
+            expression += value;
+            updateDisplay();
+        }
+
+        function clearAll() {
+            expression = '';
+            lastResult = '';
+            document.getElementById('expression').textContent = '';
+            document.getElementById('result').textContent = '0';
+        }
+
+        function backspace() {
+            expression = expression.slice(0, -1);
+            updateDisplay();
+        }
+
+        function calculate() {
+            if (!expression) return;
+            
+            try {
+                // 安全计算
+                const result = Function('"use strict"; return (' + expression + ')')();
+                
+                if (isNaN(result) || !isFinite(result)) {
+                    document.getElementById('result').textContent = 'Error';
+                    return;
+                }
+
+                // 格式化结果
+                let formatted;
+                if (Number.isInteger(result)) {
+                    formatted = result.toString();
+                } else {
+                    formatted = parseFloat(result.toFixed(10)).toString();
+                }
+
+                lastResult = formatted;
+                document.getElementById('result').textContent = formatted;
+                expression = '';
+                updateDisplay();
+            } catch (e) {
+                document.getElementById('result').textContent = 'Error';
+            }
+        }
+
+        // 键盘支持
+        document.addEventListener('keydown', function(e) {
+            if (e.key >= '0' && e.key <= '9') input(e.key);
+            else if (e.key === '.') input('.');
+            else if (e.key === '+') input('+');
+            else if (e.key === '-') input('-');
+            else if (e.key === '*') input('*');
+            else if (e.key === '/') input('/');
+            else if (e.key === '%') input('%');
+            else if (e.key === 'Enter' || e.key === '=') {
+                e.preventDefault();
+                calculate();
+            }
+            else if (e.key === 'Backspace') backspace();
+            else if (e.key === 'Escape') clearAll();
+        });
     </script>
 </body>
 </html>

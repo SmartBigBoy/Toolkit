@@ -18,481 +18,433 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6560822080596473" crossorigin="anonymous"></script>
     <style>
-        .unit-container {
-            display: flex;
-            flex-direction: column;
-            gap: 24px;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-        
-        .category-section {
-            background: #fff;
-            border-radius: 16px;
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
             padding: 20px;
         }
-        
-        .category-select {
-            width: 100%;
-            padding: 14px 18px;
-            border: 2px solid #e2e8f0;
-            border-radius: 12px;
-            font-size: 16px;
+
+        .page-wrapper {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* 顶部标题栏 */
+        .header {
+            background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+            border-radius: 24px 24px 0 0;
+            padding: 24px 20px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(139, 92, 246, 0.3);
+        }
+
+        .header h1 {
+            color: #fff;
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .header p {
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 14px;
+        }
+
+        /* 主体卡片 */
+        .main-card {
+            background: #fff;
+            border-radius: 0 0 24px 24px;
+            padding: 24px 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        /* 类别选择区 */
+        .category-box {
             background: #f8fafc;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        
-        .category-select:focus {
-            outline: none;
-            border-color: #ec4899;
-            background: #fff;
-        }
-        
-        .conversion-section {
-            background: #fff;
             border-radius: 16px;
-            padding: 20px;
-        }
-        
-        .conversion-grid {
-            display: flex;
-            align-items: flex-end;
-            gap: 16px;
+            padding: 16px;
             margin-bottom: 20px;
         }
-        
-        .conversion-item {
-            flex: 1;
+
+        .category-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #334155;
+            margin-bottom: 12px;
         }
-        
-        .conversion-item label {
-            display: block;
-            font-size: 13px;
-            color: #64748b;
-            margin-bottom: 8px;
-            font-weight: 500;
+
+        .category-label i {
+            color: #8b5cf6;
         }
-        
-        .unit-input {
+
+        .category-select {
             width: 100%;
-            padding: 12px 16px;
+            padding: 14px 16px;
             border: 2px solid #e2e8f0;
             border-radius: 12px;
             font-size: 15px;
-            background: #f8fafc;
+            background: #fff;
+            color: #1e293b;
+            cursor: pointer;
             transition: all 0.3s;
-            box-sizing: border-box;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2364748b' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 16px center;
+            padding-right: 40px;
         }
-        
+
+        .category-select:focus {
+            outline: none;
+            border-color: #8b5cf6;
+        }
+
+        /* 转换区域 */
+        .conversion-box {
+            background: #f8fafc;
+            border-radius: 16px;
+            padding: 20px;
+            position: relative;
+            border-left: 4px solid #8b5cf6;
+        }
+
+        .conversion-grid {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 16px;
+            align-items: end;
+            margin-bottom: 20px;
+        }
+
+        .unit-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .unit-label {
+            font-size: 13px;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .unit-input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 16px;
+            background: #fff;
+            color: #1e293b;
+            transition: all 0.3s;
+        }
+
         .unit-input:focus {
             outline: none;
-            border-color: #ec4899;
-            background: #fff;
+            border-color: #8b5cf6;
         }
-        
+
         .unit-select {
             width: 100%;
             padding: 12px 16px;
             border: 2px solid #e2e8f0;
             border-radius: 12px;
             font-size: 14px;
-            background: #f8fafc;
+            background: #fff;
+            color: #1e293b;
             cursor: pointer;
             transition: all 0.3s;
-            margin-top: 8px;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2364748b' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 16px center;
+            padding-right: 40px;
         }
-        
+
         .unit-select:focus {
             outline: none;
-            border-color: #ec4899;
+            border-color: #8b5cf6;
         }
-        
-        .swap-icon {
-            font-size: 20px;
-            color: #94a3b8;
-            margin-bottom: 8px;
-            cursor: pointer;
-            transition: all 0.3s;
-            flex-shrink: 0;
-        }
-        
-        .swap-icon:hover {
-            color: #ec4899;
-            transform: rotate(180deg);
-        }
-        
-        .convert-btn {
-            width: 100%;
-            padding: 14px 24px;
-            background: linear-gradient(135deg, #ec4899, #f472b6);
-            color: #fff;
+
+        /* 交换按钮 */
+        .swap-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
             border: none;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: 600;
+            color: #fff;
+            font-size: 18px;
             cursor: pointer;
-            transition: all 0.3s;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+            margin-bottom: 2px;
         }
-        
+
+        .swap-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 16px rgba(139, 92, 246, 0.4);
+        }
+
+        .swap-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* 转换按钮 */
+        .convert-btn {
+            width: 100%;
+            padding: 16px 24px;
+            background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+            border: none;
+            border-radius: 14px;
+            color: #fff;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s;
+            box-shadow: 0 4px 16px rgba(139, 92, 246, 0.3);
+        }
+
         .convert-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(236, 72, 153, 0.3);
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
         }
-        
+
         .convert-btn:active {
             transform: translateY(0);
         }
-        
-        .result-section {
-            background: #fff;
-            border-radius: 16px;
-            padding: 24px;
-            text-align: center;
-            display: none;
+
+        .convert-btn i {
+            font-size: 18px;
         }
-        
-        .result-section.show {
-            display: block;
-        }
-        
-        .result-value {
-            font-size: 36px;
-            font-weight: 700;
-            color: #1e293b;
-            margin: 16px 0;
-        }
-        
-        .result-formula {
-            font-size: 14px;
-            color: #64748b;
-            margin-bottom: 16px;
-        }
-        
-        .copy-btn {
-            padding: 12px 32px;
-            background: #f1f5f9;
-            color: #475569;
-            border: none;
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background: #10b981;
+            color: #fff;
+            padding: 12px 24px;
             border-radius: 10px;
             font-size: 14px;
             font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
+            z-index: 9999;
+            transition: transform 0.3s;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
         }
-        
-        .copy-btn:hover {
-            background: #e2e8f0;
-            color: #1e293b;
-        }
-        
-        @media (max-width: 600px) {
-            .conversion-grid {
-                flex-direction: column;
-            }
-            .swap-icon {
-                transform: rotate(90deg);
-                align-self: center;
-            }
-            .swap-icon:hover {
-                transform: rotate(270deg);
-            }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
         }
     </style>
 </head>
 <body>
-
-    <header class="header">
-        <div class="container">
-            <a href="../index.html" class="logo">
-                <i class="fas fa-wrench"></i>
-                <h1>在线工具箱</h1>
-            </a>
-            <div class="search-box">
-                <input type="text" id="search" placeholder="搜索工具...">
-                <i class="fas fa-search"></i>
-            </div>
+    <div class="page-wrapper">
+        <!-- 顶部标题栏 -->
+        <div class="header">
+            <h1>单位换算</h1>
+            <p>支持长度、重量、温度、体积等多种单位转换</p>
         </div>
-    </header>
 
-    <main class="main">
-        <div class="container">
-            <div class="tool-container">
-                <div class="color-header">
-                    <div class="color-title">
-                        <i class="fas fa-ruler-combined"></i>
-                        <h1>单位换算工具</h1>
+        <!-- 主体卡片 -->
+        <div class="main-card">
+            <!-- 类别选择 -->
+            <div class="category-box">
+                <div class="category-label">
+                    <i class="fas fa-th-large"></i>
+                    <span>选择换算类别</span>
+                </div>
+                <select class="category-select" id="category" onchange="updateUnits()">
+                    <option value="length">长度换算</option>
+                    <option value="weight">重量换算</option>
+                    <option value="temperature">温度换算</option>
+                    <option value="area">面积换算</option>
+                    <option value="volume">体积换算</option>
+                    <option value="speed">速度换算</option>
+                    <option value="time">时间换算</option>
+                    <option value="pressure">压力换算</option>
+                    <option value="power">功率换算</option>
+                </select>
+            </div>
+
+            <!-- 转换区域 -->
+            <div class="conversion-box">
+                <div class="conversion-grid">
+                    <!-- 源单位 -->
+                    <div class="unit-group">
+                        <span class="unit-label">源单位</span>
+                        <input type="number" class="unit-input" id="fromValue" value="1" placeholder="输入数值">
+                        <select class="unit-select" id="fromUnit"></select>
                     </div>
-                    <p class="color-desc">常用单位之间的相互转换，支持长度、重量、温度等</p>
+
+                    <!-- 交换按钮 -->
+                    <button class="swap-btn" onclick="swapUnits()" title="交换单位">
+                        <i class="fas fa-exchange-alt"></i>
+                    </button>
+
+                    <!-- 目标单位 -->
+                    <div class="unit-group">
+                        <span class="unit-label">目标单位</span>
+                        <input type="text" class="unit-input" id="toValue" readonly placeholder="---">
+                        <select class="unit-select" id="toUnit"></select>
+                    </div>
                 </div>
 
-                <div class="color-content">
-                    <!-- 选择类别区块 -->
-                    <div class="color-section">
-                        <div class="section-title">
-                            <i class="fas fa-th-large"></i>
-                            <span>选择换算类别</span>
-                        </div>
-                        <select id="unitCategory" class="category-select" onchange="updateUnits()">
-                            <option value="length">长度</option>
-                            <option value="weight">重量</option>
-                            <option value="temperature">温度</option>
-                            <option value="pressure">压力</option>
-                            <option value="volume">体积</option>
-                            <option value="speed">速度</option>
-                            <option value="time">时间</option>
-                            <option value="power">功率</option>
-                        </select>
-                    </div>
-
-                    <!-- 单位转换区块 -->
-                    <div class="color-section">
-                        <div class="section-title">
-                            <i class="fas fa-exchange-alt"></i>
-                            <span>单位转换</span>
-                        </div>
-                        <div class="conversion-grid">
-                            <div class="conversion-item">
-                                <label>源单位</label>
-                                <input type="number" id="inputValue" class="unit-input" value="1" min="0" step="any" placeholder="输入数值">
-                                <select id="fromUnit" class="unit-select"></select>
-                            </div>
-                            <div class="swap-icon" onclick="swapUnits()">
-                                <i class="fas fa-arrow-right"></i>
-                            </div>
-                            <div class="conversion-item">
-                                <label>目标单位</label>
-                                <input type="number" id="targetValue" class="unit-input" readonly placeholder="结果">
-                                <select id="toUnit" class="unit-select"></select>
-                            </div>
-                        </div>
-                        <button class="convert-btn" onclick="convertUnit()">
-                            <i class="fas fa-sync-alt"></i>
-                            <span>开始转换</span>
-                        </button>
-                    </div>
-
-                    <!-- 转换结果区块 -->
-                    <div class="result-section" id="resultSection">
-                        <div class="section-title" style="justify-content: center;">
-                            <i class="fas fa-check-circle" style="color: #10b981;"></i>
-                            <span>换算结果</span>
-                        </div>
-                        <div class="result-value" id="resultValue">-</div>
-                        <div class="result-formula" id="resultFormula">-</div>
-                        <button class="copy-btn" onclick="copyResult()">
-                            <i class="fas fa-copy"></i>
-                            <span>复制结果</span>
-                        </button>
-                    </div>
-                </div>
+                <!-- 转换按钮 -->
+                <button class="convert-btn" onclick="convertUnit()">
+                    <i class="fas fa-calculator"></i>
+                    <span>开始转换</span>
+                </button>
             </div>
         </div>
-    </main>
+    </div>
 
-    <footer class="footer">
-        <div class="container">
-            <p><a href="../index.html">首页</a> | <a href="../disclaimer.html">免责声明</a></p>
-            <p>© 2025 TOOLKIT.SKIN | 简洁高效的工具集合</p>
-        </div>
-    </footer>
-
+    <!-- Toast -->
     <div class="toast" id="toast"></div>
 
+    <script src="../js/tools/unit.js"></script>
     <script>
-        const units = {
-            length: [
-                { name: '米', symbol: 'm', factor: 1 },
-                { name: '千米', symbol: 'km', factor: 1000 },
-                { name: '厘米', symbol: 'cm', factor: 0.01 },
-                { name: '毫米', symbol: 'mm', factor: 0.001 },
-                { name: '英寸', symbol: 'in', factor: 0.0254 },
-                { name: '英尺', symbol: 'ft', factor: 0.3048 },
-                { name: '码', symbol: 'yd', factor: 0.9144 },
-                { name: '英里', symbol: 'mi', factor: 1609.34 }
-            ],
-            weight: [
-                { name: '千克', symbol: 'kg', factor: 1 },
-                { name: '克', symbol: 'g', factor: 0.001 },
-                { name: '毫克', symbol: 'mg', factor: 0.000001 },
-                { name: '吨', symbol: 't', factor: 1000 },
-                { name: '磅', symbol: 'lb', factor: 0.453592 },
-                { name: '盎司', symbol: 'oz', factor: 0.0283495 }
-            ],
-            temperature: [
-                { name: '摄氏度', symbol: '°C', type: 'celsius' },
-                { name: '华氏度', symbol: '°F', type: 'fahrenheit' },
-                { name: '开尔文', symbol: 'K', type: 'kelvin' }
-            ],
-            pressure: [
-                { name: '帕斯卡', symbol: 'Pa', factor: 1 },
-                { name: '千帕', symbol: 'kPa', factor: 1000 },
-                { name: '兆帕', symbol: 'MPa', factor: 1000000 },
-                { name: '巴', symbol: 'bar', factor: 100000 },
-                { name: '标准大气压', symbol: 'atm', factor: 101325 },
-                { name: '毫米汞柱', symbol: 'mmHg', factor: 133.322 },
-                { name: '磅/平方英寸', symbol: 'psi', factor: 6894.76 }
-            ],
-            volume: [
-                { name: '立方米', symbol: 'm³', factor: 1 },
-                { name: '立方厘米', symbol: 'cm³', factor: 0.000001 },
-                { name: '升', symbol: 'L', factor: 0.001 },
-                { name: '毫升', symbol: 'mL', factor: 0.000001 },
-                { name: '加仑（美）', symbol: 'gal', factor: 0.00378541 },
-                { name: '夸脱（美）', symbol: 'qt', factor: 0.000946353 },
-                { name: '品脱（美）', symbol: 'pt', factor: 0.000473176 }
-            ],
-            speed: [
-                { name: '米/秒', symbol: 'm/s', factor: 1 },
-                { name: '千米/小时', symbol: 'km/h', factor: 0.277778 },
-                { name: '英里/小时', symbol: 'mph', factor: 0.44704 },
-                { name: '节', symbol: 'kn', factor: 0.514444 }
-            ],
-            time: [
-                { name: '秒', symbol: 's', factor: 1 },
-                { name: '毫秒', symbol: 'ms', factor: 0.001 },
-                { name: '微秒', symbol: 'μs', factor: 0.000001 },
-                { name: '分钟', symbol: 'min', factor: 60 },
-                { name: '小时', symbol: 'h', factor: 3600 },
-                { name: '天', symbol: 'd', factor: 86400 },
-                { name: '周', symbol: 'w', factor: 604800 },
-                { name: '年', symbol: 'y', factor: 31536000 }
-            ],
-            power: [
-                { name: '瓦特', symbol: 'W', factor: 1 },
-                { name: '千瓦', symbol: 'kW', factor: 1000 },
-                { name: '兆瓦', symbol: 'MW', factor: 1000000 },
-                { name: '马力', symbol: 'HP', factor: 735.499 },
-                { name: '英制马力', symbol: 'bhp', factor: 745.7 }
-            ]
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2000);
+        }
+
+        // 单位换算逻辑
+        const unitData = {
+            length: {
+                units: ['米(m)', '千米(km)', '厘米(cm)', '毫米(mm)', '英里(mi)', '英寸(in)', '英尺(ft)', '码(yd)'],
+                toBase: [1, 1000, 0.01, 0.001, 1609.344, 0.0254, 0.3048, 0.9144]
+            },
+            weight: {
+                units: ['千克(kg)', '克(g)', '毫克(mg)', '吨(t)', '磅(lb)', '盎司(oz)', '斤', '克拉'],
+                toBase: [1, 0.001, 0.000001, 1000, 0.453592, 0.0283495, 0.5, 0.0002]
+            },
+            temperature: {
+                units: ['摄氏度(°C)', '华氏度(°F)', '开尔文(K)'],
+                convert: (v, from, to) => {
+                    let c;
+                    if (from === 0) c = v;
+                    else if (from === 1) c = (v - 32) * 5 / 9;
+                    else c = v - 273.15;
+                    
+                    if (to === 0) return c;
+                    if (to === 1) return c * 9 / 5 + 32;
+                    return c + 273.15;
+                }
+            },
+            area: {
+                units: ['平方米(m²)', '平方千米(km²)', '公顷(ha)', '亩', '平方英尺(sq ft)', '平方英寸(sq in)', '英亩(acre)'],
+                toBase: [1, 1000000, 10000, 666.667, 0.092903, 0.000645, 4046.86]
+            },
+            volume: {
+                units: ['立方米(m³)', '升(L)', '毫升(mL)', '加仑(gal)', '夸脱(qt)', '品脱(pt)', '杯', '立方米(m³)'],
+                toBase: [1, 0.001, 0.000001, 3.78541, 0.946353, 0.473176, 0.236588, 1]
+            },
+            speed: {
+                units: ['米/秒(m/s)', '千米/时(km/h)', '英里/时(mph)', '节(knot)', '英尺/秒(ft/s)', '马赫'],
+                toBase: [1, 0.277778, 0.44704, 0.514444, 0.3048, 343]
+            },
+            time: {
+                units: ['秒(s)', '毫秒(ms)', '分钟(min)', '小时(h)', '天(d)', '周(week)', '月(month)', '年(year)'],
+                toBase: [1, 0.001, 60, 3600, 86400, 604800, 2592000, 31536000]
+            },
+            pressure: {
+                units: ['帕(Pa)', '千帕(kPa)', '兆帕(MPa)', '巴(bar)', '标准大气压(atm)', '毫米汞柱(mmHg)', '磅力/平方英寸(psi)'],
+                toBase: [1, 1000, 1000000, 100000, 101325, 133.322, 6894.76]
+            },
+            power: {
+                units: ['瓦(W)', '千瓦(kW)', '兆瓦(MW)', '马力(HP)', '英制马力(BHP)', '千卡/秒(kcal/s)', '焦耳/秒(J/s)'],
+                toBase: [1, 1000, 1000000, 745.7, 745.7, 4184, 1]
+            }
         };
 
-        let currentResult = '';
-
-        document.addEventListener('DOMContentLoaded', () => {
-            updateUnits();
-        });
+        let currentCategory = 'length';
 
         function updateUnits() {
-            const category = document.getElementById('unitCategory').value;
+            currentCategory = document.getElementById('category').value;
+            const data = unitData[currentCategory];
             const fromSelect = document.getElementById('fromUnit');
             const toSelect = document.getElementById('toUnit');
 
             fromSelect.innerHTML = '';
             toSelect.innerHTML = '';
 
-            units[category].forEach(unit => {
-                const option1 = document.createElement('option');
-                option1.value = unit.symbol;
-                option1.textContent = `${unit.name} (${unit.symbol})`;
-                fromSelect.appendChild(option1);
-
-                const option2 = document.createElement('option');
-                option2.value = unit.symbol;
-                option2.textContent = `${unit.name} (${unit.symbol})`;
-                toSelect.appendChild(option2);
+            data.units.forEach((unit, index) => {
+                fromSelect.innerHTML += `<option value="${index}">${unit}</option>`;
+                toSelect.innerHTML += `<option value="${index}" ${index === 1 ? 'selected' : ''}>${unit}</option>`;
             });
 
-            toSelect.selectedIndex = 1;
-            document.getElementById('targetValue').value = '';
-            document.getElementById('resultSection').classList.remove('show');
+            document.getElementById('toValue').value = '';
         }
 
         function swapUnits() {
-            const fromSelect = document.getElementById('fromUnit');
-            const toSelect = document.getElementById('toUnit');
-            const fromValue = fromSelect.value;
-            const toValue = toSelect.value;
-            
-            fromSelect.value = toValue;
-            toSelect.value = fromValue;
+            const fromUnit = document.getElementById('fromUnit');
+            const toUnit = document.getElementById('toUnit');
+            const fromValue = document.getElementById('fromValue');
+            const toValue = document.getElementById('toValue');
+
+            const tempUnit = fromUnit.value;
+            fromUnit.value = toUnit.value;
+            toUnit.value = tempUnit;
+
+            if (toValue.value && toValue.value !== '---') {
+                fromValue.value = toValue.value;
+            }
+
+            convertUnit();
         }
 
         function convertUnit() {
-            const category = document.getElementById('unitCategory').value;
-            const value = parseFloat(document.getElementById('inputValue').value);
-            const fromUnit = document.getElementById('fromUnit').value;
-            const toUnit = document.getElementById('toUnit').value;
+            const value = parseFloat(document.getElementById('fromValue').value);
+            const fromIndex = parseInt(document.getElementById('fromUnit').value);
+            const toIndex = parseInt(document.getElementById('toUnit').value);
+            const data = unitData[currentCategory];
 
             if (isNaN(value)) {
-                showToast('请输入有效的数值');
+                document.getElementById('toValue').value = '';
                 return;
             }
 
             let result;
-
-            if (category === 'temperature') {
-                result = convertTemperature(value, fromUnit, toUnit);
+            if (currentCategory === 'temperature') {
+                result = data.convert(value, fromIndex, toIndex);
             } else {
-                const fromFactor = units[category].find(u => u.symbol === fromUnit).factor;
-                const toFactor = units[category].find(u => u.symbol === toUnit).factor;
-                const baseValue = value * fromFactor;
-                result = baseValue / toFactor;
+                const baseValue = value * data.toBase[fromIndex];
+                result = baseValue / data.toBase[toIndex];
             }
 
-            const fromName = units[category].find(u => u.symbol === fromUnit).name;
-            const toName = units[category].find(u => u.symbol === toUnit).name;
-            const formattedResult = result.toFixed(10).replace(/\.?0+$/, '');
-            currentResult = formattedResult;
-
-            document.getElementById('targetValue').value = formattedResult;
-            document.getElementById('resultValue').textContent = `${formattedResult} ${toUnit}`;
-            document.getElementById('resultFormula').textContent = `${value} ${fromName} = ${formattedResult} ${toName}`;
-            document.getElementById('resultSection').classList.add('show');
+            const formatted = result % 1 === 0 ? result.toString() : result.toFixed(6).replace(/\.?0+$/, '');
+            document.getElementById('toValue').value = formatted;
         }
 
-        function convertTemperature(value, fromUnit, toUnit) {
-            let celsius;
+        // 初始化
+        updateUnits();
 
-            switch (fromUnit) {
-                case '°C':
-                    celsius = value;
-                    break;
-                case '°F':
-                    celsius = (value - 32) * 5 / 9;
-                    break;
-                case 'K':
-                    celsius = value - 273.15;
-                    break;
-            }
-
-            let result;
-            switch (toUnit) {
-                case '°C':
-                    result = celsius;
-                    break;
-                case '°F':
-                    result = celsius * 9 / 5 + 32;
-                    break;
-                case 'K':
-                    result = celsius + 273.15;
-                    break;
-            }
-
-            return result;
-        }
-
-        function copyResult() {
-            if (currentResult) {
-                navigator.clipboard.writeText(currentResult).then(() => {
-                    showToast('已复制到剪贴板');
-                });
-            }
-        }
-
-        function showToast(message) {
-            const toast = document.getElementById('toast');
-            toast.textContent = message;
-            toast.classList.add('show');
-            setTimeout(() => {
-                toast.classList.remove('show');
-            }, 2000);
-        }
+        // 输入时自动转换
+        document.getElementById('fromValue').addEventListener('input', convertUnit);
+        document.getElementById('fromUnit').addEventListener('change', convertUnit);
+        document.getElementById('toUnit').addEventListener('change', convertUnit);
     </script>
 </body>
 </html>
