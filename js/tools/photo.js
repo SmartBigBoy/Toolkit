@@ -115,111 +115,42 @@ function convertPhoto() {
     const width = originalImage.width;
     const height = originalImage.height;
 
-    // ========== 步骤1：采样检测背景色 ==========
+    // ========== 步骤1：检测背景色（改进：四角+边缘采样） ==========
     const bgColor = detectBackgroundColor(data, width, height);
 
     // 目标颜色
     const targetColor = hexToRgb(selectedBgColor);
 
-    // 颜色容差阈值
-    const tolerance = 50;
+    // ========== 步骤2：计算自适应容差 ==========
+    const tolerance = calculateAdaptiveTolerance(data, width, height, bgColor);
 
-    // ========== 步骤2：创建背景蒙版 ==========
-    const mask = new Uint8Array(width * height);
+    // ========== 步骤3：创建主体蒙版（改进：种子填充算法） ==========
+    const subjectMask = createSubjectMask(data, width, height, bgColor, tolerance);
+
+    // ========== 步骤4：替换背景 ==========
     for (let i = 0; i < width * height; i++) {
-        const pixel = {
-            r: data[i * 4],
-            g: data[i * 4 + 1],
-            b: data[i * 4 + 2]
-        };
-        mask[i] = isBackgroundPixel(pixel, bgColor, tolerance) ? 1 : 0;
-    }
+        if (!subjectMask[i]) {
+            // 不是主体像素，替换为背景色
+            data[i * 4] = targetColor.r;
+            data[i * 4 + 1] = targetColor.g;
+            data[i * 4 + 2] = targetColor.b;
+            data[i * 4 + 3] = 255;
+        } else {
+            // 主体像素：检查是否接近背景色，进行轻微调整
+            const pixel = {
+                r: data[i * 4],
+                g: data[i * 4 + 1],
+                b: data[i * 4 + 2]
+            };
 
-    // ========== 步骤3：连通性分析，保留主体区域 ==========
-    const centerX = Math.floor(width / 2);
-    const centerY = Math.floor(height / 2);
-    const visited = new Uint8Array(width * height);
-
-    // BFS 从中心点开始标记连通区域
-    const queue = [];
-    queue.push([centerX, centerY]);
-    visited[centerY * width + centerX] = 1;
-
-    while (queue.length > 0) {
-        const [x, y] = queue.shift();
-
-        const neighbors = [
-            [x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1],
-            [x - 1, y - 1], [x + 1, y - 1], [x - 1, y + 1], [x + 1, y + 1]
-        ];
-
-        for (const [nx, ny] of neighbors) {
-            if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
-                const idx = ny * width + nx;
-                if (!visited[idx]) {
-                    const pixel = { r: data[idx * 4], g: data[idx * 4 + 1], b: data[idx * 4 + 2] };
-                    const centerPixel = { r: data[(centerY * width + centerX) * 4], 
-                                         g: data[(centerY * width + centerX) * 4 + 1], 
-                                         b: data[(centerY * width + centerX) * 4 + 2] };
-
-                    if (isSimilarColor(pixel, centerPixel, tolerance * 2) || !isBackgroundPixel(pixel, bgColor, tolerance)) {
-                        visited[idx] = 1;
-                        queue.push([nx, ny]);
-                    }
-                }
-            }
-        }
-    }
-
-    // ========== 步骤4：边缘羽化处理 ==========
-    for (let y = 0; y < height; y++) {
-        for (let x = 0; x < width; x++) {
-            const idx = y * width + x;
-
-            if (mask[idx] && visited[idx]) {
-                continue;
-            }
-
-            if (mask[idx]) {
-                let hasSubjectNeighbor = false;
-                let subjectCount = 0;
-                let totalWeight = 0;
-
-                for (let dy = -3; dy <= 3; dy++) {
-                    for (let dx = -3; dx <= 3; dx++) {
-                        const nx = x + dx;
-                        const ny = y + dy;
-                        if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
-                            const nidx = ny * width + nx;
-                            const dist = Math.sqrt(dx * dx + dy * dy);
-                            const weight = 1 / (1 + dist);
-
-                            if (visited[nidx]) {
-                                subjectCount += weight;
-                            }
-                            totalWeight += weight;
-                        }
-                    }
-                }
-
-                const blendRatio = subjectCount / totalWeight;
-                if (blendRatio > 0.1) {
-                    const originalPixel = {
-                        r: data[idx * 4],
-                        g: data[idx * 4 + 1],
-                        b: data[idx * 4 + 2]
-                    };
-
-                    const blendFactor = Math.min(blendRatio * 2, 1);
-                    data[idx * 4] = Math.round(originalPixel.r * (1 - blendFactor) + targetColor.r * blendFactor);
-                    data[idx * 4 + 1] = Math.round(originalPixel.g * (1 - blendFactor) + targetColor.g * blendFactor);
-                    data[idx * 4 + 2] = Math.round(originalPixel.b * (1 - blendFactor) + targetColor.b * blendFactor);
-                } else {
-                    data[idx * 4] = targetColor.r;
-                    data[idx * 4 + 1] = targetColor.g;
-                    data[idx * 4 + 2] = targetColor.b;
-                }
-                data[idx * 4 + 3] = 255;
+            // 如果主体像素颜色接近背景，进行渐变混合
+            const dist = colorDistance(pixel, bgColor);
+            if (dist < tolerance * 1.5) {
+                // 边缘区域，进行颜色混合
+                const blendFactor = Math.max(0, (dist - tolerance * 0.5) / (tolerance));
+                data[i * 4] = Math.round(pixel.r * blendFactor + targetColor.r * (1 - blendFactor));
+                data[i * 4 + 1] = Math.round(pixel.g * blendFactor + targetColor.g * (1 - blendFactor));
+                data[i * 4 + 2] = Math.round(pixel.b * blendFactor + targetColor.b * (1 - blendFactor));
             }
         }
     }
@@ -255,54 +186,184 @@ function convertPhoto() {
 
 // ========== 辅助函数 ==========
 
-// 检测背景色：从边缘采样
+// 改进的背景色检测：四角+边缘分段采样
 function detectBackgroundColor(data, width, height) {
     const samples = [];
+    const cornerSize = Math.floor(Math.min(width, height) * 0.15); // 只取边缘15%区域
 
-    // 采集边缘样本
-    for (let i = 0; i < width; i += Math.floor(width / 10)) {
-        // 顶部
-        samples.push({ r: data[i * 4], g: data[i * 4 + 1], b: data[i * 4 + 2] });
-        // 底部
-        const bottomIdx = (height - 1) * width * 4 + i * 4;
-        samples.push({ r: data[bottomIdx], g: data[bottomIdx + 1], b: data[bottomIdx + 2] });
-    }
-    for (let i = 0; i < height; i += Math.floor(height / 10)) {
-        // 左侧
-        const leftIdx = i * width * 4;
-        samples.push({ r: data[leftIdx], g: data[leftIdx + 1], b: data[leftIdx + 2] });
-        // 右侧
-        const rightIdx = i * width * 4 + (width - 1) * 4;
-        samples.push({ r: data[rightIdx], g: data[rightIdx + 1], b: data[rightIdx + 2] });
+    // 左上角
+    for (let y = 0; y < cornerSize; y += 2) {
+        for (let x = 0; x < cornerSize; x += 2) {
+            const idx = y * width + x;
+            samples.push({ r: data[idx * 4], g: data[idx * 4 + 1], b: data[idx * 4 + 2] });
+        }
     }
 
-    // 计算平均颜色
-    let totalR = 0, totalG = 0, totalB = 0;
-    for (const c of samples) {
-        totalR += c.r;
-        totalG += c.g;
-        totalB += c.b;
+    // 右上角
+    for (let y = 0; y < cornerSize; y += 2) {
+        for (let x = width - cornerSize; x < width; x += 2) {
+            const idx = y * width + x;
+            samples.push({ r: data[idx * 4], g: data[idx * 4 + 1], b: data[idx * 4 + 2] });
+        }
     }
+
+    // 左下角
+    for (let y = height - cornerSize; y < height; y += 2) {
+        for (let x = 0; x < cornerSize; x += 2) {
+            const idx = y * width + x;
+            samples.push({ r: data[idx * 4], g: data[idx * 4 + 1], b: data[idx * 4 + 2] });
+        }
+    }
+
+    // 右下角
+    for (let y = height - cornerSize; y < height; y += 2) {
+        for (let x = width - cornerSize; x < width; x += 2) {
+            const idx = y * width + x;
+            samples.push({ r: data[idx * 4], g: data[idx * 4 + 1], b: data[idx * 4 + 2] });
+        }
+    }
+
+    // 顶部边缘中间
+    for (let x = cornerSize; x < width - cornerSize; x += 3) {
+        const idx = x;
+        samples.push({ r: data[idx * 4], g: data[idx * 4 + 1], b: data[idx * 4 + 2] });
+    }
+
+    // 底部边缘中间
+    for (let x = cornerSize; x < width - cornerSize; x += 3) {
+        const idx = (height - 1) * width + x;
+        samples.push({ r: data[idx * 4], g: data[idx * 4 + 1], b: data[idx * 4 + 2] });
+    }
+
+    // 左侧边缘中间
+    for (let y = cornerSize; y < height - cornerSize; y += 3) {
+        const idx = y * width;
+        samples.push({ r: data[idx * 4], g: data[idx * 4 + 1], b: data[idx * 4 + 2] });
+    }
+
+    // 右侧边缘中间
+    for (let y = cornerSize; y < height - cornerSize; y += 3) {
+        const idx = y * width + (width - 1);
+        samples.push({ r: data[idx * 4], g: data[idx * 4 + 1], b: data[idx * 4 + 2] });
+    }
+
+    // 计算中位数颜色（更抗噪声）
+    const sortedR = samples.map(c => c.r).sort((a, b) => a - b);
+    const sortedG = samples.map(c => c.g).sort((a, b) => a - b);
+    const sortedB = samples.map(c => c.b).sort((a, b) => a - b);
+    const mid = Math.floor(samples.length / 2);
 
     return {
-        r: Math.round(totalR / samples.length),
-        g: Math.round(totalG / samples.length),
-        b: Math.round(totalB / samples.length)
+        r: sortedR[mid],
+        g: sortedG[mid],
+        b: sortedB[mid]
     };
 }
 
-// 判断像素是否为背景
-function isBackgroundPixel(pixel, bgColor, tolerance) {
-    return isSimilarColor(pixel, bgColor, tolerance);
+// 计算自适应容差
+function calculateAdaptiveTolerance(data, width, height, bgColor) {
+    const samples = [];
+    const cornerSize = Math.floor(Math.min(width, height) * 0.1);
+
+    // 采集边缘样本计算方差
+    for (let y = 0; y < cornerSize; y += 2) {
+        for (let x = 0; x < cornerSize; x += 2) {
+            const idx = y * width + x;
+            const d = colorDistance(
+                { r: data[idx * 4], g: data[idx * 4 + 1], b: data[idx * 4 + 2] },
+                bgColor
+            );
+            samples.push(d);
+        }
+        for (let x = width - cornerSize; x < width; x += 2) {
+            const idx = y * width + x;
+            const d = colorDistance(
+                { r: data[idx * 4], g: data[idx * 4 + 1], b: data[idx * 4 + 2] },
+                bgColor
+            );
+            samples.push(d);
+        }
+    }
+
+    if (samples.length === 0) return 50;
+
+    // 使用样本的标准差来调整容差
+    const mean = samples.reduce((a, b) => a + b, 0) / samples.length;
+    const variance = samples.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / samples.length;
+    const stdDev = Math.sqrt(variance);
+
+    // 容差 = 背景色到自身的距离 + 标准差（保证背景被替换）+ 一定余量
+    return Math.max(40, Math.min(80, mean + stdDev * 0.5 + 10));
 }
 
-// 判断两个颜色是否相似（欧几里得距离）
-function isSimilarColor(c1, c2, tolerance) {
+// 创建主体蒙版（改进：洪水填充算法）
+function createSubjectMask(data, width, height, bgColor, tolerance) {
+    const mask = new Uint8Array(width * height);
+    const visited = new Uint8Array(width * height);
+
+    // 找到背景区域并标记
+    const queue = [];
+
+    // 从四个角落开始（通常是背景）
+    const corners = [
+        [0, 0],
+        [width - 1, 0],
+        [0, height - 1],
+        [width - 1, height - 1],
+        [Math.floor(width / 2), 0],
+        [Math.floor(width / 2), height - 1],
+        [0, Math.floor(height / 2)],
+        [width - 1, Math.floor(height / 2)]
+    ];
+
+    for (const [startX, startY] of corners) {
+        const startIdx = startY * width + startX;
+        const pixel = { r: data[startIdx * 4], g: data[startIdx * 4 + 1], b: data[startIdx * 4 + 2] };
+
+        if (colorDistance(pixel, bgColor) < tolerance * 2) {
+            queue.push([startX, startY]);
+            visited[startIdx] = 1;
+        }
+    }
+
+    // 洪水填充：从背景向内扩散
+    while (queue.length > 0) {
+        const [x, y] = queue.shift();
+        const idx = y * width + x;
+
+        const neighbors = [
+            [x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1]
+        ];
+
+        for (const [nx, ny] of neighbors) {
+            if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                const nidx = ny * width + nx;
+                if (!visited[nidx]) {
+                    const pixel = { r: data[nidx * 4], g: data[nidx * 4 + 1], b: data[nidx * 4 + 2] };
+
+                    if (colorDistance(pixel, bgColor) < tolerance * 1.8) {
+                        visited[nidx] = 1;
+                        queue.push([nx, ny]);
+                    }
+                }
+            }
+        }
+    }
+
+    // 反转：标记为主体区域
+    for (let i = 0; i < width * height; i++) {
+        mask[i] = visited[i] ? 0 : 1;
+    }
+
+    return mask;
+}
+
+// 计算颜色距离（欧几里得）
+function colorDistance(c1, c2) {
     const dr = c1.r - c2.r;
     const dg = c1.g - c2.g;
     const db = c1.b - c2.b;
-    const distance = Math.sqrt(dr * dr + dg * dg + db * db);
-    return distance < tolerance;
+    return Math.sqrt(dr * dr + dg * dg + db * db);
 }
 
 // Hex转RGB
