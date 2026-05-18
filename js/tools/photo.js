@@ -35,8 +35,8 @@ async function loadBackgroundRemovalModel() {
         
         console.log('[模型] 导入 background-removal 库...');
         
-        // 使用本地库文件
-        const bgRemoval = await import('../assets/bg-removal/dist/index.mjs');
+        // 使用本地库文件（从 js/tools/ 到 assets/bg-removal/）
+        const bgRemoval = await import('../../assets/bg-removal/dist/index.mjs');
         const { removeBackground, preload } = bgRemoval;
         
         console.log('[模型] 库导入成功，开始预加载...');
