@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>在线工具箱 - 实用工具集合</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+
+    <header class="header">
+        <div class="container">
+            <a href="./index.html" class="logo">
+                <i class="fas fa-wrench"></i>
+                <h1>在线工具箱</h1>
+            </a>
+            <div class="search-box">
+                <input type="text" id="search" placeholder="搜索工具...">
+                <i class="fas fa-search"></i>
+            </div>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            <section class="quick-tools">
+                <h2><i class="fas fa-fire"></i> 常用工具</h2>
+                <div class="tool-grid">
+                    <div class="tool-card" data-name="json格式化" data-desc="json格式化压缩">
+                        <a href="tools/json.html">
+                            <div class="tool-icon"><i class="fas fa-file-code"></i></div>
+                            <span class="tool-name">JSON格式化</span>
+                        </a>
+                    </div>
+                    <div class="tool-card" data-name="时间戳转换" data-desc="时间戳日期转换">
+                        <a href="tools/timestamp.html">
+                            <div class="tool-icon"><i class="fas fa-clock"></i></div>
+                            <span class="tool-name">时间戳转换</span>
+                        </a>
+                    </div>
+                    <div class="tool-card" data-name="base64编码" data-desc="base64编解码">
+                        <a href="tools/base64.html">
+                            <div class="tool-icon"><i class="fas fa-key"></i></div>
+                            <span class="tool-name">Base64编码</span>
+                        </a>
+                    </div>
+                    <div class="tool-card" data-name="二维码生成" data-desc="二维码生成器">
+                        <a href="tools/qrcode.html">
+                            <div class="tool-icon"><i class="fas fa-qrcode"></i></div>
+                            <span class="tool-name">二维码生成</span>
+                        </a>
+                    </div>
+                    <div class="tool-card" data-name="颜色转换" data-desc="颜色格式转换">
+                        <a href="tools/color.html">
+                            <div class="tool-icon"><i class="fas fa-palette"></i></div>
+                            <span class="tool-name">颜色转换</span>
+                        </a>
+                    </div>
+                    <div class="tool-card" data-name="单位换算" data-desc="单位转换器">
+                        <a href="tools/unit.html">
+                            <div class="tool-icon"><i class="fas fa-ruler"></i></div>
+                            <span class="tool-name">单位换算</span>
+                        </a>
+                    </div>
+                </div>
+            </section>
+
+            <section class="tool-categories">
+                <div class="category">
+                    <h2><i class="fas fa-file-alt"></i> 文本处理</h2>
+                    <div class="tool-grid text-tools">
+                        <div class="tool-card" data-name="文本处理" data-desc="文本大小写转换">
+                            <a href="tools/text.html">
+                                <div class="tool-icon"><i class="fas fa-align-left"></i></div>
+                                <span class="tool-name">文本处理</span>
+                            </a>
+                        </div>
+                        <div class="tool-card" data-name="进制转换" data-desc="进制计算器">
+                            <a href="tools/convert.html">
+                                <div class="tool-icon"><i class="fas fa-calculator"></i></div>
+                                <span class="tool-name">进制转换</span>
+                            </a>
+                        </div>
+                        <div class="tool-card" data-name="哈希计算" data-desc="文件哈希计算器">
+                            <a href="tools/hash.html">
+                                <div class="tool-icon"><i class="fas fa-shield-alt"></i></div>
+                                <span class="tool-name">哈希计算</span>
+                            </a>
+                        </div>
+                        <div class="tool-card" data-name="密码生成" data-desc="随机密码生成">
+                            <a href="tools/password.html">
+                                <div class="tool-icon"><i class="fas fa-lock"></i></div>
+                                <span class="tool-name">密码生成</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="category">
+                    <h2><i class="fas fa-laptop-code"></i> 开发工具</h2>
+                    <div class="tool-grid dev-tools">
+                        <div class="tool-card" data-name="json格式化" data-desc="json格式化压缩">
+                            <a href="tools/json.html">
+                                <div class="tool-icon"><i class="fas fa-file-code"></i></div>
+                                <span class="tool-name">JSON格式化</span>
+                            </a>
+                        </div>
+                        <div class="tool-card" data-name="时间戳转换" data-desc="时间戳日期转换">
+                            <a href="tools/timestamp.html">
+                                <div class="tool-icon"><i class="fas fa-clock"></i></div>
+                                <span class="tool-name">时间戳转换</span>
+                            </a>
+                        </div>
+                        <div class="tool-card" data-name="base64编码" data-desc="base64编解码">
+                            <a href="tools/base64.html">
+                                <div class="tool-icon"><i class="fas fa-key"></i></div>
+                                <span class="tool-name">Base64编码</span>
+                            </a>
+                        </div>
+                        <div class="tool-card" data-name="url编码" data-desc="url编码解码">
+                            <a href="tools/url.html">
+                                <div class="tool-icon"><i class="fas fa-link"></i></div>
+                                <span class="tool-name">URL编码</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="category">
+                    <h2><i class="fas fa-image"></i> 图片工具</h2>
+                    <div class="tool-grid image-tools">
+                        <div class="tool-card" data-name="二维码生成" data-desc="二维码生成器">
+                            <a href="tools/qrcode.html">
+                                <div class="tool-icon"><i class="fas fa-qrcode"></i></div>
+                                <span class="tool-name">二维码生成</span>
+                            </a>
+                        </div>
+                        <div class="tool-card" data-name="证件照转换" data-desc="证件照尺寸转换">
+                            <a href="tools/photo.html">
+                                <div class="tool-icon"><i class="fas fa-camera"></i></div>
+                                <span class="tool-name">证件照转换</span>
+                            </a>
+                        </div>
+                        <div class="tool-card" data-name="颜色转换" data-desc="颜色格式转换">
+                            <a href="tools/color.html">
+                                <div class="tool-icon"><i class="fas fa-palette"></i></div>
+                                <span class="tool-name">颜色转换</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="category">
+                    <h2><i class="fas fa-calculator"></i> 计算工具</h2>
+                    <div class="tool-grid calc-tools">
+                        <div class="tool-card" data-name="单位换算" data-desc="单位转换器">
+                            <a href="tools/unit.html">
+                                <div class="tool-icon"><i class="fas fa-ruler"></i></div>
+                                <span class="tool-name">单位换算</span>
+                            </a>
+                        </div>
+                        <div class="tool-card" data-name="汇率换算" data-desc="汇率转换器">
+                            <a href="tools/currency.html">
+                                <div class="tool-icon"><i class="fas fa-coins"></i></div>
+                                <span class="tool-name">汇率换算</span>
+                            </a>
+                        </div>
+                        <div class="tool-card" data-name="数学计算" data-desc="数学计算器">
+                            <a href="tools/math.html">
+                                <div class="tool-icon"><i class="fas fa-square-root-alt"></i></div>
+                                <span class="tool-name">数学计算</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>© 2025 在线工具箱 | 简洁高效的工具集合</p>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>二维码生成器 - 在线工具箱</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <style>
+        .qr-container {
+            max-width: 700px;
+            margin: 0 auto;
+            background: var(--bg-secondary);
+            border-radius: 20px;
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .qr-header {
+            padding: 28px 32px;
+            background: var(--primary-gradient);
+            color: white;
+            text-align: center;
+        }
+
+        .qr-header h2 {
+            font-size: 24px;
+            font-weight: 700;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .qr-header p {
+            margin: 8px 0 0;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .qr-body {
+            padding: 32px;
+        }
+
+        .input-section {
+            margin-bottom: 28px;
+        }
+
+        .input-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .input-area {
+            margin-bottom: 20px;
+        }
+
+        .input-area textarea {
+            width: 100%;
+            min-height: 120px;
+            padding: 16px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            font-size: 14px;
+            background: var(--bg-primary);
+            resize: vertical;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+
+        .input-area textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+            background: var(--bg-secondary);
+        }
+
+        .config-section {
+            margin-bottom: 28px;
+        }
+
+        .config-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+        }
+
+        .config-item {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .config-item label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .config-item select,
+        .config-item input[type="color"] {
+            padding: 12px;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            font-size: 14px;
+            background: var(--bg-primary);
+            transition: all 0.2s;
+        }
+
+        .config-item select:focus {
+            cursor: pointer;
+        }
+
+        .config-item input[type="color"] {
+            height: 46px;
+            padding: 4px;
+            cursor: pointer;
+        }
+
+        .config-item select:focus,
+        .config-item input[type="color"]:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+            background: var(--bg-secondary);
+        }
+
+        .preview-section {
+            margin-bottom: 28px;
+        }
+
+        .qr-preview {
+            padding: 40px 24px;
+            background: var(--bg-tertiary);
+            border-radius: 16px;
+            text-align: center;
+            border: 2px dashed var(--border);
+            min-height: 300px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .qr-preview canvas {
+            max-width: 100%;
+            border-radius: 12px;
+            box-shadow: var(--shadow-md);
+        }
+
+        .actions-section {
+            display: flex;
+            gap: 16px;
+        }
+
+        .action-btn {
+            flex: 1;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .action-btn.primary {
+            background: var(--primary-gradient);
+            color: white;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+        }
+
+        .action-btn.primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.45);
+        }
+
+        .action-btn.secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .action-btn.secondary:hover:not(:disabled) {
+            background: var(--border);
+        }
+
+        .action-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        @media (max-width: 768px) {
+            .qr-body {
+                padding: 20px;
+            }
+
+            .config-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .actions-section {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="../index.html" class="logo">
+                <i class="fas fa-wrench"></i>
+                <h1>在线工具箱</h1>
+            </a>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            <div class="qr-container">
+                <div class="qr-header">
+                    <h2><i class="fas fa-qrcode"></i> 二维码生成器</h2>
+                    <p>将文本或URL转换为二维码，支持自定义颜色和大小</p>
+                </div>
+
+                <div class="qr-body">
+                    <div class="input-section">
+                        <div class="input-title">
+                            <i class="fas fa-keyboard"></i> 输入内容
+                        </div>
+                        <div class="input-area">
+                            <textarea id="qrInput" placeholder="输入文本、URL、联系方式等内容..." onkeydown="if(event.keyCode==13&&event.preventDefault();"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="config-section">
+                        <div class="input-title">
+                            <i class="fas fa-sliders-h"></i> 自定义配置
+                        </div>
+                        <div class="config-grid">
+                            <div class="config-item">
+                                <label>大小（像素）</label>
+                                <select id="qrSize">
+                                    <option value="150">150×150</option>
+                                    <option value="200" selected>200×200</option>
+                                    <option value="250">250×250</option>
+                                    <option value="300">300×300</option>
+                                    <option value="350">350×350</option>
+                                </select>
+                            </div>
+                            <div class="config-item">
+                                <label>前景色</label>
+                                <input type="color" id="colorDark" value="#000000">
+                            </div>
+                            <div class="config-item">
+                                <label>背景色</label>
+                                <input type="color" id="colorLight" value="#ffffff">
+                            </div>
+                            <div class="config-item">
+                                <label>纠错等级</label>
+                                <select id="errorLevel">
+                                    <option value="L" selected>L (7%)</option>
+                                    <option value="M">M (15%)</option>
+                                    <option value="Q">Q (25%)</option>
+                                    <option value="H">H (30%)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="preview-section">
+                        <div class="input-title">
+                            <i class="fas fa-eye"></i> 二维码预览
+                        </div>
+                        <div id="qrResult" class="qr-preview">
+                            <div style="color: var(--text-tertiary);">
+                                <i class="fas fa-qrcode" style="font-size: 64px; margin-bottom: 16px; opacity: 0.3;"></i>
+                                <p>输入内容后点击生成按钮</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="actions-section">
+                        <button class="action-btn primary" onclick="generateQRCode()">
+                            <i class="fas fa-magic"></i> 生成二维码
+                        </button>
+                        <button class="action-btn secondary" onclick="downloadQRCode('png')" id="downloadPngBtn" disabled>
+                            <i class="fas fa-download"></i> 下载PNG
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>© 2025 在线工具箱 | 简洁高效的工具集合</p>
+        </div>
+    </footer>
+
+    <script src="../js/tools/qrcode.js"></script>
+</body>
+</html>
