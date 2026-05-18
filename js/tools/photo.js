@@ -1141,6 +1141,12 @@
     els.resetBtn?.addEventListener('click', () => {
       state.sourceImage = null;
       state.sourceBlob = null;
+      state.selectedSize = '1inch';
+      state.selectedBg = 'white';
+      state.tolerance = 42;
+      state.headOffset = 12;
+      state.zoom = 100;
+      state.edgeRefine = 72;
       state.aiProc = null;
       if (previewObjectUrl) {
         URL.revokeObjectURL(previewObjectUrl);
@@ -1159,6 +1165,35 @@
       if (els.convertBtn) els.convertBtn.disabled = true;
       if (els.downloadBtn) els.downloadBtn.disabled = true;
       if (els.resultMeta) els.resultMeta.textContent = '';
+      // 恢复滑块默认值
+      if (els.tolerance) {
+        els.tolerance.value = 42;
+        if (els.toleranceVal) els.toleranceVal.textContent = '42';
+      }
+      if (els.headOffset) {
+        els.headOffset.value = 12;
+        if (els.headOffsetVal) els.headOffsetVal.textContent = '12%';
+      }
+      if (els.zoom) {
+        els.zoom.value = 100;
+        if (els.zoomVal) els.zoomVal.textContent = '100%';
+      }
+      if (els.edgeRefine) {
+        els.edgeRefine.value = 72;
+        if (els.edgeRefineVal) els.edgeRefineVal.textContent = '72';
+      }
+      // 恢复单选按钮默认值
+      const whiteRadio = document.querySelector('input[name="bgColor"][value="white"]');
+      if (whiteRadio) whiteRadio.checked = true;
+      const size1inch = document.querySelector('input[name="photoSize"][value="1inch"]');
+      if (size1inch) size1inch.checked = true;
+      // 移除选中样式
+      document.querySelectorAll('#bgGrid .size-option.selected').forEach(el => el.classList.remove('selected'));
+      document.querySelectorAll('#sizeGrid .size-option.selected').forEach(el => el.classList.remove('selected'));
+      const whiteOption = document.querySelector('#bgGrid .size-option[data-color="white"]');
+      if (whiteOption) whiteOption.classList.add('selected');
+      const inchOption = document.querySelector('#sizeGrid .size-option[data-size="1inch"]');
+      if (inchOption) inchOption.classList.add('selected');
       setStatus('已重置');
     });
 
