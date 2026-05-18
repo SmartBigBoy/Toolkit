@@ -420,10 +420,13 @@ async function convertWithTraditionalAlgorithm() {
         }
     }
 
-    // 第五步：再次膨胀确保边缘完整
-    for (let i = 0; i < 6; i++) dilateMask(mask, width, height, 1);
+    // 第五步：再次膨胀确保边缘完整（增加次数确保头发被包含）
+    for (let i = 0; i < 10; i++) dilateMask(mask, width, height, 1);
 
-    // 第六步：替换背景
+    // 第六步：去除蒙版中的小噪点（小于50像素的区域设为背景）
+    removeSmallBlobs(mask, width, height, 50);
+
+    // 第七步：替换背景
     for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; x++) {
             const idx = (y * width + x) * 4;
@@ -541,6 +544,48 @@ function erodeMask(mask, width, height, radius) {
         }
     }
     for (let i = 0; i < mask.length; i++) mask[i] = newMask[i];
+}
+
+// 去除蒙版中的小噪点（连通区域小于threshold的设为0）
+function removeSmallBlobs(mask, width, height, threshold) {
+    const visited = new Uint8Array(mask.length);
+    const queue = [];
+    const toRemove = [];
+    
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+            const idx = y * width + x;
+            if (mask[idx] && !visited[idx]) {
+                toRemove.length = 0;
+                queue.length = 0;
+                queue.push([x, y]);
+                visited[idx] = 1;
+                
+                while (queue.length > 0) {
+                    const [cx, cy] = queue.shift();
+                    toRemove.push([cx, cy]);
+                    
+                    const neighbors = [[cx-1,cy],[cx+1,cy],[cx,cy-1],[cx,cy+1]];
+                    for (const [nx, ny] of neighbors) {
+                        if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                            const nidx = ny * width + nx;
+                            if (mask[nidx] && !visited[nidx]) {
+                                visited[nidx] = 1;
+                                queue.push([nx, ny]);
+                            }
+                        }
+                    }
+                }
+                
+                // 如果区域太小，标记为背景
+                if (toRemove.length < threshold) {
+                    for (const [rx, ry] of toRemove) {
+                        mask[ry * width + rx] = 0;
+                    }
+                }
+            }
+        }
+    }
 }
 
 // 检测背景色
