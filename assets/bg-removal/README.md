@@ -2,57 +2,61 @@
 
 ## 当前状态
 
-此目录包含 `@imgly/background-removal@1.7.0` 完整库文件。
+此目录包含 `@imgly/background-removal@1.4.5` 完整库文件及本地预下载模型。
 
 ## 文件结构
 
 ```
 bg-removal/
 ├── dist/
-│   ├── index.mjs          # ES Module 主文件
-│   └── index.cjs           # CommonJS 主文件
-├── ort-wasm-simd-threaded.wasm  # ONNX Runtime Web WASM 文件（4.3MB）
+│   ├── index.mjs              # ES Module 主文件
+│   └── index.cjs               # CommonJS 主文件
+├── models/
+│   └── medium                  # AI 模型文件 (85MB)
+├── onnxruntime-web/
+│   └── ort-wasm-simd-threaded.wasm  # ONNX Runtime WASM (11MB)
+├── ort-wasm-simd-threaded.wasm      # WASM 副本
+├── resources.json              # 模型资源清单
 ├── package.json
 └── README.md
 ```
 
-## 模型文件说明
+## 模型配置
 
-AI 模型文件（.onnx，大约 20-80MB）**不在此目录中**，因为它们是动态下载的：
-- 首次使用时从 CDN 动态下载
-- 下载后自动缓存到用户浏览器的 IndexedDB 中
-- 后续使用从 IndexedDB 读取，无需再次下载
+photo.js 中使用以下配置加载本地模型：
+
+```javascript
+await removeBackground(image, {
+    model: 'medium',
+    publicPath: '../assets/bg-removal/'
+});
+```
+
+## 模型下载说明
+
+模型文件已预下载到本地：
+
+| 文件 | 大小 | 说明 |
+|------|------|------|
+| models/medium | 85MB | AI 分割模型（medium 版本） |
+| ort-wasm-simd-threaded.wasm | 11MB | ONNX Runtime Web WASM |
+
+这些文件是从 `https://staticimgly.com/@imgly/background-removal-data/1.4.5/dist/` 下载的分块文件合并而成。
 
 ## 技术架构
 
 ```
-background-removal@1.7.0
-├── dist/index.mjs    → 库主文件（已下载）
-├── dist/index.cjs    → 库主文件（已下载）
-├── ort-wasm-simd-threaded.wasm  → WASM 运行时（已下载）
-└── 模型文件（首次运行时从 CDN 下载）
-    └── 缓存到 IndexedDB
+background-removal@1.4.5
+├── dist/index.mjs      → 库主文件
+├── models/medium        → AI 模型（已本地化）
+└── ort-wasm-simd-threaded.wasm → ONNX Runtime WASM（已本地化）
 ```
 
-## 使用说明
+## 重新下载模型
 
-在 `photo.js` 中配置：
-```javascript
-// 从本地加载库
-const { removeBackground } = await import('../assets/bg-removal/dist/index.mjs');
+如需重新下载模型，运行：
 
-// 首次调用会下载并缓存模型到 IndexedDB
-await removeBackground(imageFile, {
-    model: 'small',
-    progress: (key, current, total) => { ... }
-});
+```bash
+cd /workspace/projects/assets/bg-removal
+bash download-full.sh
 ```
-
-## 模型缓存
-
-用户首次使用时：
-1. 浏览器从 CDN 下载模型文件（约 30MB）
-2. 模型缓存到 IndexedDB
-3. 后续使用秒开
-
-如需清除缓存：浏览器开发者工具 → Application → IndexedDB → 删除

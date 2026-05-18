@@ -40,7 +40,8 @@ async function loadBackgroundRemovalModel() {
             .then(r => r.blob());
         
         await removeBackground(tiny, {
-            model: 'small',
+            model: 'medium',  // 使用本地 medium 模型
+            publicPath: '../assets/bg-removal/',
             progress: (key, current, total) => {
                 if (total > 0) {
                     const pct = Math.round(current / total * 100);
