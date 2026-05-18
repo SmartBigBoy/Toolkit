@@ -315,144 +315,98 @@
     return out;
   }
 
+
   /**
    * ========================================
-   * 增强版抠图算法 v2 - 多策略组合
+   * 增强版抠图算法 v3 - 基于连通区域分析
+   * 策略：先洪水填充背景，再用连通区域分析保护前景
    * ========================================
    */
 
   /**
-   * RGB 转 YCbCr 色彩空间
+   * 查找连通区域
    */
-  function rgbToYCbCr(r, g, b) {
-    const y = 0.299 * r + 0.587 * g + 0.114 * b;
-    const cb = 128 - 0.168736 * r - 0.331264 * g + 0.5 * b;
-    const cr = 128 + 0.5 * r - 0.418688 * g - 0.081312 * b;
-    return { y, cb, cr };
-  }
-
-  /**
-   * 皮肤检测 - 基于 YCbCr 色彩空间的椭圆模型
-   * @returns {Float32Array} 每个像素的皮肤概率 (0-1)
-   */
-  function detectSkinPixels(data, w, h) {
-    const skinProb = new Float32Array(w * h);
+  function findConnectedComponents(mask, w, h) {
+    const visited = new Uint8Array(mask.length);
+    const components = [];
 
     for (let y = 0; y < h; y++) {
       for (let x = 0; x < w; x++) {
-        const i = (y * w + x) * 4;
-        const r = data[i], g = data[i + 1], b = data[i + 2];
-        const { cb, cr } = rgbToYCbCr(r, g, b);
+        const idx = y * w + x;
+        if (mask[idx] && !visited[idx]) {
+          const pixels = [];
+          const queue = [idx];
+          visited[idx] = 1;
+          let head = 0;
 
-        // 简化的皮肤椭圆模型
-        let prob = 0;
-        const cx = cb - 109.38;
-        const cy = cr - 152.02;
-        const ecc = (cx * cx) / 1.5 + (cy * cy);
+          while (head < queue.length) {
+            const p = queue[head++];
+            pixels.push(p);
+            const px = p % w, py = (p / w) | 0;
 
-        if (ecc < 1550) {
-          // 额外检查：排除过白或过黑的像素
-          const brightness = 0.299 * r + 0.587 * g + 0.114 * b;
-          if (brightness > 30 && brightness < 240) {
-            prob = Math.max(0, 1 - ecc / 1550);
+            if (py > 0 && mask[(py - 1) * w + px] && !visited[(py - 1) * w + px]) {
+              visited[(py - 1) * w + px] = 1;
+              queue.push((py - 1) * w + px);
+            }
+            if (py < h - 1 && mask[(py + 1) * w + px] && !visited[(py + 1) * w + px]) {
+              visited[(py + 1) * w + px] = 1;
+              queue.push((py + 1) * w + px);
+            }
+            if (px > 0 && mask[py * w + px - 1] && !visited[py * w + px - 1]) {
+              visited[py * w + px - 1] = 1;
+              queue.push(py * w + px - 1);
+            }
+            if (px < w - 1 && mask[py * w + px + 1] && !visited[py * w + px + 1]) {
+              visited[py * w + px + 1] = 1;
+              queue.push(py * w + px + 1);
+            }
+          }
+
+          if (pixels.length > 0) {
+            let minX = w, maxX = 0, minY = h, maxY = 0;
+            let sumX = 0, sumY = 0;
+            for (const p of pixels) {
+              const px = p % w, py = (p / w) | 0;
+              minX = Math.min(minX, px);
+              maxX = Math.max(maxX, px);
+              minY = Math.min(minY, py);
+              maxY = Math.max(maxY, py);
+              sumX += px;
+              sumY += py;
+            }
+            components.push({
+              pixels,
+              count: pixels.length,
+              bounds: { minX, maxX, minY, maxY },
+              center: { x: sumX / pixels.length, y: sumY / pixels.length }
+            });
           }
         }
-
-        skinProb[y * w + x] = prob;
       }
     }
 
-    // 高斯模糊皮肤概率图，使区域更连续
-    return gaussianBlurFloat(skinProb, w, h, 3);
-  }
-
-  /**
-   * 高斯模糊 - Float32Array 版本
-   */
-  function gaussianBlurFloat(data, w, h, radius) {
-    if (radius < 1) return data;
-    const out = new Float32Array(data.length);
-    const kernel = createGaussianKernel(radius);
-    const kSize = kernel.length;
-    const kHalf = (kSize - 1) / 2;
-
-    // 水平卷积
-    const temp = new Float32Array(data.length);
-    for (let y = 0; y < h; y++) {
-      for (let x = 0; x < w; x++) {
-        let sum = 0, weightSum = 0;
-        for (let k = -kHalf; k <= kHalf; k++) {
-          const nx = Math.min(w - 1, Math.max(0, x + k));
-          const w2 = kernel[k + kHalf];
-          sum += data[y * w + nx] * w2;
-          weightSum += w2;
-        }
-        temp[y * w + x] = sum / weightSum;
-      }
-    }
-
-    // 垂直卷积
-    for (let y = 0; y < h; y++) {
-      for (let x = 0; x < w; x++) {
-        let sum = 0, weightSum = 0;
-        for (let k = -kHalf; k <= kHalf; k++) {
-          const ny = Math.min(h - 1, Math.max(0, y + k));
-          const w2 = kernel[k + kHalf];
-          sum += temp[ny * w + x] * w2;
-          weightSum += w2;
-        }
-        out[y * w + x] = sum / weightSum;
-      }
-    }
-
-    return out;
-  }
-
-  /**
-   * 创建高斯卷积核
-   */
-  function createGaussianKernel(radius) {
-    const size = radius * 2 + 1;
-    const kernel = new Float32Array(size);
-    const sigma = radius / 3;
-    let sum = 0;
-    for (let i = 0; i < size; i++) {
-      const x = i - radius;
-      kernel[i] = Math.exp(-(x * x) / (2 * sigma * sigma));
-      sum += kernel[i];
-    }
-    for (let i = 0; i < size; i++) kernel[i] /= sum;
-    return kernel;
-  }
-
-  /**
-   * 形态学闭运算 - 先膨胀后腐蚀，填充小孔洞
-   */
-  function morphologicalClose(mask, w, h, radius) {
-    // 膨胀
-    const dilated = dilate(mask, w, h, radius);
-    // 腐蚀
-    return erode(dilated, w, h, radius);
+    return components;
   }
 
   /**
    * 形态学膨胀
    */
   function dilate(mask, w, h, radius) {
-    const out = new Float32Array(w * h);
+    const out = new Uint8Array(w * h);
     const r2 = radius * radius;
     for (let y = 0; y < h; y++) {
       for (let x = 0; x < w; x++) {
-        let maxVal = 0;
         for (let dy = -radius; dy <= radius; dy++) {
           for (let dx = -radius; dx <= radius; dx++) {
             if (dx * dx + dy * dy > r2) continue;
             const nx = x + dx, ny = y + dy;
-            if (nx < 0 || nx >= w || ny < 0 || ny >= h) continue;
-            maxVal = Math.max(maxVal, mask[ny * w + nx]);
+            if (nx >= 0 && nx < w && ny >= 0 && ny < h && mask[ny * w + nx]) {
+              out[y * w + x] = 1;
+              break;
+            }
           }
+          if (out[y * w + x]) break;
         }
-        out[y * w + x] = maxVal;
       }
     }
     return out;
@@ -462,173 +416,114 @@
    * 形态学腐蚀
    */
   function erode(mask, w, h, radius) {
-    const out = new Float32Array(w * h);
+    const out = new Uint8Array(w * h);
     const r2 = radius * radius;
     for (let y = 0; y < h; y++) {
       for (let x = 0; x < w; x++) {
-        let minVal = 255;
-        for (let dy = -radius; dy <= radius; dy++) {
+        let ok = true;
+        for (let dy = -radius; dy <= radius && ok; dy++) {
           for (let dx = -radius; dx <= radius; dx++) {
             if (dx * dx + dy * dy > r2) continue;
             const nx = x + dx, ny = y + dy;
-            if (nx < 0 || nx >= w || ny < 0 || ny >= h) continue;
-            minVal = Math.min(minVal, mask[ny * w + nx]);
+            if (nx < 0 || nx >= w || ny < 0 || ny >= h || !mask[ny * w + nx]) {
+              ok = false;
+              break;
+            }
           }
         }
-        out[y * w + x] = minVal;
+        out[y * w + x] = ok ? 1 : 0;
       }
     }
     return out;
   }
 
   /**
-   * 边缘感知羽化 - 根据边缘强度动态调整羽化半径
+   * 闭运算：先膨胀后腐蚀
    */
-  function edgeAwareFeather(alpha, data, w, h, baseRadius) {
-    const out = new Float32Array(w * h);
+  function morphologicalClose(mask, w, h, radius) {
+    const dilated = dilate(mask, w, h, radius);
+    return erode(dilated, w, h, radius);
+  }
 
-    // 计算边缘强度 (梯度幅度)
-    const edge = computeEdgeStrength(data, w, h);
+  /**
+   * RGB 转 LAB 色彩空间
+   */
+  function rgbToLab(r, g, b) {
+    let rr = r / 255, gg = g / 255, bb = b / 255;
+    rr = rr > 0.04045 ? Math.pow((rr + 0.055) / 1.055, 2.4) : rr / 12.92;
+    gg = gg > 0.04045 ? Math.pow((gg + 0.055) / 1.055, 2.4) : gg / 12.92;
+    bb = bb > 0.04045 ? Math.pow((bb + 0.055) / 1.055, 2.4) : bb / 12.92;
+    const x = (rr * 0.4124564 + gg * 0.3575761 + bb * 0.1804375) / 0.95047;
+    const y = (rr * 0.2126729 + gg * 0.7151522 + bb * 0.0721750);
+    const z = (rr * 0.0193339 + gg * 0.1191920 + bb * 0.9503041) / 1.08883;
+    const fx = x > 0.008856 ? Math.pow(x, 1/3) : (7.787 * x) + 16/116;
+    const fy = y > 0.008856 ? Math.pow(y, 1/3) : (7.787 * y) + 16/116;
+    const fz = z > 0.008856 ? Math.pow(z, 1/3) : (7.787 * z) + 16/116;
+    return { l: (116 * fy) - 16, a: 500 * (fx - fy), b: 200 * (fy - fz) };
+  }
 
+  /**
+   * LAB 色彩空间距离
+   */
+  function colorDistLab(r1, g1, b1, r2, g2, b2) {
+    const lab1 = rgbToLab(r1, g1, b1);
+    const lab2 = rgbToLab(r2, g2, b2);
+    return Math.sqrt(
+      (lab1.l - lab2.l) ** 2 +
+      (lab1.a - lab2.a) ** 2 +
+      (lab1.b - lab2.b) ** 2
+    );
+  }
+
+  /**
+   * 高斯模糊 Float32Array
+   */
+  function gaussianBlurFloat(data, w, h, radius) {
+    if (radius < 1) return data;
+    const out = new Float32Array(data.length);
+    const kernel = [];
+    let sum = 0;
+    for (let i = -radius; i <= radius; i++) {
+      const v = Math.exp(-(i * i) / (2 * radius * radius / 9));
+      kernel.push(v);
+      sum += v;
+    }
+    for (let i = 0; i < kernel.length; i++) kernel[i] /= sum;
+    const kHalf = radius;
+
+    const temp = new Float32Array(data.length);
     for (let y = 0; y < h; y++) {
       for (let x = 0; x < w; x++) {
-        const i = y * w + x;
-        const edgeStrength = edge[i];
-
-        // 边缘处用小半径，非边缘处用大半径
-        const dynamicRadius = Math.max(1, baseRadius * (1 - edgeStrength * 0.7));
-
-        // 加权平均计算新 alpha
-        let sum = 0, weightSum = 0;
-        const r = Math.ceil(dynamicRadius);
-        for (let dy = -r; dy <= r; dy++) {
-          for (let dx = -r; dx <= r; dx++) {
-            const nx = x + dx, ny = y + dy;
-            if (nx < 0 || nx >= w || ny < 0 || ny >= h) continue;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            if (dist > dynamicRadius + 1) continue;
-            const weight = Math.max(0, 1 - dist / (dynamicRadius + 1));
-            sum += alpha[ny * w + nx] * weight;
-            weightSum += weight;
-          }
+        let val = 0, wsum = 0;
+        for (let k = -kHalf; k <= kHalf; k++) {
+          const nx = Math.min(w - 1, Math.max(0, x + k));
+          val += data[y * w + nx] * kernel[k + kHalf];
+          wsum += kernel[k + kHalf];
         }
-        out[i] = weightSum > 0 ? sum / weightSum : alpha[i];
+        temp[y * w + x] = val / wsum;
       }
-    }
-
-    return out;
-  }
-
-  /**
-   * 计算边缘强度 (Sobel 梯度)
-   */
-  function computeEdgeStrength(data, w, h) {
-    const out = new Float32Array(w * h);
-
-    for (let y = 1; y < h - 1; y++) {
-      for (let x = 1; x < w - 1; x++) {
-        const i = (y * w + x) * 4;
-
-        // Sobel 算子
-        const gx =
-          -data[i - 4] + data[i + 4]
-          - 2 * data[i - 4 - w * 4] + 2 * data[i + 4 - w * 4]
-          - data[i - 4 + w * 4] + data[i + 4 + w * 4];
-
-        const gy =
-          -data[i - w * 4] + data[i + w * 4]
-          - 2 * data[i - 4 - w * 4] + 2 * data[i - 4 + w * 4]
-          - data[i + 4 - w * 4] + data[i + 4 + w * 4];
-
-        out[y * w + x] = Math.min(1, Math.sqrt(gx * gx + gy * gy) / 500);
-      }
-    }
-
-    return out;
-  }
-
-  /**
-   * 多起点洪水填充 - 从边缘和中心点同时填充
-   */
-  function multiSeedFloodFill(data, w, h, tolerance, skinProb) {
-    const isBg = new Float32Array(w * h);
-    const visited = new Uint8Array(w * h);
-    const bgColor = sampleBackgroundColor(data, w, h);
-
-    // 种子点队列
-    const queue = [];
-    const push = (x, y, priority) => {
-      if (x < 0 || x >= w || y < 0 || y >= h || visited[y * w + x]) return;
-      const i = (y * w + x) * 4;
-      const dist = colorDist(data[i], data[i + 1], data[i + 2], bgColor.r, bgColor.g, bgColor.b);
-
-      // 皮肤区域内的点优先级低（更容易被填充为前景）
-      const skinPenalty = skinProb[y * w + x] * 0.5;
-
-      if (dist <= tolerance * (1 - skinPenalty)) {
-        visited[y * w + x] = 1;
-        // 皮肤概率高的点放队尾，边缘点放队头
-        if (priority === 'high') {
-          queue.unshift({ x, y });
-        } else {
-          queue.push({ x, y });
-        }
-      }
-    };
-
-    // 边缘种子点（高优先级）
-    for (let x = 0; x < w; x++) {
-      push(x, 0, 'high');
-      push(x, h - 1, 'high');
     }
     for (let y = 0; y < h; y++) {
-      push(0, y, 'high');
-      push(w - 1, y, 'high');
-    }
-
-    // 中心区域种子点（低优先级）- 用于处理背景延伸情况
-    const cx = w >> 1, cy = h >> 1;
-    const innerBand = Math.min(w, h) * 0.35;
-    for (let y = Math.floor(cy - innerBand); y <= Math.ceil(cy + innerBand); y += 10) {
-      for (let x = Math.floor(cx - innerBand); x <= Math.ceil(cx + innerBand); x += 10) {
-        if (y >= 0 && y < h && x >= 0 && x < w) {
-          const i = (y * w + x) * 4;
-          const dist = colorDist(data[i], data[i + 1], data[i + 2], bgColor.r, bgColor.g, bgColor.b);
-          if (dist <= tolerance * 0.7) {
-            push(x, y, 'low');
-          }
+      for (let x = 0; x < w; x++) {
+        let val = 0, wsum = 0;
+        for (let k = -kHalf; k <= kHalf; k++) {
+          const ny = Math.min(h - 1, Math.max(0, y + k));
+          val += temp[ny * w + x] * kernel[k + kHalf];
+          wsum += kernel[k + kHalf];
         }
+        out[y * w + x] = val / wsum;
       }
     }
-
-    // BFS 填充
-    const dx = [1, -1, 0, 0];
-    const dy = [0, 0, 1, -1];
-
-    while (queue.length > 0) {
-      const { x, y } = queue.shift();
-      const idx = y * w + x;
-      const i = (y * w + x) * 4;
-      const dist = colorDist(data[i], data[i + 1], data[i + 2], bgColor.r, bgColor.g, bgColor.b);
-      const skinPenalty = skinProb[idx] * 0.5;
-
-      isBg[idx] = 1 - skinPenalty * 0.3; // 皮肤区域略微降低背景概率
-
-      for (let k = 0; k < 4; k++) {
-        push(x + dx[k], y + dy[k], 'low');
-      }
-    }
-
-    return isBg;
+    return out;
   }
 
   /**
    * ========================================
-   * 增强版抠图主函数
+   * 增强版抠图主函数 v3
    * ========================================
    */
   function removeBackgroundCanvasV2(img, tolerance) {
-    const maxSide = 1400; // 可处理更大图片
+    const maxSide = 1400;
     let sw = img.naturalWidth;
     let sh = img.naturalHeight;
     const scale = Math.min(1, maxSide / Math.max(sw, sh));
@@ -643,47 +538,110 @@
     const imageData = ctx.getImageData(0, 0, sw, sh);
     const { data } = imageData;
 
-    // 步骤1: 皮肤检测
-    console.log('[photo] 步骤1: 皮肤检测...');
-    const skinProb = detectSkinPixels(data, sw, sh);
-
-    // 步骤2: 多起点洪水填充
-    console.log('[photo] 步骤2: 多起点洪水填充...');
-    const isBg = multiSeedFloodFill(data, sw, sh, tolerance, skinProb);
-
-    // 步骤3: 形态学闭运算填充小孔洞
-    console.log('[photo] 步骤3: 形态学闭运算...');
-    const binaryMask = new Float32Array(sw * sh);
-    for (let i = 0; i < isBg.length; i++) {
-      binaryMask[i] = isBg[i] > 0.5 ? 255 : 0;
+    // 步骤1: 智能采样背景色（边缘区域）
+    const band = Math.max(3, Math.floor(Math.min(sw, sh) * 0.05));
+    const samples = [];
+    for (let x = 0; x < sw; x++) {
+      for (let b = 0; b < band; b++) {
+        const i = ((b + 1) * sw + x) * 4;
+        samples.push([data[i], data[i+1], data[i+2]]);
+        const i2 = ((sh - 2 - b) * sw + x) * 4;
+        samples.push([data[i2], data[i2+1], data[i2+2]]);
+      }
     }
-    const closedMask = morphologicalClose(binaryMask, sw, sh, 3);
+    for (let y = 0; y < sh; y++) {
+      for (let b = 0; b < band; b++) {
+        const i = (y * sw + b + 1) * 4;
+        samples.push([data[i], data[i+1], data[i+2]]);
+        const i2 = (y * sw + sw - 2 - b) * 4;
+        samples.push([data[i2], data[i2+1], data[i2+2]]);
+      }
+    }
 
-    // 步骤4: 边缘感知羽化
-    console.log('[photo] 步骤4: 边缘感知羽化...');
-    const feathered = edgeAwareFeather(closedMask, data, sw, sh, 2.5);
+    // 中位数采样（抗噪声）
+    const sortedR = samples.map(s => s[0]).sort((a, b) => a - b);
+    const sortedG = samples.map(s => s[1]).sort((a, b) => a - b);
+    const sortedB = samples.map(s => s[2]).sort((a, b) => a - b);
+    const mid = Math.floor(samples.length / 2);
+    const bgColor = { r: sortedR[mid], g: sortedG[mid], b: sortedB[mid] };
 
-    // 步骤5: 轻微高斯模糊获得更自然的边缘
-    console.log('[photo] 步骤5: 边缘平滑...');
-    const smoothed = gaussianBlurFloat(feathered, sw, sh, 1);
+    // 步骤2: LAB 色彩空间的洪水填充获取背景
+    const isBg = new Uint8Array(sw * sh);
+    const visited = new Uint8Array(sw * sh);
+    const queue = new Int32Array(sw * sh);
+    let head = 0, tail = 0;
 
-    // 构建输出图像
+    const tryPush = (x, y) => {
+      if (x < 0 || x >= sw || y < 0 || y >= sh || visited[y * sw + x]) return;
+      const i = (y * sw + x) * 4;
+      const dist = colorDistLab(data[i], data[i+1], data[i+2], bgColor.r, bgColor.g, bgColor.b);
+      if (dist <= tolerance) {
+        visited[y * sw + x] = 1;
+        isBg[y * sw + x] = 1;
+        queue[tail++] = y * sw + x;
+      }
+    };
+
+    // 边缘种子
+    for (let x = 0; x < sw; x++) {
+      tryPush(x, 0);
+      tryPush(x, sh - 1);
+    }
+    for (let y = 0; y < sh; y++) {
+      tryPush(0, y);
+      tryPush(sw - 1, y);
+    }
+
+    // BFS
+    while (head < tail) {
+      const idx = queue[head++];
+      const x = idx % sw, y = (idx / sw) | 0;
+      tryPush(x + 1, y);
+      tryPush(x - 1, y);
+      tryPush(x, y + 1);
+      tryPush(x, y - 1);
+    }
+
+    // 步骤3: 查找所有连通区域
+    const components = findConnectedComponents(isBg, sw, sh);
+
+    // 找出主要背景区域（接触边缘且面积较大）
+    let mainBg = new Uint8Array(sw * sh);
+    for (const comp of components) {
+      const { bounds, count } = comp;
+      const touchesEdge = bounds.minX === 0 || bounds.maxX === sw - 1 ||
+                          bounds.minY === 0 || bounds.maxY === sh - 1;
+      if (touchesEdge && count > sw * sh * 0.08) {
+        for (const p of comp.pixels) mainBg[p] = 1;
+      }
+    }
+
+    // 步骤4: 闭运算平滑
+    mainBg = morphologicalClose(mainBg, sw, sh, 3);
+
+    // 步骤5: 构建 alpha 通道并羽化
+    const alpha = new Float32Array(sw * sh);
+    for (let i = 0; i < sw * sh; i++) {
+      alpha[i] = mainBg[i] ? 0 : 255;
+    }
+
+    const feathered = gaussianBlurFloat(alpha, sw, sh, 2);
+
+    // 构建输出
     const out = ctx.createImageData(sw, sh);
     for (let i = 0; i < sw * sh; i++) {
       const si = i * 4;
       out.data[si] = data[si];
       out.data[si + 1] = data[si + 1];
       out.data[si + 2] = data[si + 2];
-      out.data[si + 3] = Math.round(Math.min(255, Math.max(0, smoothed[i])));
+      out.data[si + 3] = Math.round(Math.min(255, Math.max(0, feathered[i])));
     }
     ctx.putImageData(out, 0, 0);
-
-    console.log('[photo] 增强抠图完成');
     return c;
   }
 
   /**
-   * 原始简单版抠图（保留作为备选）
+   * 原始简单版抠图（备选）
    */
   function removeBackgroundCanvasSimple(img, tolerance) {
     const maxSide = 1200;
