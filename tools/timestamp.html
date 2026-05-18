@@ -320,11 +320,21 @@
     </footer>
 
     <script>
+        function pad(n) { return n.toString().padStart(2, '0'); }
+        
         function updateCurrentTime() {
-            const now = Date.now();
-            const seconds = Math.floor(now / 1000);
+            const now = new Date();
+            const seconds = Math.floor(now.getTime() / 1000);
             document.getElementById('currentSeconds').textContent = seconds;
-            document.getElementById('currentMillis').textContent = now;
+            document.getElementById('currentMillis').textContent = now.getTime();
+            
+            // 实时更新日期输入框
+            document.getElementById('year').value = now.getFullYear();
+            document.getElementById('month').value = pad(now.getMonth() + 1);
+            document.getElementById('day').value = pad(now.getDate());
+            document.getElementById('hour').value = pad(now.getHours());
+            document.getElementById('minute').value = pad(now.getMinutes());
+            document.getElementById('second').value = pad(now.getSeconds());
         }
         updateCurrentTime();
         setInterval(updateCurrentTime, 1000);
