@@ -22,6 +22,7 @@
   };
 
   const BACKGROUNDS = {
+    original: null,
     white: '#ffffff',
     blue: '#438edb',
     red: '#d81e06',
@@ -34,7 +35,7 @@
     sourceImage: null,
     sourceBlob: null,
     selectedSize: '1inch',
-    selectedBg: 'white',
+    selectedBg: 'original',
     tolerance: 15,
     headOffset: 12,
     zoom: 100,
@@ -945,11 +946,23 @@
       const sizeKey = normalizeSizeKey(state.selectedSize);
       const size = SIZES[sizeKey] || SIZES['1inch'];
       const [tw, th] = size.px;
-      const bgHex = BACKGROUNDS[state.selectedBg] || BACKGROUNDS.white;
+      const bgHex = BACKGROUNDS[state.selectedBg];
+      const isOriginalBg = state.selectedBg === 'original';
 
-      const subject = await getSubjectCanvas();
-      const sw = subject.width;
-      const sh = subject.height;
+      let sourceCanvas;
+      if (isOriginalBg) {
+        // 原色模式：直接使用原图，不抠图
+        sourceCanvas = document.createElement('canvas');
+        sourceCanvas.width = state.sourceImage.naturalWidth;
+        sourceCanvas.height = state.sourceImage.naturalHeight;
+        const ctx = sourceCanvas.getContext('2d');
+        ctx.drawImage(state.sourceImage, 0, 0);
+      } else {
+        sourceCanvas = await getSubjectCanvas();
+      }
+
+      const sw = sourceCanvas.width;
+      const sh = sourceCanvas.height;
 
       const { cropX, cropY, cropW, cropH } = computeCropRect(
         sw,
@@ -964,9 +977,16 @@
       out.width = tw;
       out.height = th;
       const ctx = out.getContext('2d');
-      ctx.fillStyle = bgHex;
-      ctx.fillRect(0, 0, tw, th);
-      ctx.drawImage(subject, cropX, cropY, cropW, cropH, 0, 0, tw, th);
+
+      if (isOriginalBg) {
+        // 原色模式：绘制原图裁剪区域
+        ctx.drawImage(sourceCanvas, cropX, cropY, cropW, cropH, 0, 0, tw, th);
+      } else {
+        // 换底模式：先填底色，再绘制主体
+        ctx.fillStyle = bgHex || '#ffffff';
+        ctx.fillRect(0, 0, tw, th);
+        ctx.drawImage(sourceCanvas, cropX, cropY, cropW, cropH, 0, 0, tw, th);
+      }
 
       revokeResultUrl();
       const blob = await canvasToBlob(out, 'image/jpeg', 0.95);
@@ -1041,14 +1061,17 @@
   function bindBgGrid() {
     if (els.bgGrid) {
       els.bgGrid.innerHTML = '';
-      const labels = { white: '白底', blue: '蓝底', red: '红底', green: '绿底', yellow: '黄底', gray: '灰底' };
+      const labels = { original: '原色', white: '白底', blue: '蓝底', red: '红底', green: '绿底', yellow: '黄底', gray: '灰底' };
       Object.entries(BACKGROUNDS).forEach(([key, hex]) => {
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'bg-tag' + (key === state.selectedBg ? ' active selected' : '');
         btn.dataset.bg = key;
-        btn.dataset.color = hex;
-        btn.innerHTML = `<span class="bg-dot" style="background:${hex}"></span>${labels[key]}`;
+        btn.dataset.color = hex || '';
+        // 原色用图标，其他用颜色圆点
+        btn.innerHTML = key === 'original'
+          ? `<span class="bg-icon">✦</span>${labels[key]}`
+          : `<span class="bg-dot" style="background:${hex}"></span>${labels[key]}`;
         btn.addEventListener('click', () => {
           state.selectedBg = key;
           $$('.bg-tag').forEach((el) => {
