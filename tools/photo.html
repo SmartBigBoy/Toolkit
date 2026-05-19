@@ -84,18 +84,13 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      background: #f8fafc;
-      border-radius: 8px;
+      background: #fff;
+      border: 2px dashed #e2e8f0;
+      border-radius: 10px;
       overflow: hidden;
     }
-    .preview-box img {
-      max-width: 100%;
-      max-height: 320px;
-      object-fit: contain;
-      display: block;
-    }
     .preview-placeholder {
-      color: var(--text-tertiary);
+      color: #94a3b8;
       font-size: 14px;
     }
     .size-grid {
@@ -292,14 +287,13 @@
           <h3><i class="fas fa-eye"></i> 原图预览</h3>
           <div id="photoPreview" class="preview-box">
             <span id="previewPlaceholder" class="preview-placeholder">暂无照片</span>
-            <img id="previewOriginal" alt="原图" hidden>
+            <img id="previewOriginal" alt="原图" hidden style="max-width:100%;max-height:320px;object-fit:contain;">
           </div>
         </div>
         <div class="photo-panel">
-          <h3><i class="fas fa-image"></i> 证件照结果</h3>
           <div class="preview-box">
             <span id="resultPlaceholder" class="preview-placeholder">生成后显示</span>
-            <img id="previewResult" alt="证件照结果" hidden>
+            <img id="previewResult" alt="证件照结果" hidden style="max-width:100%;max-height:320px;object-fit:contain;">
           </div>
           <p id="resultMeta" class="result-meta"></p>
         </div>
