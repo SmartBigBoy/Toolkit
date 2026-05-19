@@ -33,26 +33,54 @@
     }
     .photo-panel h3 i { color: var(--primary); }
     .drop-zone {
-      border: 2px dashed var(--border);
+      background: #fff;
       border-radius: 14px;
-      padding: 32px 20px;
+      padding: 40px 24px;
       text-align: center;
       cursor: pointer;
-      transition: border-color 0.2s, background 0.2s;
-      background: var(--bg-secondary);
+      transition: all 0.2s;
+      border: none;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
     }
     .drop-zone:hover,
     .drop-zone.dragover {
-      border-color: var(--primary);
-      background: rgba(99, 102, 241, 0.06);
+      box-shadow: 0 4px 12px rgba(99,102,241,0.15);
     }
-    .drop-zone i.cloud-icon {
-      font-size: 40px;
-      color: var(--primary);
-      margin-bottom: 12px;
+    .drop-zone .cloud-icon {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 16px;
+      background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(139,92,246,0.3);
     }
-    .drop-zone p { color: var(--text-secondary); font-size: 14px; margin: 4px 0; }
-    .drop-zone .hint { font-size: 12px; color: var(--text-tertiary); }
+    .drop-zone .cloud-icon svg {
+      width: 28px;
+      height: 28px;
+      fill: #fff;
+    }
+    .drop-zone p { color: #1f2937; font-size: 15px; margin: 8px 0; font-weight: 500; }
+    .drop-zone .hint { font-size: 13px; color: #9ca3af; font-weight: 400; }
+    .drop-zone .upload-btn {
+      display: inline-block;
+      margin-top: 20px;
+      padding: 10px 28px;
+      background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+      color: #fff;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 2px 8px rgba(139,92,246,0.3);
+    }
+    .drop-zone .upload-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(139,92,246,0.4);
+    }
     .preview-box {
       min-height: 220px;
       display: flex;
@@ -251,13 +279,13 @@
 
       <div class="section-block" style="padding-top:24px">
         <div id="uploadArea" class="drop-zone photo-upload">
-          <i class="fas fa-cloud-arrow-up cloud-icon"></i>
+          <div class="cloud-icon">
+            <svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
+          </div>
           <p>点击或拖拽上传照片</p>
           <p class="hint">支持 JPG、PNG、WebP，建议半身照、背景单一，最大 15MB</p>
           <input type="file" id="photoUpload" name="photoUpload" class="file-input-hidden" accept="image/jpeg,image/png,image/webp">
-          <p style="margin-top:16px">
-            <label for="photoUpload" class="upload-btn">选择照片</label>
-          </p>
+          <span class="upload-btn">选择照片</span>
         </div>
       </div>
 
