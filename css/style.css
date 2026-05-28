@@ -871,3 +871,16 @@ body {
 .image-actions .action-btn i {
     font-size: 14px;
 }
+
+/* 广告容器 */
+.ad-container {
+    text-align: center;
+    padding: 20px 0;
+    margin: 30px auto;
+    max-width: 470px;
+}
+.ad-container img {
+    max-width: 100%;
+    border-radius: 8px;
+    display: block;
+}
