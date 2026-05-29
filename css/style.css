@@ -884,3 +884,63 @@ body {
     border-radius: 8px;
     display: block;
 }
+
+/* 文章页面样式 */
+.article-content {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 30px 20px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.article-content h1 {
+    font-size: 1.8rem;
+    color: #1a1a1a;
+    margin-bottom: 24px;
+    line-height: 1.4;
+}
+.article-content h2 {
+    font-size: 1.4rem;
+    color: #333;
+    margin: 32px 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #f0f0f0;
+}
+.article-content h3 {
+    font-size: 1.2rem;
+    color: #444;
+    margin: 24px 0 12px;
+}
+.article-content p {
+    line-height: 1.8;
+    color: #333;
+    margin-bottom: 16px;
+}
+.article-content ul, .article-content ol {
+    margin: 16px 0;
+    padding-left: 24px;
+}
+.article-content li {
+    line-height: 1.8;
+    color: #333;
+    margin-bottom: 8px;
+}
+.article-content a {
+    color: #4f46e5;
+    text-decoration: none;
+}
+.article-content a:hover {
+    text-decoration: underline;
+}
+.article-content figure {
+    margin: 24px 0;
+    text-align: center;
+}
+.article-content img {
+    max-width: 100%;
+    border-radius: 8px;
+}
+.article-content strong {
+    color: #1a1a1a;
+}
