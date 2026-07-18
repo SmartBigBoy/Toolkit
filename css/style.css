@@ -339,6 +339,7 @@ body {
     display: flex;
     gap: 12px;
     flex-wrap: wrap;
+    justify-content: center;
 }
 .rec-card {
     display: flex;
@@ -377,6 +378,22 @@ body {
     text-align: center;
     line-height: 1.2;
 }
+/* 轮播滑出 — 向左移出 */
+.rec-slide-out {
+    animation: recSlideOut 0.3s ease forwards;
+}
+@keyframes recSlideOut {
+    to { opacity: 0; transform: translateX(-20px); }
+}
+/* 轮播滑入 — 从右移入 */
+.rec-slide-in {
+    animation: recSlideIn 0.35s ease forwards;
+}
+@keyframes recSlideIn {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
 @keyframes recFadeIn {
     from { opacity: 0; transform: translateY(8px); }
     to { opacity: 1; transform: translateY(0); }

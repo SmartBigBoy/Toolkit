@@ -33,17 +33,17 @@ function getCurrentToolId() {
   return m ? m[1] : null;
 }
 
-/* 渲染推荐卡片 */
-function renderRecommendations() {
-  const currentId = getCurrentToolId();
-  const others = TOOLS_DATA.filter(t => t.id !== currentId);
-  shuffle(others);
-  const picks = others.slice(0, 5);
+/* ── 轮播状态 ── */
+let carouselCards = [];   // 当前 5 张卡片
+let carouselIdx = 0;      // 下一张要替换的位置
+let carouselTimer = null;
+let isAnimating = false;
 
+/* 渲染卡片（无动画） */
+function renderCarousel(cards) {
   const container = document.getElementById('tool-recommend');
   if (!container) return;
-
-  container.innerHTML = picks.map(t => `
+  container.innerHTML = cards.map(t => `
     <a href="../tools/${t.id}.html" class="rec-card">
       <div class="rec-icon"><i class="fas ${t.icon}"></i></div>
       <span class="rec-name">${t.name}</span>
@@ -51,19 +51,58 @@ function renderRecommendations() {
   `).join('');
 }
 
-/* 6 秒轮播刷新 */
-let recTimer = null;
-function startRecRotation() {
-  renderRecommendations();
-  if (recTimer) clearInterval(recTimer);
-  recTimer = setInterval(() => {
-    renderRecommendations();
-  }, 6000);
+/* 初始化轮播 */
+function initCarousel() {
+  const currentId = getCurrentToolId();
+  const others = TOOLS_DATA.filter(t => t.id !== currentId);
+  shuffle(others);
+  carouselCards = others.slice(0, 5);
+  carouselIdx = 0;
+  renderCarousel(carouselCards);
 }
 
-/* 页面加载时启动 */
+/* 单张轮播 — 替换一张卡片，带滑入动画 */
+function rotateOneCard() {
+  if (isAnimating) return;
+  const currentId = getCurrentToolId();
+  const others = TOOLS_DATA.filter(t => t.id !== currentId);
+  const shown = new Set(carouselCards.map(t => t.id));
+  const available = others.filter(t => !shown.has(t.id));
+  if (available.length === 0) return;
+
+  const newCard = available[Math.floor(Math.random() * available.length)];
+  const container = document.getElementById('tool-recommend');
+  if (!container) return;
+
+  // 找到要替换的卡片元素
+  const cards = container.querySelectorAll('.rec-card');
+  const target = cards[carouselIdx];
+  if (!target) return;
+
+  isAnimating = true;
+  target.classList.add('rec-slide-out');
+
+  setTimeout(() => {
+    carouselCards[carouselIdx] = newCard;
+    renderCarousel(carouselCards);
+    // 对新替换的卡片应用滑入动画
+    const newCards = container.querySelectorAll('.rec-card');
+    const newTarget = newCards[carouselIdx];
+    if (newTarget) newTarget.classList.add('rec-slide-in');
+    carouselIdx = (carouselIdx + 1) % 5;
+    isAnimating = false;
+  }, 300);
+}
+
+/* 启动 */
+function startCarousel() {
+  initCarousel();
+  if (carouselTimer) clearInterval(carouselTimer);
+  carouselTimer = setInterval(rotateOneCard, 3000);
+}
+
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', startRecRotation);
+  document.addEventListener('DOMContentLoaded', startCarousel);
 } else {
-  startRecRotation();
+  startCarousel();
 }
