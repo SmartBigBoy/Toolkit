@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IP查询 - 在线工具箱</title>
+  <meta name="description" content="在线IP地址查询工具，查询本机IP、归属地、运营商信息，支持查询指定IP">
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous">
+  <style>
+    .ip-wrap { max-width: 600px; margin: 0 auto; padding: 20px 0; }
+    .ip-my { background: var(--bg-secondary); border-radius: 16px; padding: 28px 24px; border: 1px solid var(--border); text-align: center; margin-bottom: 20px; }
+    .ip-my .ip-address { font-size: 28px; font-weight: 700; color: var(--primary); font-family: 'SF Mono', Monaco, monospace; margin: 8px 0; }
+    .ip-my .ip-label { font-size: 14px; color: var(--text-secondary); }
+    .ip-details { background: var(--bg-secondary); border-radius: 16px; padding: 20px 24px; border: 1px solid var(--border); }
+    .ip-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+    .ip-row:last-child { border-bottom: none; }
+    .ip-row .label { color: var(--text-secondary); }
+    .ip-row .value { color: var(--text-primary); font-weight: 500; font-family: 'SF Mono', Monaco, monospace; font-size: 13px; }
+    .ip-search { display: flex; gap: 10px; margin-top: 16px; }
+    .ip-search input { flex: 1; padding: 10px 14px; border: 1px solid var(--border); border-radius: 10px; font-size: 14px; background: var(--bg-primary); color: var(--text-primary); font-family: 'SF Mono', Monaco, monospace; }
+    .ip-search input:focus { outline: none; border-color: var(--primary); }
+    .ip-search button { padding: 10px 20px; border: none; border-radius: 10px; background: var(--primary-gradient); color: #fff; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; }
+    .ip-search button:hover { opacity: 0.9; }
+    .ip-loading { text-align: center; padding: 20px; color: var(--text-tertiary); font-size: 14px; display: none; }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="container">
+      <a href="../index.html" class="logo"><i class="fas fa-wrench"></i><h1>在线工具箱</h1></a>
+    </div>
+  </header>
+  <main class="main">
+    <div class="container">
+      <div class="tool-container" style="display:block">
+        <div class="ip-wrap">
+          <div class="ip-my">
+            <div class="ip-label"><i class="fas fa-globe"></i> 我的 IP 地址</div>
+            <div class="ip-address" id="myIp">--</div>
+            <div id="myLocation" style="font-size:14px;color:var(--text-secondary)"></div>
+          </div>
+          <div class="ip-details">
+            <div class="ip-row"><span class="label">IP 地址</span><span class="value" id="detIp">--</span></div>
+            <div class="ip-row"><span class="label">国家</span><span class="value" id="detCountry">--</span></div>
+            <div class="ip-row"><span class="label">地区</span><span class="value" id="detRegion">--</span></div>
+            <div class="ip-row"><span class="label">城市</span><span class="value" id="detCity">--</span></div>
+            <div class="ip-row"><span class="label">运营商</span><span class="value" id="detIsp">--</span></div>
+            <div class="ip-row"><span class="label">经纬度</span><span class="value" id="detLoc">--</span></div>
+          </div>
+          <div class="ip-search">
+            <input type="text" id="searchIp" placeholder="输入 IP 地址查询…">
+            <button id="btnQueryIp">查询</button>
+          </div>
+          <div class="ip-loading" id="ipLoading"><i class="fas fa-spinner fa-spin"></i> 查询中…</div>
+        </div>
+      </div>
+    </div>
+  </main>
+  <footer class="footer container"><p>© 2026 在线工具箱 | 简洁高效的工具集合</p></footer>
+  <script>
+    async function queryIP(ip) {
+      const url = ip ? `https://ip-api.com/json/${ip}?lang=zh-CN` : 'https://ip-api.com/json/?lang=zh-CN';
+      document.getElementById('ipLoading').style.display = 'block';
+      try {
+        const r = await fetch(url);
+        const d = await r.json();
+        document.getElementById('ipLoading').style.display = 'none';
+        if (d.status === 'fail') { document.getElementById('myIp').textContent = '查询失败'; return; }
+        document.getElementById('detIp').textContent = d.query || d.ip || '--';
+        document.getElementById('detCountry').textContent = d.country || '--';
+        document.getElementById('detRegion').textContent = d.regionName || d.region || '--';
+        document.getElementById('detCity').textContent = d.city || '--';
+        document.getElementById('detIsp').textContent = d.isp || d.org || '--';
+        document.getElementById('detLoc').textContent = d.lat && d.lon ? d.lat + ', ' + d.lon : '--';
+        if (!ip || ip === '') {
+          document.getElementById('myIp').textContent = d.query || '--';
+          document.getElementById('myLocation').textContent = [d.city, d.regionName, d.country].filter(Boolean).join(' · ');
+        }
+      } catch(e) {
+        document.getElementById('ipLoading').style.display = 'none';
+        document.getElementById('myIp').textContent = '查询失败';
+      }
+    }
+    document.addEventListener('DOMContentLoaded', () => queryIP());
+    document.getElementById('btnQueryIp').addEventListener('click', () => {
+      const ip = document.getElementById('searchIp').value.trim();
+      if (ip) queryIP(ip);
+    });
+    document.getElementById('searchIp').addEventListener('keydown', (e) => { if (e.key === 'Enter') document.getElementById('btnQueryIp').click(); });
+  </script>
+  <script src="../js/tools_data.js"></script>
+<script>
+var _hmt = _hmt || [];
+(function() { var hm = document.createElement("script"); hm.src = "https://hm.baidu.com/hm.js?0b7fd37b2338e3531b062a45e6cb51c0"; var s = document.getElementsByTagName("script")[0]; s.parentNode.insertBefore(hm, s); })();
+</script></body>
+</html>

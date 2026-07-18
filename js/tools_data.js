@@ -14,6 +14,8 @@ const TOOLS_DATA = [
   { id: 'math',       name: '数学计算',   icon: 'fa-square-root-alt', cat: 'calc' },
   { id: 'currency',   name: '汇率换算',   icon: 'fa-coins',        cat: 'calc' },
   { id: 'photo',      name: '证件照转换', icon: 'fa-camera',       cat: 'image' },
+  { id: 'ip',         name: 'IP查询',     icon: 'fa-network-wired', cat: 'dev' },
+  { id: 'date',       name: '日期计算',   icon: 'fa-calendar-alt',  cat: 'calc' },
   { id: 'screenshot', name: '截图工具',   icon: 'fa-camera',       cat: 'image' },
   { id: 'timer',      name: '定时器',     icon: 'fa-hourglass-half', cat: 'calc' },
   { id: 'compress',   name: '图片压缩',   icon: 'fa-compress-alt', cat: 'image' },

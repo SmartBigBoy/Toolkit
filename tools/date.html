@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>日期计算器 - 在线工具箱</title>
+  <meta name="description" content="在线日期计算器，计算两个日期之间的天数差、日期推算、倒计时天数">
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous">
+  <style>
+    .date-wrap { max-width: 560px; margin: 0 auto; padding: 20px 0; }
+    .date-card { background: var(--bg-secondary); border-radius: 16px; padding: 24px; border: 1px solid var(--border); margin-bottom: 16px; }
+    .date-card h3 { font-size: 15px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .date-card h3 i { color: var(--primary); }
+    .date-label { font-size: 13px; color: var(--text-secondary); margin-bottom: 4px; }
+    .date-input { width: 100%; padding: 10px 14px; border: 1px solid var(--border); border-radius: 10px; font-size: 15px; background: var(--bg-primary); color: var(--text-primary); font-family: inherit; }
+    .date-input:focus { outline: none; border-color: var(--primary); }
+    .date-result { font-size: 24px; font-weight: 700; color: var(--primary); text-align: center; padding: 12px 0; font-family: 'SF Mono', Monaco, monospace; }
+    .date-result .unit { font-size: 14px; font-weight: 400; color: var(--text-secondary); }
+    .date-row { display: flex; gap: 12px; }
+    .date-row > div { flex: 1; }
+    .date-btn { padding: 10px 24px; border: none; border-radius: 10px; background: var(--primary-gradient); color: #fff; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; display: inline-flex; align-items: center; gap: 6px; }
+    .date-btn:hover { opacity: 0.9; }
+    .preset-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; }
+    .preset-tag { padding: 6px 14px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-secondary); color: var(--text-secondary); font-size: 13px; cursor: pointer; font-family: inherit; }
+    .preset-tag:hover { border-color: var(--primary-light); color: var(--primary); }
+    .date-sub-result { text-align: center; font-size: 13px; color: var(--text-tertiary); margin-top: 4px; }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="container">
+      <a href="../index.html" class="logo"><i class="fas fa-wrench"></i><h1>在线工具箱</h1></a>
+    </div>
+  </header>
+  <main class="main">
+    <div class="container">
+      <div class="tool-container" style="display:block">
+        <div class="date-wrap">
+          <!-- 日期差 -->
+          <div class="date-card">
+            <h3><i class="fas fa-arrows-left-right"></i> 日期差计算</h3>
+            <div class="date-row">
+              <div><div class="date-label">开始日期</div><input type="date" id="dateStart" class="date-input"></div>
+              <div><div class="date-label">结束日期</div><input type="date" id="dateEnd" class="date-input"></div>
+            </div>
+            <div class="date-result" id="diffDays">-- <span class="unit">天</span></div>
+            <div class="date-sub-result" id="diffDetail"></div>
+            <div class="preset-tags">
+              <button class="preset-tag" data-days="7">一周后</button>
+              <button class="preset-tag" data-days="30">一个月后</button>
+              <button class="preset-tag" data-days="180">半年后</button>
+              <button class="preset-tag" data-days="365">一年后</button>
+              <button class="preset-tag" data-days="-7">一周前</button>
+              <button class="preset-tag" data-days="-30">一个月前</button>
+            </div>
+          </div>
+
+          <!-- 日期推算 -->
+          <div class="date-card">
+            <h3><i class="fas fa-calculator"></i> 日期推算</h3>
+            <div class="date-row">
+              <div><div class="date-label">起始日期</div><input type="date" id="calcDate" class="date-input"></div>
+              <div><div class="date-label">天数</div><input type="number" id="calcDays" class="date-input" value="0" min="-9999" max="9999"></div>
+            </div>
+            <div style="margin-top:10px;text-align:center">
+              <button id="btnCalcDate" class="date-btn"><i class="fas fa-play"></i> 计算</button>
+            </div>
+            <div class="date-result" id="calcResult" style="display:none">--</div>
+          </div>
+
+          <!-- 今天日期 -->
+          <div class="date-card" style="text-align:center">
+            <div style="font-size:32px;font-weight:700;color:var(--text-primary)" id="todayDate"></div>
+            <div style="font-size:14px;color:var(--text-secondary);margin-top:4px" id="todayWeekday"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+  <footer class="footer container"><p>© 2026 在线工具箱 | 简洁高效的工具集合</p></footer>
+  <script>
+    function fmtDate(d) { return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+
+    // 今天
+    const today = new Date();
+    document.getElementById('todayDate').textContent = fmtDate(today);
+    const weekdays = ['星期日','星期一','星期二','星期三','星期四','星期五','星期六'];
+    document.getElementById('todayWeekday').textContent = weekdays[today.getDay()];
+
+    // 初始化日期
+    const endDefault = new Date(); endDefault.setDate(endDefault.getDate() + 7);
+    document.getElementById('dateStart').value = fmtDate(today);
+    document.getElementById('dateEnd').value = fmtDate(endDefault);
+    document.getElementById('calcDate').value = fmtDate(today);
+
+    function calcDiff() {
+      const s = new Date(document.getElementById('dateStart').value);
+      const e = new Date(document.getElementById('dateEnd').value);
+      const diff = Math.abs(e - s);
+      const days = Math.round(diff / (1000*60*60*24));
+      document.getElementById('diffDays').innerHTML = days + ' <span class="unit">天</span>';
+      const weeks = Math.floor(days / 7);
+      const rem = days % 7;
+      const months = Math.floor(days / 30.44);
+      const years = Math.floor(days / 365.25);
+      let detail = [];
+      if (years > 0) detail.push(years + ' 年');
+      if (months > 0) detail.push(months + ' 个月');
+      if (weeks > 0) detail.push(weeks + ' 周');
+      if (rem > 0) detail.push(rem + ' 天');
+      document.getElementById('diffDetail').textContent = '约 ' + detail.join(' ') || days + ' 天';
+    }
+
+    document.getElementById('dateStart').addEventListener('change', calcDiff);
+    document.getElementById('dateEnd').addEventListener('change', calcDiff);
+    calcDiff();
+
+    // 预设
+    document.querySelectorAll('.preset-tag').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const d = parseInt(btn.dataset.days);
+        const dt = new Date();
+        dt.setDate(dt.getDate() + d);
+        document.getElementById('dateEnd').value = fmtDate(dt);
+        calcDiff();
+      });
+    });
+
+    // 日期推算
+    document.getElementById('btnCalcDate').addEventListener('click', () => {
+      const dt = new Date(document.getElementById('calcDate').value);
+      const days = parseInt(document.getElementById('calcDays').value) || 0;
+      dt.setDate(dt.getDate() + days);
+      const el = document.getElementById('calcResult');
+      el.style.display = 'block';
+      el.innerHTML = fmtDate(dt) + '<br><span class="unit" style="font-size:14px">' + weekdays[dt.getDay()] + '</span>';
+    });
+    document.getElementById('calcDays').addEventListener('keydown', (e) => { if (e.key === 'Enter') document.getElementById('btnCalcDate').click(); });
+  </script>
+  <script src="../js/tools_data.js"></script>
+<script>
+var _hmt = _hmt || [];
+(function() { var hm = document.createElement("script"); hm.src = "https://hm.baidu.com/hm.js?0b7fd37b2338e3531b062a45e6cb51c0"; var s = document.getElementsByTagName("script")[0]; s.parentNode.insertBefore(hm, s); })();
+</script></body>
+</html>
