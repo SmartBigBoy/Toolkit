@@ -50,9 +50,6 @@
   let currentQ = 0;
   let answers = [];
 
-  let currentQ = 0;
-  let answers = [];
-
   // DOM
   const startEl = document.getElementById('mbtiStart');
   const questionsEl = document.getElementById('mbtiQuestions');
