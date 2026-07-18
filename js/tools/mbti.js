@@ -60,6 +60,8 @@
   const container = document.getElementById('questionContainer');
   const progressBar = document.getElementById('progressBar');
   const progressText = document.getElementById('progressText');
+  const btnStart = document.getElementById('btnStart');
+  const btnRetest = document.getElementById('btnRetest');
 
   btnStart.addEventListener('click', startTest);
   btnRetest.addEventListener('click', resetAll);
