@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>证件照转换工具 - 在线工具箱</title>
+  <meta name="description" content="在线证件照尺寸转换、换底色，支持一寸二寸等标准规格，纯浏览器处理保护隐私">
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous">
+  <style>
+    .photo-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      padding: 16px 0;
+    }
+    @media (max-width: 768px) {
+      .photo-layout { grid-template-columns: 1fr; }
+    }
+    .photo-panel {
+      background: #fff;
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .photo-panel h3 {
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 12px;
+      color: #1e293b;
+    }
+    .photo-panel h3 i { display: none; }
+    .drop-zone {
+      background: #fff;
+      border-radius: 14px;
+      padding: 40px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+    .drop-zone:hover,
+    .drop-zone.dragover {
+      box-shadow: 0 4px 12px rgba(99,102,241,0.15);
+    }
+    .drop-zone .cloud-icon {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 16px;
+      background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(139,92,246,0.3);
+    }
+    .drop-zone .cloud-icon svg {
+      width: 28px;
+      height: 28px;
+      fill: #fff;
+    }
+    .drop-zone p { color: #1f2937; font-size: 15px; margin: 8px 0; font-weight: 500; }
+    .drop-zone .hint { font-size: 13px; color: #8b5cf6; font-weight: 400; }
+    .drop-zone .upload-btn {
+      display: inline-block;
+      margin-top: 20px;
+      padding: 10px 28px;
+      background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+      color: #fff;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 2px 8px rgba(139,92,246,0.3);
+    }
+    .drop-zone .upload-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(139,92,246,0.4);
+    }
+    .preview-box {
+      min-height: 200px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #fff;
+      border: 2px dashed #e2e8f0;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .preview-placeholder {
+      color: #94a3b8;
+      font-size: 14px;
+    }
+    .size-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .bg-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .size-tag {
+      padding: 6px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--bg-secondary);
+      cursor: pointer;
+      transition: all 0.2s;
+      font: inherit;
+      color: var(--text-primary);
+      font-size: 13px;
+    }
+    .size-tag .size-info {
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-left: 6px;
+    }
+    .size-tag:hover {
+      border-color: var(--primary-light);
+    }
+    .size-tag.active {
+      border-color: var(--primary);
+      background: rgba(99, 102, 241, 0.1);
+      color: var(--primary);
+    }
+    .bg-tag {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--bg-secondary);
+      cursor: pointer;
+      transition: all 0.2s;
+      font: inherit;
+      color: var(--text-primary);
+      font-size: 13px;
+    }
+    .bg-tag:hover {
+      border-color: var(--primary-light);
+    }
+    .bg-tag.active {
+      border-color: var(--primary);
+      background: rgba(99, 102, 241, 0.1);
+      color: var(--primary);
+    }
+    .bg-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: 1px solid rgba(0,0,0,0.1);
+    }
+    .bg-icon {
+      font-size: 14px;
+      color: var(--primary);
+      line-height: 1;
+    }
+    .photo-controls {
+      padding: 0 24px 16px;
+      display: grid;
+      gap: 14px;
+    }
+    .control-row {
+      display: grid;
+      grid-template-columns: 100px 1fr 48px;
+      align-items: center;
+      gap: 12px;
+      font-size: 13px;
+    }
+    .control-row label { color: var(--text-secondary); font-weight: 600; }
+    .control-row input[type="range"] {
+      width: 100%;
+      accent-color: var(--primary);
+    }
+    .mode-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      font-size: 13px;
+    }
+    .mode-group label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+    .photo-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding: 0 24px 24px;
+      justify-content: center;
+    }
+    .photo-actions .action-btn {
+      min-width: 160px;
+    }
+    .photo-actions .action-btn.secondary {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+      box-shadow: none;
+    }
+    .photo-status {
+      text-align: center;
+      font-size: 13px;
+      color: var(--text-secondary);
+      padding: 0 24px 12px;
+    }
+    .photo-status.is-success { color: var(--success); }
+    .photo-status.is-error { color: var(--danger); }
+    .result-meta {
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-top: 8px;
+    }
+    #loadingOverlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+    #loadingOverlay[hidden] { display: none; }
+    .loading-card {
+      background: var(--bg-secondary);
+      padding: 28px 36px;
+      border-radius: 16px;
+      text-align: center;
+      box-shadow: var(--shadow-lg);
+    }
+    .loading-card i {
+      font-size: 32px;
+      color: var(--primary);
+      margin-bottom: 12px;
+    }
+    .section-block {
+      padding: 0 24px 20px;
+    }
+    .section-block > h3 {
+      font-size: 15px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .section-block > h3 i { color: var(--primary); }
+    .file-input-hidden {
+      position: absolute;
+      width: 0.1px;
+      height: 0.1px;
+      opacity: 0;
+      overflow: hidden;
+      z-index: -1;
+    }
+  </style>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-V8533PXQLF"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-V8533PXQLF');
+    </script>
+</head>
+<body>
+  <header class="header">
+    <div class="container">
+      <a href="../index.html" class="logo">
+        <i class="fas fa-wrench"></i>
+        <h1>在线工具箱</h1>
+      </a>
+    </div>
+  </header>
+
+  <main class="main">
+    <div class="container">
+    <div class="tool-container" style="display:block">
+
+      <div class="section-block" style="padding-top:24px">
+        <div id="uploadArea" class="drop-zone photo-upload">
+          <div class="cloud-icon">
+            <svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
+          </div>
+          <p>点击或拖拽上传照片</p>
+          <p >支持 JPG、PNG、WebP，建议半身照、背景单一，最大 15MB</p>
+          <input type="file" id="photoUpload" name="photoUpload" class="file-input-hidden" accept="image/jpeg,image/png,image/webp">
+          <span class="upload-btn">选择照片</span>
+        </div>
+      </div>
+
+      <div class="photo-layout">
+        <div class="photo-panel">
+          <h3><i class="fas fa-eye"></i> 原图预览</h3>
+          <div id="photoPreview" class="preview-box">
+            <span id="previewPlaceholder" class="preview-placeholder">暂无照片</span>
+            <img id="previewOriginal" alt="原图" hidden style="max-width:100%;max-height:320px;object-fit:contain;">
+          </div>
+        </div>
+        <div class="photo-panel">
+          <h3>证件照结果</h3>
+          <div class="preview-box">
+            <span id="resultPlaceholder" class="preview-placeholder">生成后显示</span>
+            <img id="previewResult" alt="证件照结果" hidden style="max-width:100%;max-height:320px;object-fit:contain;">
+          </div>
+          <p id="resultMeta" class="result-meta"></p>
+        </div>
+      </div>
+
+      <div class="section-block">
+        <h3><i class="fas fa-ruler-combined"></i> 选择目标尺寸</h3>
+        <div id="sizeGrid" class="size-grid"></div>
+      </div>
+
+      <div class="section-block">
+        <h3><i class="fas fa-palette"></i> 选择底色</h3>
+        <div id="bgGrid" class="bg-grid"></div>
+      </div>
+
+      <div class="photo-controls">
+        <div class="control-row">
+          <label for="tolerance">抠图容差</label>
+          <input type="range" id="tolerance" min="15" max="80" value="15">
+          <span id="toleranceVal">15</span>
+        </div>
+        <div class="control-row">
+          <label for="headOffset">人像位置</label>
+          <input type="range" id="headOffset" min="0" max="100" value="12">
+          <span id="headOffsetVal">12%</span>
+        </div>
+        <div class="control-row">
+          <label for="zoom">缩放</label>
+          <input type="range" id="zoom" min="80" max="150" value="100">
+          <span id="zoomVal">100%</span>
+        </div>
+        <div class="control-row" id="edgeRefineRow" hidden>
+          <label for="edgeRefine">发丝精修</label>
+          <input type="range" id="edgeRefine" min="40" max="100" value="72">
+          <span id="edgeRefineVal">72%</span>
+        </div>
+        <div>
+          <span style="font-size:13px;font-weight:600;color:var(--text-secondary)">抠图模式</span>
+          <div class="mode-group" style="margin-top:8px">
+            <label><input type="radio" name="bgMode" value="auto" checked> 智能抠图（推荐，纯色背景）</label>
+            <label><input type="radio" name="bgMode" value="ai"> AI 精细抠图（复杂背景，需联网）</label>
+          </div>
+        </div>
+      </div>
+
+      <p id="statusText" class="photo-status">请上传一张证件照或半身照</p>
+
+      <div class="photo-actions image-actions">
+        <button type="button" id="convertBtn" class="action-btn">
+          <i class="fas fa-wand-magic-sparkles"></i> 生成证件照
+        </button>
+        <button type="button" id="downloadBtn" class="action-btn" disabled>
+          <i class="fas fa-download"></i> 下载照片
+        </button>
+        <button type="button" id="resetBtn" class="action-btn secondary">
+          <i class="fas fa-rotate-left"></i> 重置
+        </button>
+      </div>
+    </div>
+    </div>
+  </main>
+
+  <footer class="footer container">
+    <p>© 2026 在线工具箱 | 简洁高效的工具集合 · 图片仅在本地浏览器处理</p>
+  </footer>
+
+  <div id="loadingOverlay" hidden>
+    <div class="loading-card">
+      <i class="fas fa-spinner fa-spin"></i>
+      <p class="loading-text">处理中…</p>
+    </div>
+  </div>
+
+  <!-- 上传兜底：即使外部 JS 报错，label 仍可打开文件；选图后交给 PhotoTool -->
+  <script>
+  (function () {
+    var input = document.getElementById('photoUpload');
+    if (!input) return;
+    input.addEventListener('change', function () {
+      var file = input.files && input.files[0];
+      if (!file) return;
+      function run() {
+        if (window.PhotoTool && window.PhotoTool.handleFile) {
+          window.PhotoTool.handleFile(file);
+          return;
+        }
+        var url = URL.createObjectURL(file);
+        var img = document.getElementById('previewOriginal');
+        var box = document.getElementById('photoPreview');
+        var ph = document.getElementById('previewPlaceholder');
+        if (img) { img.src = url; img.hidden = false; }
+        else if (box) { box.innerHTML = '<img src="' + url + '" alt="原图" style="max-width:100%;max-height:320px">'; }
+        if (ph) ph.hidden = true;
+        var st = document.getElementById('statusText') || document.getElementById('conversionStatus');
+        if (st) st.textContent = '图片已选择，功能脚本加载中…';
+        setTimeout(run, 80);
+      }
+      run();
+    });
+  })();
+  </script>
+  <script src="../js/tools/photo.js"></script>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?0b7fd37b2338e3531b062a45e6cb51c0";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script></body>
+</html>

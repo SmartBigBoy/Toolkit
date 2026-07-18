@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>颜色转换工具 - TOOLKIT.SKIN</title>
+    <meta name="description" content="在线颜色转换工具，支持HEX、RGB、HSL格式之间的相互转换，无需注册，完全免费。">
+    <meta name="keywords" content="颜色转换,HEX颜色,RGB颜色,HSL颜色,颜色格式转换,在线工具">
+    <meta name="author" content="TOOLKIT.SKIN">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://toolkit.skin/tools/color.html">
+    <meta property="og:title" content="颜色转换工具">
+    <meta property="og:description" content="在线颜色转换工具，支持HEX、RGB、HSL格式之间的相互转换。">
+    <meta property="og:url" content="https://toolkit.skin/tools/color.html">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6560822080596473" crossorigin="anonymous"></script>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-V8533PXQLF"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-V8533PXQLF');
+    </script>
+</head>
+<body>
+
+    <header class="header">
+        <div class="container">
+            <a href="../index.html" class="logo">
+                <i class="fas fa-wrench"></i>
+                <h1>在线工具箱</h1>
+            </a>
+            <div class="search-box">
+                <input type="text" id="search" placeholder="搜索工具...">
+                <i class="fas fa-search"></i>
+            </div>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            <div class="tool-container">
+                <div class="color-header">
+                    <div class="color-title">
+                        <i class="fas fa-palette"></i>
+                        <h1>颜色转换工具</h1>
+                    </div>
+                    <p class="color-desc">颜色格式之间的相互转换，支持HEX、RGB、HSL</p>
+                </div>
+
+                <div class="color-content">
+                    <!-- 选择颜色区块 -->
+                    <div class="color-section">
+                        <div class="section-title">
+                            <i class="fas fa-pen"></i>
+                            <span>选择颜色</span>
+                        </div>
+                        <div class="color-picker-box">
+                            <input type="color" id="colorPicker" value="#3b82f6">
+                        </div>
+                    </div>
+
+                    <!-- 格式转换区块 -->
+                    <div class="color-section">
+                        <div class="section-title">
+                            <i class="fas fa-code"></i>
+                            <span>格式转换</span>
+                        </div>
+                        <div class="format-grid">
+                            <div class="format-item">
+                                <label>HEX</label>
+                                <input type="text" id="hexInput" value="#3b82f6" placeholder="#000000">
+                            </div>
+                            <div class="format-item">
+                                <label>RGB</label>
+                                <input type="text" id="rgbInput" value="rgb(59, 130, 246)" placeholder="rgb(0, 0, 0)">
+                            </div>
+                            <div class="format-item">
+                                <label>HSL</label>
+                                <input type="text" id="hslInput" value="hsl(217, 91%, 60%)" placeholder="hsl(0, 100%, 50%)">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 颜色预览区块 -->
+                    <div class="color-section">
+                        <div class="section-title">
+                            <i class="fas fa-eye"></i>
+                            <span>颜色预览</span>
+                        </div>
+                        <div class="preview-box">
+                            <div class="preview-color" id="previewColor"></div>
+                        </div>
+                        <div class="copy-actions">
+                            <button class="copy-btn" onclick="copyColor('hex')">
+                                <i class="fas fa-copy"></i>
+                                <span>复制HEX</span>
+                            </button>
+                            <button class="copy-btn" onclick="copyColor('rgb')">
+                                <i class="fas fa-copy"></i>
+                                <span>复制RGB</span>
+                            </button>
+                            <button class="copy-btn" onclick="copyColor('hsl')">
+                                <i class="fas fa-copy"></i>
+                                <span>复制HSL</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-links">
+                <a href="../index.html">首页</a>
+                <a href="../disclaimer.html">免责声明</a>
+                <a href="../404.html">404</a>
+            </div>
+            <p>© 2026 在线工具箱 | 简洁高效的工具集合</p>
+        </div>
+    </footer>
+
+    <div id="toast" class="toast"></div>
+
+    <style>
+        /* 颜色转换工具专属样式 */
+        .color-header {
+            background: linear-gradient(135deg, #ec4899 0%, #f472b6 100%);
+            padding: 32px 24px;
+            text-align: center;
+        }
+
+        .color-title {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .color-title i {
+            font-size: 28px;
+            color: #9333ea;
+        }
+
+        .color-title h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: white;
+            margin: 0;
+        }
+
+        .color-desc {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 14px;
+            margin: 8px 0 0;
+        }
+
+        .color-content {
+            padding: 24px;
+        }
+
+        .color-section {
+            margin-bottom: 24px;
+        }
+
+        .color-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .section-title i {
+            color: #6366f1;
+        }
+
+        .color-picker-box {
+            background: var(--bg-tertiary);
+            border: 2px dashed var(--border);
+            border-radius: 16px;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .color-picker-box input[type="color"] {
+            width: 120px;
+            height: 120px;
+            border: none;
+            border-radius: 16px;
+            cursor: pointer;
+            padding: 0;
+            background: none;
+        }
+
+        .color-picker-box input[type="color"]::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+
+        .color-picker-box input[type="color"]::-webkit-color-swatch {
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        }
+
+        .format-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .format-item {
+            text-align: center;
+        }
+
+        .format-item label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .format-item input {
+            width: 100%;
+            padding: 14px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            font-size: 14px;
+            font-family: 'SF Mono', 'Monaco', 'Menlo', monospace;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        .format-item input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .preview-box {
+            background: var(--bg-tertiary);
+            border-radius: 16px;
+            padding: 32px;
+            text-align: center;
+        }
+
+        .preview-color {
+            display: inline-block;
+            width: 140px;
+            height: 140px;
+            border-radius: 20px;
+            background-color: #3b82f6;
+            border: 4px solid white;
+            box-shadow: 0 8px 32px rgba(59, 130, 246, 0.4), 0 0 0 1px rgba(0, 0, 0, 0.05);
+        }
+
+        .copy-actions {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .copy-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 20px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .copy-btn i {
+            font-size: 14px;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #10b981;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        @media (max-width: 640px) {
+            .format-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .copy-actions {
+                flex-direction: column;
+            }
+
+            .copy-btn {
+                justify-content: center;
+            }
+        }
+    </style>
+
+    <script>
+        const colorPicker = document.getElementById('colorPicker');
+        const hexInput = document.getElementById('hexInput');
+        const rgbInput = document.getElementById('rgbInput');
+        const hslInput = document.getElementById('hslInput');
+        const previewColor = document.getElementById('previewColor');
+        const toast = document.getElementById('toast');
+
+        // HEX to RGB
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : null;
+        }
+
+        // RGB to HEX
+        function rgbToHex(r, g, b) {
+            return '#' + [r, g, b].map(x => {
+                const hex = Math.round(Math.max(0, Math.min(255, x))).toString(16);
+                return hex.length === 1 ? '0' + hex : hex;
+            }).join('');
+        }
+
+        // RGB to HSL
+        function rgbToHsl(r, g, b) {
+            r /= 255;
+            g /= 255;
+            b /= 255;
+            const max = Math.max(r, g, b);
+            const min = Math.min(r, g, b);
+            let h, s, l = (max + min) / 2;
+
+            if (max === min) {
+                h = s = 0;
+            } else {
+                const d = max - min;
+                s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                switch (max) {
+                    case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+                    case g: h = ((b - r) / d + 2) / 6; break;
+                    case b: h = ((r - g) / d + 4) / 6; break;
+                }
+            }
+
+            return {
+                h: Math.round(h * 360),
+                s: Math.round(s * 100),
+                l: Math.round(l * 100)
+            };
+        }
+
+        // HSL to RGB
+        function hslToRgb(h, s, l) {
+            h /= 360;
+            s /= 100;
+            l /= 100;
+            let r, g, b;
+
+            if (s === 0) {
+                r = g = b = l;
+            } else {
+                const hue2rgb = (p, q, t) => {
+                    if (t < 0) t += 1;
+                    if (t > 1) t -= 1;
+                    if (t < 1/6) return p + (q - p) * 6 * t;
+                    if (t < 1/2) return q;
+                    if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+                    return p;
+                };
+                const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+                const p = 2 * l - q;
+                r = hue2rgb(p, q, h + 1/3);
+                g = hue2rgb(p, q, h);
+                b = hue2rgb(p, q, h - 1/3);
+            }
+
+            return {
+                r: Math.round(r * 255),
+                g: Math.round(g * 255),
+                b: Math.round(b * 255)
+            };
+        }
+
+        // Parse RGB string
+        function parseRgb(rgbStr) {
+            const match = rgbStr.match(/rgb\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)/i);
+            if (match) {
+                return {
+                    r: parseInt(match[1]),
+                    g: parseInt(match[2]),
+                    b: parseInt(match[3])
+                };
+            }
+            return null;
+        }
+
+        // Parse HSL string
+        function parseHsl(hslStr) {
+            const match = hslStr.match(/hsl\s*\(\s*(\d+)\s*,\s*(\d+)%?\s*,\s*(\d+)%?\s*\)/i);
+            if (match) {
+                return {
+                    h: parseInt(match[1]),
+                    s: parseInt(match[2]),
+                    l: parseInt(match[3])
+                };
+            }
+            return null;
+        }
+
+        // Update all color formats from a hex value
+        function updateFromHex(hex) {
+            const rgb = hexToRgb(hex);
+            if (!rgb) return;
+
+            const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
+
+            colorPicker.value = hex;
+            hexInput.value = hex.toLowerCase();
+            rgbInput.value = `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`;
+            hslInput.value = `hsl(${hsl.h}, ${hsl.s}%, ${hsl.l}%)`;
+            previewColor.style.backgroundColor = hex;
+        }
+
+        // Event listeners
+        colorPicker.addEventListener('input', (e) => {
+            updateFromHex(e.target.value);
+        });
+
+        hexInput.addEventListener('change', (e) => {
+            let hex = e.target.value.trim();
+            if (!hex.startsWith('#')) hex = '#' + hex;
+            updateFromHex(hex);
+        });
+
+        rgbInput.addEventListener('change', (e) => {
+            const rgb = parseRgb(e.target.value);
+            if (rgb) {
+                const hex = rgbToHex(rgb.r, rgb.g, rgb.b);
+                updateFromHex(hex);
+            }
+        });
+
+        hslInput.addEventListener('change', (e) => {
+            const hsl = parseHsl(e.target.value);
+            if (hsl) {
+                const rgb = hslToRgb(hsl.h, hsl.s, hsl.l);
+                const hex = rgbToHex(rgb.r, rgb.g, rgb.b);
+                updateFromHex(hex);
+            }
+        });
+
+        // Copy function
+        function copyColor(type) {
+            let text = '';
+            switch (type) {
+                case 'hex': text = hexInput.value; break;
+                case 'rgb': text = rgbInput.value; break;
+                case 'hsl': text = hslInput.value; break;
+            }
+
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('已复制到剪贴板');
+            }).catch(() => {
+                // Fallback
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                showToast('已复制到剪贴板');
+            });
+        }
+
+        function showToast(message) {
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2000);
+        }
+
+        // Initialize
+        updateFromHex('#3b82f6');
+
+        // Search functionality
+        const searchInput = document.getElementById('search');
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                const query = e.target.value.toLowerCase();
+                const cards = document.querySelectorAll('.tool-card');
+                cards.forEach(card => {
+                    const name = card.dataset.name?.toLowerCase() || '';
+                    const desc = card.dataset.desc?.toLowerCase() || '';
+                    if (name.includes(query) || desc.includes(query)) {
+                        card.style.display = '';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            });
+        }
+    </script>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?0b7fd37b2338e3531b062a45e6cb51c0";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script></body>
+</html>

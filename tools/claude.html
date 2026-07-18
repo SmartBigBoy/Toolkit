@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>国内安装 Claude Code 完整指南</title>
+    <meta name="description" content="详尽的国内 Claude Code 安装教程，包含 Node.js 安装、cc-Switch 配置、Deepseek API 接入，以及常用快捷键一览。">
+    <meta name="keywords" content="Claude Code, Claude安装, Claude国内使用, AI编程工具, cc-Switch配置, Deepseek API">
+    <meta name="author" content="TOOLKIT.SKIN">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://toolkit.skin/tools/claude.html">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-light: #818cf8;
+            --primary-dark: #4f46e5;
+            --primary-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            --bg-primary: #f8fafc;
+            --bg-secondary: #ffffff;
+            --border: #e2e8f0;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --code-bg: #1e1e2e;
+            --code-text: #cdd6f4;
+            --green: #059669;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Noto Sans CJK SC", sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.7;
+            padding-top: 60px;
+        }
+
+        /* ── Header (from toolkit.skin) ── */
+        .header {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+        }
+        .header .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 24px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .logo:hover {
+            transform: scale(1.02);
+        }
+        .logo i {
+            font-size: 26px;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .logo h1 {
+            font-size: 20px;
+            font-weight: 700;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* ── Hero ── */
+        .hero {
+            background: var(--primary-gradient);
+            color: #fff;
+            text-align: center;
+            padding: 52px 24px 48px;
+        }
+        .hero h1 {
+            font-size: clamp(1.6rem, 5vw, 2.4rem);
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: 12px;
+        }
+        .hero p {
+            font-size: 1rem;
+            opacity: 0.88;
+            max-width: 540px;
+            margin: 0 auto;
+        }
+        .hero .meta {
+            margin-top: 16px;
+            font-size: 0.85rem;
+            opacity: 0.7;
+        }
+
+        /* ── Layout ── */
+        .container {
+            max-width: 780px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        main {
+            padding: 40px 0 64px;
+        }
+
+        /* ── Step cards ── */
+        .step {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 32px 28px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+            border: 1px solid var(--border);
+        }
+        .step-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 20px;
+        }
+        .step-number {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: var(--primary);
+            color: #fff;
+            font-size: 0.9rem;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+        .step-title {
+            font-size: 1.15rem;
+            font-weight: 600;
+        }
+
+        .step p {
+            color: #374151;
+            margin-bottom: 12px;
+            font-size: 0.95rem;
+        }
+        .step p:last-child { margin-bottom: 0; }
+
+        .step a {
+            color: var(--primary);
+            text-decoration: none;
+            word-break: break-all;
+        }
+        .step a:hover {
+            text-decoration: underline;
+        }
+
+        /* ── Code blocks ── */
+        pre {
+            background: var(--code-bg);
+            color: var(--code-text);
+            border-radius: 10px;
+            padding: 16px 20px;
+            overflow-x: auto;
+            font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", Consolas, monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            margin: 12px 0 16px;
+            position: relative;
+        }
+        code {
+            font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", Consolas, monospace;
+            font-size: 0.85em;
+            background: #f0f0ff;
+            color: var(--primary);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        pre code {
+            background: transparent;
+            color: inherit;
+            padding: 0;
+            border-radius: 0;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(255,255,255,0.08);
+            border: none;
+            color: rgba(255,255,255,0.5);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .copy-btn:hover {
+            background: rgba(255,255,255,0.15);
+            color: #fff;
+        }
+
+        /* ── Tips / Warnings ── */
+        .tip {
+            background: #f0fdf4;
+            border-left: 4px solid var(--green);
+            padding: 14px 18px;
+            border-radius: 0 8px 8px 0;
+            margin: 12px 0;
+            font-size: 0.9rem;
+            color: #065f46;
+        }
+        .tip strong { color: var(--green); }
+
+        .warning {
+            background: #fffbeb;
+            border-left: 4px solid #f59e0b;
+            padding: 14px 18px;
+            border-radius: 0 8px 8px 0;
+            margin: 12px 0;
+            font-size: 0.9rem;
+            color: #92400e;
+        }
+        .warning strong { color: #d97706; }
+
+        /* ── Shortcuts table ── */
+        .shortcuts-section {
+            margin-top: 16px;
+        }
+        .shortcuts-section h4 {
+            font-size: 0.95rem;
+            color: var(--primary);
+            margin: 20px 0 10px;
+            padding-bottom: 4px;
+            border-bottom: 1px solid var(--border);
+        }
+        .shortcuts-section h4:first-child { margin-top: 0; }
+
+        .shortcut-row {
+            display: flex;
+            align-items: baseline;
+            padding: 5px 0;
+            font-size: 0.9rem;
+            gap: 12px;
+        }
+        .shortcut-key {
+            display: inline-block;
+            background: #f0f0ff;
+            color: var(--primary);
+            padding: 2px 10px;
+            border-radius: 5px;
+            font-family: "JetBrains Mono", Consolas, monospace;
+            font-size: 0.82rem;
+            white-space: nowrap;
+            min-width: 140px;
+        }
+        .shortcut-desc {
+            color: #374151;
+        }
+
+        /* ── Footer ── */
+        footer {
+            text-align: center;
+            padding: 32px 20px 48px;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            border-top: 1px solid var(--border);
+        }
+        footer a { color: var(--primary); text-decoration: none; }
+
+        /* ── Responsive ── */
+        @media (max-width: 600px) {
+            .hero { padding: 44px 20px 40px; }
+            .step { padding: 24px 18px; }
+            .shortcut-row { flex-direction: column; gap: 2px; padding: 6px 0; }
+            .shortcut-key { min-width: auto; }
+        }
+    </style>
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-V8533PXQLF"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-V8533PXQLF');
+    </script></head>
+<body>
+
+<!-- ══════════ Header ══════════ -->
+<header class="header">
+    <div class="container">
+        <a href="https://toolkit.skin" class="logo">
+            <i class="fas fa-wrench"></i>
+            <h1>在线工具箱</h1>
+        </a>
+    </div>
+</header>
+
+<header class="hero">
+    <h1>国内安装 Claude Code 完整指南</h1>
+    <p>解决国内网络环境下的 Claude Code 安装痛点，从 Node.js 到 cc-Switch 配置，一篇到位。</p>
+    <div class="meta">适用于 Windows · 基于 Deepseek 模型 · 2026-05</div>
+</header>
+
+<!-- ══════════ Main ══════════ -->
+<main>
+    <div class="container">
+
+        <!-- ── Step 1 ── -->
+        <div class="step">
+            <div class="step-header">
+                <span class="step-number">1</span>
+                <span class="step-title">安装 Node.js</span>
+            </div>
+            <p>Claude Code 基于 Node.js 运行，首先安装 Node.js v24.15.0。</p>
+            <p><strong>下载地址：</strong><br><a href="https://nodejs.org/dist/v24.15.0/node-v24.15.0-x64.msi" target="_blank">https://nodejs.org/dist/v24.15.0/node-v24.15.0-x64.msi</a></p>
+            <p>下载完成后双击安装包，一路点击 <strong>Next</strong> 完成安装即可。</p>
+            <p>安装完成后，打开命令行（<kbd>Win</kbd> + <kbd>R</kbd>，输入 <code>cmd</code>，回车），验证安装是否成功：</p>
+
+            <pre><code>node -v</code></pre>
+            <p>成功将返回版本号。接着验证 npm：</p>
+            <pre><code>npm -v</code></pre>
+
+            <div class="tip">
+                <strong>✔ 正常输出</strong> — 如果两个命令都返回了版本号，说明 Node.js 和 npm 已安装成功。
+            </div>
+        </div>
+
+        <!-- ── Step 2 ── -->
+        <div class="step">
+            <div class="step-header">
+                <span class="step-number">2</span>
+                <span class="step-title">安装 Claude Code</span>
+            </div>
+            <p>使用 npm 全局安装 Claude Code，指定国内镜像源加速下载：</p>
+            <pre><code>npm install -g @anthropic-ai/claude-code --registry=https://registry.npmmirror.com</code></pre>
+            <p>等待安装完成后，验证版本：</p>
+            <pre><code>claude --version</code></pre>
+            <div class="tip"><strong>✔ 正常输出</strong> — 返回 Claude 版本号即安装成功。</div>
+        </div>
+
+        <!-- ── Step 3 ── -->
+        <div class="step">
+            <div class="step-header">
+                <span class="step-number">3</span>
+                <span class="step-title">安装 cc-Switch</span>
+            </div>
+            <p>cc-Switch 是一个模型切换工具，用于将 Claude Code 的底层模型切换为 Deepseek 等国内可用的模型。</p>
+            <p><strong>下载地址：</strong><br><a href="https://github.com/farion1231/cc-switch/releases/download/v3.15.0/CC-Switch-v3.15.0-Windows.msi" target="_blank">https://github.com/farion1231/cc-switch/releases/download/v3.15.0/CC-Switch-v3.15.0-Windows.msi</a></p>
+            <p>下载完成后双击安装，按照向导提示完成即可。</p>
+        </div>
+
+        <!-- ── Step 4 ── -->
+        <div class="step">
+            <div class="step-header">
+                <span class="step-number">4</span>
+                <span class="step-title">获取 Deepseek API Key</span>
+            </div>
+            <p>进入 <a href="https://www.deepseek.com/" target="_blank">Deepseek 官网</a> 注册账号，登录后充值金额（初次建议充值 10 元即可）。</p>
+            <p>在控制台中点击 <strong>API Key</strong>，创建一个新的 API Key。复制生成的一串字符——<strong>这个 Key 就是外部软件访问 Deepseek 模型的凭证</strong>，里面包含了你的身份信息，调用模型时官方会计费到你的账户。</p>
+
+            <div class="warning">
+                <strong>⚠ 注意事项</strong>
+                <br>• API Key 仅在创建时出现一次，复制后请妥善保存
+                <br>• 如果忘记了，可以删除后重新创建，旧的 Key 会立即失效
+                <br>• 建议给 API Key 添加描述名称，方便知道哪些工具在调用 Deepseek
+            </div>
+        </div>
+
+        <!-- ── Step 5 ── -->
+        <div class="step">
+            <div class="step-header">
+                <span class="step-number">5</span>
+                <span class="step-title">配置 cc-Switch</span>
+            </div>
+            <p>cc-Switch 安装完成后，打开软件：</p>
+            <ol style="padding-left:20px;color:#374151;font-size:0.95rem;">
+                <li style="margin-bottom:6px;">在右上角点击 <strong>＋</strong> 按钮，进入模型配置页面</li>
+                <li style="margin-bottom:6px;">选择 <strong>DeepSeek</strong> 作为模型提供商</li>
+                <li style="margin-bottom:6px;">下滑找到 API Key 输入框，粘贴刚才复制的 Key</li>
+                <li style="margin-bottom:6px;">点击 <strong>添加</strong> 保存配置</li>
+            </ol>
+        </div>
+
+        <!-- ── Step 6 ── -->
+        <div class="step">
+            <div class="step-header">
+                <span class="step-number">6</span>
+                <span class="step-title">体验 Claude Code</span>
+            </div>
+            <p>所有配置完成后，在命令行中输入：</p>
+            <pre><code>claude</code></pre>
+            <p>将会进入 Claude Code 交互界面。一直按 <kbd>Enter</kbd>，等到出现输入光标后，就可以开始使用了。比如你可以先问它：</p>
+            <pre><code>你使用的什么模型？你能帮我做什么？</code></pre>
+        </div>
+
+        <!-- ── Step 7: Shortcuts ── -->
+        <div class="step">
+            <div class="step-header">
+                <span class="step-number">7</span>
+                <span class="step-title">Claude Code 常用快捷键</span>
+            </div>
+            <p>熟练使用快捷键能大幅提升操作效率，以下是常用快捷键一览：</p>
+
+            <div class="shortcuts-section">
+                <h4>最常用</h4>
+                <div class="shortcut-row"><span class="shortcut-key">Enter</span><span class="shortcut-desc">发送消息</span></div>
+                <div class="shortcut-row"><span class="shortcut-key">Ctrl + J</span><span class="shortcut-desc">换行（而非发送）</span></div>
+                <div class="shortcut-row"><span class="shortcut-key">Ctrl + T</span><span class="shortcut-desc">切换任务列表</span></div>
+                <div class="shortcut-row"><span class="shortcut-key">Ctrl + O</span><span class="shortcut-desc">切换 Transcript</span></div>
+                <div class="shortcut-row"><span class="shortcut-key">Ctrl + S</span><span class="shortcut-desc">保存 / 暂存对话</span></div>
+                <div class="shortcut-row"><span class="shortcut-key">Esc</span><span class="shortcut-desc">取消 / 关闭弹窗</span></div>
+                <div class="shortcut-row"><span class="shortcut-key">Ctrl + G</span><span class="shortcut-desc">打开外部编辑器</span></div>
+                <div class="shortcut-row"><span class="shortcut-key">Ctrl + L</span><span class="shortcut-desc">清空输入框</span></div>
+            </div>
+
+            <div class="shortcuts-section">
+                <h4>对话与历史</h4>
+                <div class="shortcut-row"><span class="shortcut-key">↑ / ↓</span><span class="shortcut-desc">上 / 下一条历史输入</span></div>
+                <div class="shortcut-row"><span class="shortcut-key">Ctrl + R</span><span class="shortcut-desc">搜索命令历史</span></div>
+                <div class="shortcut-row"><span class="shortcut-key">Ctrl + Z / Ctrl+Shift+Z</span><span class="shortcut-desc">撤销 / 重做输入</span></div>
+            </div>
+
+            <div class="shortcuts-section">
+                <h4>模型控制</h4>
+                <div class="shortcut-row"><span class="shortcut-key">Win+P / Cmd+P</span><span class="shortcut-desc">切换模型</span></div>
+                <div class="shortcut-row"><span class="shortcut-key">Win+O / Cmd+O</span><span class="shortcut-desc">切换快速模式</span></div>
+                <div class="shortcut-row"><span class="shortcut-key">Win+T / Cmd+T</span><span class="shortcut-desc">切换思考模式</span></div>
+                <div class="shortcut-row"><span class="shortcut-key">Shift + Tab</span><span class="shortcut-desc">循环切换输入模式</span></div>
+            </div>
+
+            <div class="shortcuts-section">
+                <h4>确认对话框</h4>
+                <div class="shortcut-row"><span class="shortcut-key">Y / Enter</span><span class="shortcut-desc">确认</span></div>
+                <div class="shortcut-row"><span class="shortcut-key">N / Esc</span><span class="shortcut-desc">拒绝</span></div>
+                <div class="shortcut-row"><span class="shortcut-key">Space</span><span class="shortcut-desc">切换选项</span></div>
+                <div class="shortcut-row"><span class="shortcut-key">Tab / ↑↓</span><span class="shortcut-desc">切换焦点</span></div>
+            </div>
+
+            <div class="shortcuts-section">
+                <h4>任务与 Agent</h4>
+                <div class="shortcut-row"><span class="shortcut-key">Ctrl + B</span><span class="shortcut-desc">当前任务放到后台</span></div>
+                <div class="shortcut-row"><span class="shortcut-key">Ctrl+X → Ctrl+K</span><span class="shortcut-desc">杀掉所有 Agent</span></div>
+            </div>
+
+            <div class="shortcuts-section">
+                <h4>界面导航</h4>
+                <div class="shortcut-row"><span class="shortcut-key">Ctrl+U / Ctrl+D</span><span class="shortcut-desc">上半页 / 下半页滚动</span></div>
+                <div class="shortcut-row"><span class="shortcut-key">Ctrl+B / Ctrl+F</span><span class="shortcut-desc">上一页 / 下一页</span></div>
+                <div class="shortcut-row"><span class="shortcut-key">G / Shift+G</span><span class="shortcut-desc">跳到顶部 / 底部</span></div>
+                <div class="shortcut-row"><span class="shortcut-key">Ctrl+Shift+C</span><span class="shortcut-desc">复制选中内容</span></div>
+            </div>
+        </div>
+
+    </div>
+</main>
+
+<footer>
+    <p>©2026  <a href="https://toolkit.skin" target="_blank">在线工具箱 </a> | 简洁高效的工具集合· 纯本地处理，无需代理</p>
+</footer>
+
+<script>
+// Copy button for code blocks
+document.querySelectorAll('pre').forEach(pre => {
+    const btn = document.createElement('button');
+    btn.className = 'copy-btn';
+    btn.textContent = '复制';
+    btn.addEventListener('click', async () => {
+        const code = pre.querySelector('code');
+        if (!code) return;
+        try {
+            await navigator.clipboard.writeText(code.textContent);
+            btn.textContent = '已复制 ✓';
+            setTimeout(() => { btn.textContent = '复制'; }, 2000);
+        } catch { btn.textContent = '复制失败'; }
+    });
+    pre.appendChild(btn);
+});
+</script>
+
+
+    <!-- 百度统计 -->
+    <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?0b7fd37b2338e3531b062a45e6cb51c0";
+      var s = document.getElementsByTagName("script")[0]; 
+      s.parentNode.insertBefore(hm, s);
+    })();
+    </script></body>
+</html>

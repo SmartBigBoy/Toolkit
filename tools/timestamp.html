@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>时间戳转换 - 在线工具箱</title>
+    <meta name="description" content="在线工具箱提供 JSON格式化、时间戳转换、Base64编码、颜色拾取器、二维码生成等实用工具，无需注册，完全免费。">
+    <meta name="keywords" content="在线工具,JSON格式化,时间戳转换,Base64编码,二维码生成,颜色转换,URL编码,工具箱">
+    <meta name="author" content="TOOLKIT.SKIN">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://toolkit.skin/tools/timestamp.html">
+    <meta property="og:title" content="时间戳转换 - 在线工具箱">
+    <meta property="og:description" content="免费在线工具箱，提供多种实用工具，包括JSON格式化、时间戳转换、Base64编码等。">
+    <meta property="og:url" content="https://toolkit.skin/tools/timestamp.html">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="TOOLKIT.SKIN 在线工具箱">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="时间戳转换 - 在线工具箱">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6560822080596473" crossorigin="anonymous"></script>
+    <style>
+        body { background: var(--bg-primary); margin: 0; padding: 0; }
+        .container-box {
+            max-width: 600px;
+            margin: 40px auto;
+            background: #fff;
+            border-radius: 24px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        .color-header {
+            background: linear-gradient(135deg, #f97316, #fb923c);
+            padding: 30px 24px;
+            color: #fff;
+        }
+        .color-header h1 {
+            margin: 0 0 8px 0;
+            font-size: 24px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .color-header p {
+            margin: 0;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        .color-body { padding: 24px; }
+        .time-card {
+            background: #f3f4f6;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+        .card-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #6b7280;
+            margin-bottom: 12px;
+        }
+        .time-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .time-label { font-size: 13px; color: #9ca3af; }
+        .time-value { font-size: 16px; font-weight: 500; color: #1f2937; font-family: monospace; }
+        .btn-row { display: flex; gap: 8px; margin-top: 12px; }
+        .btn-white {
+            flex: 1;
+            padding: 10px;
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 13px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            color: #6b7280;
+        }
+        .btn-white:hover { background: #f9fafb; }
+        .btn-purple {
+            flex: 1;
+            padding: 10px;
+            background: linear-gradient(135deg, #8b5cf6, #a78bfa);
+            border: none;
+            border-radius: 10px;
+            font-size: 13px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            color: #fff;
+        }
+        .btn-purple:hover { box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3); }
+        .text-input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 14px;
+            box-sizing: border-box;
+            margin-bottom: 12px;
+        }
+        .text-input:focus { outline: none; border-color: #f97316; }
+        .text-input::placeholder { color: #9ca3af; }
+        .convert-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #8b5cf6, #a78bfa);
+            border: none;
+            border-radius: 12px;
+            color: #fff;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+        }
+        .convert-btn:hover { box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4); }
+        .date-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr;
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+        .date-inputs input {
+            padding: 10px 4px;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 12px;
+            text-align: center;
+            min-width: 0;
+        }
+        .date-inputs input:focus { outline: none; border-color: #f97316; }
+        .date-inputs .input-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .date-inputs .input-label {
+            font-size: 11px;
+            color: #9ca3af;
+            margin-bottom: 4px;
+        }
+        .result-display {
+            background: #f3f4f6;
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 12px;
+        }
+        .result-display .label {
+            font-size: 12px;
+            color: #9ca3af;
+            margin-bottom: 4px;
+        }
+        .result-display .value {
+            font-size: 16px;
+            font-weight: 500;
+            color: #1f2937;
+        }
+        .footer-link {
+            text-align: center;
+            padding: 16px 24px 24px;
+        }
+        .footer-link a {
+            color: #6b7280;
+            text-decoration: none;
+            font-size: 13px;
+        }
+        .footer-link a:hover { color: #f97316; }
+        @media (max-width: 480px) {
+            .date-inputs { grid-template-columns: repeat(3, 1fr); }
+        }
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+        .input-label {
+            font-size: 11px;
+            color: #94a3b8;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            text-align: center;
+            background: white;
+        }
+        .input-group input:focus {
+            outline: none;
+            border-color: #8b5cf6;
+        }
+    </style>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-V8533PXQLF"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-V8533PXQLF');
+    </script>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="../index.html" class="logo">
+                <i class="fas fa-wrench"></i>
+                <h1>在线工具箱</h1>
+            </a>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container-box">
+            <div class="color-header">
+                <h1><i class="fas fa-clock"></i> 时间戳转换工具</h1>
+                <p>时间戳与日期时间之间的相互转换</p>
+            </div>
+            
+            <div class="color-body">
+                <div class="time-card">
+                    <div class="card-title">
+                        <i class="fas fa-bolt"></i>
+                        <span>当前时间戳</span>
+                    </div>
+                    <div class="time-row">
+                        <span class="time-label">秒</span>
+                        <span class="time-value" id="currentSeconds">---</span>
+                    </div>
+                    <div class="time-row">
+                        <span class="time-label">毫秒</span>
+                        <span class="time-value" id="currentMillis">---</span>
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn-white" onclick="copyValue('currentSeconds')">
+                            <i class="fas fa-copy"></i> 复制秒
+                        </button>
+                        <button class="btn-purple" onclick="copyValue('currentMillis')">
+                            <i class="fas fa-copy"></i> 复制毫秒
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="time-card">
+                    <div class="card-title">
+                        <i class="fas fa-arrow-right"></i>
+                        <span>时间戳 → 日期</span>
+                    </div>
+                    <input type="text" id="timestampInput" class="text-input" placeholder="输入时间戳（支持秒或毫秒），例如：1699999999 或 1699999999000">
+                    <button class="convert-btn" onclick="timestampToDate()">
+                        <i class="fas fa-pen"></i>
+                        <span>转换为日期</span>
+                    </button>
+                    <div id="dateResult" class="result-display" style="display:none;">
+                        <div class="label">转换结果</div>
+                        <div class="value" id="dateResultValue">---</div>
+                    </div>
+                </div>
+                
+                <div class="time-card">
+                    <div class="card-title">
+                        <i class="fas fa-arrow-left"></i>
+                        <span>日期 → 时间戳</span>
+                    </div>
+                    <div class="date-inputs">
+                        <div class="input-group">
+                            <span class="input-label">年</span>
+                            <input type="number" id="year" value="2025">
+                        </div>
+                        <div class="input-group">
+                            <span class="input-label">月</span>
+                            <input type="number" id="month" value="1">
+                        </div>
+                        <div class="input-group">
+                            <span class="input-label">日</span>
+                            <input type="number" id="day" value="1">
+                        </div>
+                        <div class="input-group">
+                            <span class="input-label">时</span>
+                            <input type="number" id="hour" value="0">
+                        </div>
+                        <div class="input-group">
+                            <span class="input-label">分</span>
+                            <input type="number" id="minute" value="0">
+                        </div>
+                        <div class="input-group">
+                            <span class="input-label">秒</span>
+                            <input type="number" id="second" value="0">
+                        </div>
+                    </div>
+                    <button class="convert-btn" onclick="dateToTimestamp()">
+                        <i class="fas fa-pen"></i>
+                        <span>转换为时间戳</span>
+                    </button>
+                    <div id="timestampResult" class="result-display" style="display:none;">
+                        <div class="label">转换结果</div>
+                        <div class="value" id="timestampResultValue">---</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="footer-link">
+                <a href="../index.html">← 返回首页</a> | <a href="../disclaimer.html">免责声明</a>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>© 2026 在线工具箱 | 简洁高效的工具集合</p>
+        </div>
+    </footer>
+
+    <script>
+        function pad(n) { return n.toString().padStart(2, '0'); }
+        
+        function initCurrentTime() {
+            const now = new Date();
+            const seconds = Math.floor(now.getTime() / 1000);
+            document.getElementById('currentSeconds').textContent = seconds;
+            document.getElementById('currentMillis').textContent = now.getTime();
+            
+            // 初始化日期输入框为当前时间
+            document.getElementById('year').value = now.getFullYear();
+            document.getElementById('month').value = pad(now.getMonth() + 1);
+            document.getElementById('day').value = pad(now.getDate());
+            document.getElementById('hour').value = pad(now.getHours());
+            document.getElementById('minute').value = pad(now.getMinutes());
+            document.getElementById('second').value = pad(now.getSeconds());
+        }
+        
+        // 只刷新时间戳数字，不刷新日期输入框
+        function updateTimestampOnly() {
+            const now = new Date();
+            document.getElementById('currentSeconds').textContent = Math.floor(now.getTime() / 1000);
+            document.getElementById('currentMillis').textContent = now.getTime();
+        }
+        
+        initCurrentTime();
+        setInterval(updateTimestampOnly, 1000);
+        
+        function timestampToDate() {
+            const input = document.getElementById('timestampInput').value.trim();
+            if (!input) return;
+            let ts = parseInt(input);
+            if (ts < 10000000000) ts *= 1000;
+            const date = new Date(ts);
+            document.getElementById('dateResultValue').textContent = date.toLocaleString('zh-CN');
+            document.getElementById('dateResult').style.display = 'block';
+        }
+        
+        function dateToTimestamp() {
+            const y = parseInt(document.getElementById('year').value) || 2025;
+            const mo = parseInt(document.getElementById('month').value) || 1;
+            const d = parseInt(document.getElementById('day').value) || 1;
+            const h = parseInt(document.getElementById('hour').value) || 0;
+            const mi = parseInt(document.getElementById('minute').value) || 0;
+            const s = parseInt(document.getElementById('second').value) || 0;
+            const date = new Date(y, mo - 1, d, h, mi, s);
+            document.getElementById('timestampResultValue').textContent = date.getTime();
+            document.getElementById('timestampResult').style.display = 'block';
+        }
+        
+        function copyValue(id) {
+            const text = document.getElementById(id).textContent;
+            navigator.clipboard.writeText(text).then(() => showToast('已复制'));
+        }
+        
+        function showToast(msg) {
+            const toast = document.createElement('div');
+            toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#10b981;color:#fff;padding:10px 20px;border-radius:8px;font-size:14px;z-index:9999;';
+            toast.textContent = msg;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2000);
+        }
+    </script>
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?0b7fd37b2338e3531b062a45e6cb51c0";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script></body>
+</html>

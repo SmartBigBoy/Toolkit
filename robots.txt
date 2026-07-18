@@ -1,0 +1,9 @@
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://toolkit.skin/sitemap.xml
+
+# Disallow
+Disallow: /404.html
