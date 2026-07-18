@@ -33,72 +33,58 @@ function getCurrentToolId() {
   return m ? m[1] : null;
 }
 
-/* ── 轮播状态 ── */
-let carouselCards = [];   // 当前 5 张卡片
-let carouselIdx = 0;      // 下一张要替换的位置
+/* ── 优雅交叉淡入淡出 ── */
 let carouselTimer = null;
 let isAnimating = false;
 
-/* 渲染卡片（无动画） */
-function renderCarousel(cards) {
-  const container = document.getElementById('tool-recommend');
-  if (!container) return;
-  container.innerHTML = cards.map(t => `
+function getContainer() {
+  return document.getElementById('tool-recommend');
+}
+
+function renderCards(cards) {
+  const c = getContainer();
+  if (!c) return null;
+  c.innerHTML = cards.map(t => `
     <a href="../tools/${t.id}.html" class="rec-card">
       <div class="rec-icon"><i class="fas ${t.icon}"></i></div>
       <span class="rec-name">${t.name}</span>
     </a>
   `).join('');
+  return c;
 }
 
-/* 初始化轮播 */
-function initCarousel() {
-  const currentId = getCurrentToolId();
-  const others = TOOLS_DATA.filter(t => t.id !== currentId);
-  shuffle(others);
-  carouselCards = others.slice(0, 5);
-  carouselIdx = 0;
-  renderCarousel(carouselCards);
-}
-
-/* 单张轮播 — 替换一张卡片，带滑入动画 */
-function rotateOneCard() {
+function crossfade() {
   if (isAnimating) return;
   const currentId = getCurrentToolId();
   const others = TOOLS_DATA.filter(t => t.id !== currentId);
-  const shown = new Set(carouselCards.map(t => t.id));
-  const available = others.filter(t => !shown.has(t.id));
-  if (available.length === 0) return;
-
-  const newCard = available[Math.floor(Math.random() * available.length)];
-  const container = document.getElementById('tool-recommend');
+  const container = getContainer();
   if (!container) return;
 
-  // 找到要替换的卡片元素
-  const cards = container.querySelectorAll('.rec-card');
-  const target = cards[carouselIdx];
-  if (!target) return;
-
   isAnimating = true;
-  target.classList.add('rec-slide-out');
+  // 旧卡片淡出 + 上移
+  container.classList.add('rec-fade-out');
 
   setTimeout(() => {
-    carouselCards[carouselIdx] = newCard;
-    renderCarousel(carouselCards);
-    // 对新替换的卡片应用滑入动画
-    const newCards = container.querySelectorAll('.rec-card');
-    const newTarget = newCards[carouselIdx];
-    if (newTarget) newTarget.classList.add('rec-slide-in');
-    carouselIdx = (carouselIdx + 1) % 5;
-    isAnimating = false;
-  }, 300);
+    shuffle(others);
+    const picks = others.slice(0, 5);
+    renderCards(picks);
+    // 新卡片从下方淡入
+    container.classList.remove('rec-fade-out');
+    container.classList.add('rec-fade-in');
+    setTimeout(() => {
+      container.classList.remove('rec-fade-in');
+      isAnimating = false;
+    }, 700);
+  }, 500);
 }
 
-/* 启动 */
 function startCarousel() {
-  initCarousel();
+  const currentId = getCurrentToolId();
+  const others = TOOLS_DATA.filter(t => t.id !== currentId);
+  shuffle(others);
+  renderCards(others.slice(0, 5));
   if (carouselTimer) clearInterval(carouselTimer);
-  carouselTimer = setInterval(rotateOneCard, 3000);
+  carouselTimer = setInterval(crossfade, 5000);
 }
 
 if (document.readyState === 'loading') {
