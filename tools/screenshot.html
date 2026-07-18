@@ -50,20 +50,28 @@
   <main class="main">
     <div class="container">
       <div class="tool-container" style="display:block">
-        <div class="ss-wrap">
+        <div class="ss-wrap" id="ssContainer">
+          <!-- 开始 -->
           <div id="startScreen">
             <p style="font-size:15px;color:var(--text-secondary);margin-bottom:8px">捕获屏幕或窗口，自由标注</p>
             <button id="btnStartCapture" class="ss-btn"><i class="fas fa-camera"></i> 开始截图</button>
-            <p class="ss-hint">快捷键: <kbd>Space</kbd> 截图 · <kbd>Ctrl+Z</kbd> 撤销 · <kbd>Esc</kbd> 取消</p>
+            <p class="ss-hint">快捷键: <kbd>Enter</kbd> 确认选区 · <kbd>Ctrl+Z</kbd> 撤销 · <kbd>Esc</kbd> 取消</p>
           </div>
 
-          <div class="screen-preview" id="screenPreview">
+          <!-- 选区阶段 -->
+          <div id="stageSelect" style="display:none">
             <div style="position:relative;display:inline-block;max-width:100%">
-              <canvas id="ssCanvas"></canvas>
-              <div id="cropOverlay"></div>
+              <canvas id="captureCanvas" style="width:100%;border-radius:12px;cursor:crosshair"></canvas>
             </div>
+            <p id="cropInfo" style="font-size:13px;color:var(--text-tertiary);margin-top:12px"></p>
+          </div>
 
-            <div class="ss-toolbar" id="ssToolbar">
+          <!-- 标注阶段 -->
+          <div id="stageAnnot" style="display:none">
+            <div style="position:relative;display:inline-block;max-width:100%">
+              <canvas id="annotCanvas" style="width:100%;border-radius:12px;cursor:crosshair;background:#fff;box-shadow:0 4px 24px rgba(0,0,0,0.1)"></canvas>
+            </div>
+            <div class="ss-toolbar" id="annotToolbar">
               <button class="ss-tool active" data-tool="rect" title="矩形"><i class="fas fa-square"></i></button>
               <button class="ss-tool" data-tool="arrow" title="箭头"><i class="fas fa-arrow-right"></i></button>
               <button class="ss-tool" data-tool="text" title="文字"><i class="fas fa-font"></i></button>
@@ -71,7 +79,7 @@
               <button class="ss-tool" data-tool="blur" title="马赛克"><i class="fas fa-eye-slash"></i></button>
               <button class="ss-tool" data-tool="crop" title="裁剪"><i class="fas fa-crop-alt"></i></button>
               <div class="sep"></div>
-              <button class="ss-tool" id="undoBtn" title="撤销 (Ctrl+Z)"><i class="fas fa-undo"></i></button>
+              <button class="ss-tool" id="undoBtn" title="撤销 Ctrl+Z"><i class="fas fa-undo"></i></button>
               <button class="ss-tool" id="redoBtn" title="重做"><i class="fas fa-redo"></i></button>
               <div class="sep"></div>
               <div class="color-btn ss-tool" id="colorPicker" style="background:#e74c3c"><input type="color" id="colorInput" value="#e74c3c"></div>
@@ -82,11 +90,9 @@
                 <button class="ss-size" data-size="8">8</button>
               </div>
             </div>
-
-            <div class="ss-bottom" id="ssBottom">
+            <div class="ss-bottom" id="annotBottom">
               <button id="downloadBtn" class="ss-action primary"><i class="fas fa-download"></i> 下载</button>
               <button id="copyBtn" class="ss-action secondary" style="display:none"><i class="fas fa-copy"></i> 复制</button>
-              <button id="recaptureBtn" class="ss-action secondary"><i class="fas fa-redo"></i> 重新截图</button>
               <button id="cancelBtn" class="ss-action secondary"><i class="fas fa-times"></i> 取消</button>
             </div>
           </div>

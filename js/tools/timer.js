@@ -71,7 +71,7 @@
     isRunning = true;
     btnStart.innerHTML = '<i class="fas fa-pause"></i> 暂停';
     btnStart.classList.add('running');
-    btnLap.disabled = false;
+    btnLap.removeAttribute('disabled');
     timerStatus.textContent = mode === 'countdown' ? '倒计时运行中' : '秒表运行中';
     const startTime = Date.now();
     const initialMs = totalMs;

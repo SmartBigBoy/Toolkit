@@ -1,87 +1,284 @@
 (function() {
-  const canvas = document.getElementById('ssCanvas');
-  const ctx = canvas.getContext('2d');
-  const startScreen = document.getElementById('startScreen');
-  const screenPreview = document.getElementById('screenPreview');
-  const toolbar = document.getElementById('ssToolbar');
-  const bottom = document.getElementById('ssBottom');
-  const cropOverlay = document.getElementById('cropOverlay');
-
+  // ── 状态 ──
+  let phase = 'idle'; // idle | selecting | annotating
   let stream = null;
-  let imageData = null; // original captured image data (for crop reset)
+  let capturedImage = null; // Image 对象
+  let canvas, ctx;
+  let selStartX, selStartY, selEndX, selEndY;
+  let isSelecting = false;
   let scaleX = 1, scaleY = 1;
-
-  // ── 标注状态 ──
+  let annotHistory = [];
+  let annotIdx = -1;
   let currentTool = 'rect';
   let currentColor = '#e74c3c';
   let currentSize = 4;
   let isDrawing = false;
-  let startX, startY;
-  let history = []; // 操作历史
-  let historyIdx = -1;
-  let isCropping = false;
-  let cropStartX, cropStartY, cropEndX, cropEndY;
-  let cropActive = false;
+  let drawStartX, drawStartY;
+  let imageData = null; // canvas image data for undo
 
   // ── DOM ──
-  const btnStart = document.getElementById('btnStartCapture');
-  const downloadBtn = document.getElementById('downloadBtn');
-  const copyBtn = document.getElementById('copyBtn');
-  const recaptureBtn = document.getElementById('recaptureBtn');
-  const cancelBtn = document.getElementById('cancelBtn');
-  const undoBtn = document.getElementById('undoBtn');
-  const redoBtn = document.getElementById('redoBtn');
-  const colorInput = document.getElementById('colorInput');
+  const container = document.getElementById('ssContainer');
+  const startScreen = document.getElementById('startScreen');
+  const stageSelect = document.getElementById('stageSelect');
+  const stageAnnot = document.getElementById('stageAnnot');
+  const captureCanvas = document.getElementById('captureCanvas');
+  const annotCanvas = document.getElementById('annotCanvas');
+  const toolbar = document.getElementById('annotToolbar');
+  const bottom = document.getElementById('annotBottom');
+  const cropInfo = document.getElementById('cropInfo');
+  const previewImg = document.getElementById('previewImg');
 
   // ── 开始截图 ──
-  btnStart.addEventListener('click', startCapture);
-  recaptureBtn.addEventListener('click', startCapture);
-  cancelBtn.addEventListener('click', exit);
+  document.getElementById('btnStartCapture').addEventListener('click', startCapture);
 
   async function startCapture() {
     try {
-      stream = await navigator.mediaDevices.getDisplayMedia({ video: { displaySurface: 'monitor' } });
+      stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
       const video = document.createElement('video');
       video.srcObject = stream;
-      video.play();
+      await video.play();
 
-      // 等一帧后截图
-      video.addEventListener('loadeddata', () => {
-        setTimeout(() => {
-          canvas.width = video.videoWidth;
-          canvas.height = video.videoHeight;
-          ctx.drawImage(video, 0, 0);
-          stream.getTracks().forEach(t => t.stop());
-          stream = null;
+      // 截取一帧
+      const c = document.createElement('canvas');
+      c.width = video.videoWidth;
+      c.height = video.videoHeight;
+      c.getContext('2d').drawImage(video, 0, 0);
+      stream.getTracks().forEach(t => t.stop());
+      stream = null;
 
-          // 保存原始数据
-          imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-          startScreen.style.display = 'none';
-          screenPreview.classList.add('active');
-          toolbar.classList.add('active');
-          bottom.classList.add('active');
-          updateCanvasScale();
-          resetHistory();
-        }, 200);
-      }, { once: true });
-    } catch(e) {
-      if (e.name !== 'NotAllowedError') console.error(e);
+      // 加载到 Image
+      capturedImage = new Image();
+      capturedImage.onload = enterSelection;
+      capturedImage.src = c.toDataURL('image/png');
+    } catch(e) { if (e.name !== 'NotAllowedError') console.error(e); }
+  }
+
+  // ── 选区阶段 ──
+  function enterSelection() {
+    startScreen.style.display = 'none';
+    stageSelect.style.display = 'block';
+    phase = 'selecting';
+
+    canvas = captureCanvas;
+    ctx = canvas.getContext('2d');
+    canvas.width = capturedImage.width;
+    canvas.height = capturedImage.height;
+    ctx.drawImage(capturedImage, 0, 0);
+
+    scaleX = canvas.width / canvas.offsetWidth;
+    scaleY = canvas.height / canvas.offsetHeight;
+
+    // 鼠标事件
+    canvas.onmousedown = onSelDown;
+    canvas.onmousemove = onSelMove;
+    canvas.onmouseup = onSelUp;
+    canvas.onmouseleave = onSelUp;
+
+    // 触屏
+    canvas.ontouchstart = (e) => { const t = e.touches[0]; onSelDown({ clientX: t.clientX, clientY: t.clientY, preventDefault: () => e.preventDefault() }); e.preventDefault(); };
+    canvas.ontouchmove = (e) => { const t = e.touches[0]; onSelMove({ clientX: t.clientX, clientY: t.clientY, preventDefault: () => e.preventDefault() }); e.preventDefault(); };
+    canvas.ontouchend = onSelUp;
+
+    document.addEventListener('keydown', onKeyDown);
+
+    cropInfo.textContent = '拖拽选择截图区域，按 Enter 确认，Esc 取消';
+  }
+
+  function getPos(e) {
+    const r = canvas.getBoundingClientRect();
+    return { x: (e.clientX - r.left) * scaleX, y: (e.clientY - r.top) * scaleY };
+  }
+
+  function onSelDown(e) {
+    const p = getPos(e);
+    selStartX = p.x; selStartY = p.y;
+    selEndX = p.x; selEndY = p.y;
+    isSelecting = true;
+  }
+
+  function onSelMove(e) {
+    if (!isSelecting) return;
+    const p = getPos(e);
+    selEndX = p.x; selEndY = p.y;
+    drawSelection();
+  }
+
+  function onSelUp() {
+    if (!isSelecting) return;
+    isSelecting = false;
+    if (Math.abs(selEndX - selStartX) < 5 || Math.abs(selEndY - selStartY) < 5) return;
+    cropInfo.textContent = '按 Enter 确认截图，Esc 重新选择';
+  }
+
+  function drawSelection() {
+    ctx.drawImage(capturedImage, 0, 0);
+    // 暗色遮罩
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    // 挖出选区
+    const x = Math.min(selStartX, selEndX), y = Math.min(selStartY, selEndY);
+    const w = Math.abs(selEndX - selStartX), h = Math.abs(selEndY - selStartY);
+    ctx.drawImage(capturedImage, x, y, w, h, x, y, w, h);
+    // 选区边框
+    ctx.strokeStyle = '#007AFF';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x, y, w, h);
+    // 尺寸标注
+    ctx.fillStyle = '#007AFF';
+    ctx.font = '13px sans-serif';
+    ctx.fillText(Math.round(w) + ' × ' + Math.round(h), x + 6, y - 8);
+  }
+
+  // ── 确认选区 → 进入标注 ──
+  function confirmSelection() {
+    const x = Math.min(selStartX, selEndX), y = Math.min(selStartY, selEndY);
+    const w = Math.abs(selEndX - selStartX), h = Math.abs(selEndY - selStartY);
+    if (w < 5 || h < 5) return;
+
+    stageSelect.style.display = 'none';
+    stageAnnot.style.display = 'block';
+    toolbar.classList.add('active');
+    bottom.classList.add('active');
+    phase = 'annotating';
+
+    canvas = annotCanvas;
+    ctx = canvas.getContext('2d');
+    canvas.width = Math.round(w);
+    canvas.height = Math.round(h);
+
+    // 从原图截取选区
+    const tmpC = document.createElement('canvas');
+    tmpC.width = capturedImage.width;
+    tmpC.height = capturedImage.height;
+    tmpC.getContext('2d').drawImage(capturedImage, 0, 0);
+    const imgData = tmpC.getContext('2d').getImageData(x, y, w, h);
+    ctx.putImageData(imgData, 0, 0);
+
+    imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    scaleX = canvas.width / canvas.offsetWidth;
+    scaleY = canvas.height / canvas.offsetHeight;
+
+    // 鼠标事件
+    canvas.onmousedown = onAnnotDown;
+    canvas.onmousemove = onAnnotMove;
+    canvas.onmouseup = onAnnotUp;
+    canvas.onmouseleave = onAnnotUp;
+    canvas.ontouchstart = (e) => { const t = e.touches[0]; onAnnotDown({ clientX: t.clientX, clientY: t.clientY, preventDefault: () => e.preventDefault() }); e.preventDefault(); };
+    canvas.ontouchmove = (e) => { const t = e.touches[0]; onAnnotMove({ clientX: t.clientX, clientY: t.clientY, preventDefault: () => e.preventDefault() }); e.preventDefault(); };
+    canvas.ontouchend = onAnnotUp;
+
+    saveSnapshot();
+    updateUndoButtons();
+  }
+
+  // ── 快捷键 ──
+  function onKeyDown(e) {
+    if (phase === 'selecting') {
+      if (e.key === 'Enter') { e.preventDefault(); confirmSelection(); }
+      if (e.key === 'Escape') { e.preventDefault(); exit(); }
+    }
+    if (phase === 'annotating') {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); e.shiftKey ? redo() : undo(); }
+      if (e.key === 'Escape') { e.preventDefault(); exit(); }
     }
   }
 
-  function updateCanvasScale() {
-    const rect = canvas.getBoundingClientRect();
-    scaleX = canvas.width / rect.width;
-    scaleY = canvas.height / rect.height;
+  // ── 标注绘制 ──
+  function getAnnotPos(e) {
+    const r = canvas.getBoundingClientRect();
+    return { x: (e.clientX - r.left) * scaleX, y: (e.clientY - r.top) * scaleY };
   }
 
-  function exit() {
-    if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
-    startScreen.style.display = '';
-    screenPreview.classList.remove('active');
-    toolbar.classList.remove('active');
-    bottom.classList.remove('active');
+  function onAnnotDown(e) {
+    const p = getAnnotPos(e);
+    if (currentTool === 'crop') { startCrop(p); return; }
+    isDrawing = true;
+    drawStartX = p.x; drawStartY = p.y;
   }
+
+  function onAnnotMove(e) {
+    const p = getAnnotPos(e);
+    if (isCropping) { moveCrop(p); return; }
+    if (!isDrawing) return;
+    restoreSnapshot();
+    drawShape(drawStartX, drawStartY, p.x, p.y, false);
+  }
+
+  function onAnnotUp(e) {
+    if (isCropping) { endCrop(); return; }
+    if (!isDrawing) return;
+    isDrawing = false;
+    saveSnapshot();
+    updateUndoButtons();
+  }
+
+  function drawShape(x1, y1, x2, y2) {
+    ctx.save();
+    ctx.strokeStyle = currentColor; ctx.fillStyle = currentColor;
+    ctx.lineWidth = currentSize; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    switch (currentTool) {
+      case 'rect':
+        const rx=Math.min(x1,x2), ry=Math.min(y1,y2), rw=Math.abs(x2-x1), rh=Math.abs(y2-y1);
+        ctx.strokeRect(rx,ry,rw,rh);
+        ctx.globalAlpha=0.12; ctx.fillRect(rx,ry,rw,rh); ctx.globalAlpha=1;
+        break;
+      case 'arrow':
+        const angle=Math.atan2(y2-y1,x2-x1), hl=Math.min(18,Math.hypot(x2-x1,y2-y1)/3);
+        ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x2,y2);
+        ctx.lineTo(x2-hl*Math.cos(angle-0.4),y2-hl*Math.sin(angle-0.4));
+        ctx.lineTo(x2-hl*Math.cos(angle+0.4),y2-hl*Math.sin(angle+0.4));
+        ctx.closePath(); ctx.fill();
+        break;
+      case 'text':
+        ctx.font=(currentSize*7)+'px sans-serif';
+        ctx.fillText('T', x1, y1);
+        break;
+      case 'pen':
+        ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+        break;
+      case 'blur':
+        const bx=Math.min(x1,x2), by=Math.min(y1,y2), bw=Math.abs(x2-x1), bh=Math.abs(y2-y1);
+        if (bw<5||bh<5) break;
+        const bc=document.createElement('canvas'); bc.width=Math.ceil(bw); bc.height=Math.ceil(bh);
+        const bctx=bc.getContext('2d');
+        bctx.drawImage(canvas,bx,by,bw,bh,0,0,Math.ceil(bw/10),Math.ceil(bh/10));
+        bctx.imageSmoothingEnabled=false;
+        bctx.drawImage(bc,0,0,Math.ceil(bw/10),Math.ceil(bh/10),0,0,Math.ceil(bw),Math.ceil(bh));
+        ctx.drawImage(bc,bx,by);
+        break;
+    }
+    ctx.restore();
+  }
+
+  // ── 裁剪（标注阶段内的裁剪） ──
+  let cropX1,cropY1,cropX2,cropY2,isCropping=false;
+
+  function startCrop(p) { cropX1=p.x; cropY1=p.y; cropX2=p.x; cropY2=p.y; isCropping=true; }
+  function moveCrop(p) { cropX2=p.x; cropY2=p.y; restoreSnapshot(); ctx.strokeStyle='#007AFF'; ctx.lineWidth=2; ctx.setLineDash([6,4]); ctx.strokeRect(Math.min(cropX1,cropX2),Math.min(cropY1,cropY2),Math.abs(cropX2-cropX1),Math.abs(cropY2-cropY1)); ctx.setLineDash([]); }
+  function endCrop() {
+    if (!isCropping) return; isCropping=false;
+    const x=Math.min(cropX1,cropX2), y=Math.min(cropY1,cropY2), w=Math.abs(cropX2-cropX1), h=Math.abs(cropY2-cropY1);
+    if (w<5||h<5) return;
+    const d=ctx.getImageData(x,y,w,h);
+    canvas.width=Math.round(w); canvas.height=Math.round(h);
+    ctx.putImageData(d,0,0);
+    imageData=ctx.getImageData(0,0,canvas.width,canvas.height);
+    scaleX=canvas.width/canvas.offsetWidth; scaleY=canvas.height/canvas.offsetHeight;
+    saveSnapshot(); updateUndoButtons();
+    document.querySelector('[data-tool="rect"]').click();
+  }
+
+  // ── 撤销 ──
+  function saveSnapshot() {
+    annotHistory = annotHistory.slice(0, annotIdx + 1);
+    annotHistory.push({ snapshot: ctx.getImageData(0,0,canvas.width,canvas.height) });
+    annotIdx = annotHistory.length - 1;
+  }
+  function restoreSnapshot() { if (annotIdx>=0) ctx.putImageData(annotHistory[annotIdx].snapshot,0,0); else if (imageData) ctx.putImageData(imageData,0,0); }
+  function undo() { if (annotIdx<=0) return; annotIdx--; restoreSnapshot(); updateUndoButtons(); }
+  function redo() { if (annotIdx>=annotHistory.length-1) return; annotIdx++; restoreSnapshot(); updateUndoButtons(); }
+  function updateUndoButtons() { document.getElementById('undoBtn').style.opacity=annotIdx>0?'1':'0.3'; document.getElementById('redoBtn').style.opacity=annotIdx<annotHistory.length-1?'1':'0.3'; }
 
   // ── 工具切换 ──
   document.querySelectorAll('[data-tool]').forEach(btn => {
@@ -89,270 +286,36 @@
       document.querySelectorAll('[data-tool]').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       currentTool = btn.dataset.tool;
-      canvas.style.cursor = currentTool === 'text' ? 'text' : currentTool === 'crop' ? 'crosshair' : 'crosshair';
-      if (currentTool === 'crop') { isCropping = true; cropActive = false; cropOverlay.classList.remove('active'); }
-      else isCropping = false;
+      canvas.style.cursor = currentTool==='crop'?'crosshair':'crosshair';
     });
   });
-
-  // ── 颜色 ──
-  colorInput.addEventListener('input', () => {
-    currentColor = colorInput.value;
-    document.getElementById('colorPicker').style.background = currentColor;
-  });
-
-  // ── 粗细 ──
+  document.getElementById('colorInput').addEventListener('input', function() { currentColor=this.value; document.getElementById('colorPicker').style.background=this.value; });
   document.querySelectorAll('[data-size]').forEach(btn => {
     btn.addEventListener('click', () => {
-      document.querySelectorAll('[data-size]').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      currentSize = parseInt(btn.dataset.size);
+      document.querySelectorAll('[data-size]').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active'); currentSize=parseInt(btn.dataset.size);
     });
   });
+  document.getElementById('undoBtn').addEventListener('click', undo);
+  document.getElementById('redoBtn').addEventListener('click', redo);
 
-  // ── 撤销 ──
-  undoBtn.addEventListener('click', undo);
-  redoBtn.addEventListener('click', redo);
-
-  // ── 快捷键 ──
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') { if (isCropping) cancelCrop(); else exit(); }
-    if ((e.ctrlKey || e.metaKey) && e.key === 'z') { if (e.shiftKey) redo(); else undo(); e.preventDefault(); }
-  });
-
-  // ── 鼠标事件 ──
-  canvas.addEventListener('mousedown', onMouseDown);
-  canvas.addEventListener('mousemove', onMouseMove);
-  canvas.addEventListener('mouseup', onMouseUp);
-  canvas.addEventListener('mouseleave', onMouseUp);
-
-  // 触屏
-  canvas.addEventListener('touchstart', (e) => { const t = e.touches[0]; onMouseDown({ offsetX: t.clientX - canvas.getBoundingClientRect().left, offsetY: t.clientY - canvas.getBoundingClientRect().top, preventDefault: () => e.preventDefault() }); }, { passive: false });
-  canvas.addEventListener('touchmove', (e) => { const t = e.touches[0]; onMouseMove({ offsetX: t.clientX - canvas.getBoundingClientRect().left, offsetY: t.clientY - canvas.getBoundingClientRect().top, preventDefault: () => e.preventDefault() }); }, { passive: false });
-  canvas.addEventListener('touchend', (e) => { onMouseUp({}); });
-
-  // ── 绘制 ──
-  function getPos(e) {
-    const rect = canvas.getBoundingClientRect();
-    return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY };
-  }
-
-  function onMouseDown(e) {
-    const pos = { x: (e.offsetX) * scaleX, y: (e.offsetY) * scaleY };
-    if (!pos.x && !pos.y && e.clientX) { const r = canvas.getBoundingClientRect(); pos.x = (e.clientX - r.left) * scaleX; pos.y = (e.clientY - r.top) * scaleY; }
-
-    if (isCropping) {
-      cropStartX = pos.x; cropStartY = pos.y;
-      cropEndX = pos.x; cropEndY = pos.y;
-      cropActive = true;
-      return;
-    }
-
-    isDrawing = true;
-    startX = pos.x; startY = pos.y;
-  }
-
-  function onMouseMove(e) {
-    const pos = { x: (e.offsetX) * scaleX, y: (e.offsetY) * scaleY };
-    if (!pos.x && !pos.y && e.clientX) { const r = canvas.getBoundingClientRect(); pos.x = (e.clientX - r.left) * scaleX; pos.y = (e.clientY - r.top) * scaleY; }
-
-    if (isCropping && cropActive) {
-      cropEndX = pos.x; cropEndY = pos.y;
-      drawCropOverlay();
-      return;
-    }
-
-    if (!isDrawing) return;
-
-    // 实时预览（画到临时层）
-    restoreFromHistory();
-    drawShape(startX, startY, pos.x, pos.y, false);
-  }
-
-  function onMouseUp(e) {
-    if (isCropping && cropActive) {
-      cropActive = false;
-      if (Math.abs(cropEndX - cropStartX) > 10 && Math.abs(cropEndY - cropStartY) > 10) {
-        doCrop();
-      } else {
-        cropOverlay.classList.remove('active');
-      }
-      return;
-    }
-
-    if (!isDrawing) return;
-    isDrawing = false;
-
-    // 保存到历史
-    const pos = { x: startX, y: startY };
-    // 获取结束位置
-    const lastMove = { x: startX, y: startY }; // fallback
-    history.push({ tool: currentTool, x1: startX, y1: startY, x2: lastMove.x, y2: lastMove.y, color: currentColor, size: currentSize });
-    historyIdx = history.length - 1;
-    // 截取最终状态
-    saveHistorySnapshot();
-    updateUndoButtons();
-  }
-
-  function drawShape(x1, y1, x2, y2, commit) {
-    ctx.save();
-    ctx.strokeStyle = currentColor;
-    ctx.fillStyle = currentColor;
-    ctx.lineWidth = currentSize;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-
-    switch (currentTool) {
-      case 'rect':
-        const rx = Math.min(x1, x2), ry = Math.min(y1, y2), rw = Math.abs(x2 - x1), rh = Math.abs(y2 - y1);
-        ctx.strokeRect(rx, ry, rw, rh);
-        ctx.globalAlpha = 0.15; ctx.fillRect(rx, ry, rw, rh); ctx.globalAlpha = 1;
-        break;
-      case 'arrow':
-        drawArrow(ctx, x1, y1, x2, y2);
-        break;
-      case 'text':
-        ctx.font = (currentSize * 6) + 'px sans-serif';
-        ctx.fillText('文本', x1, y1);
-        break;
-      case 'pen':
-        ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
-        break;
-      case 'blur':
-        drawBlur(ctx, x1, y1, x2, y2);
-        break;
-    }
-    ctx.restore();
-  }
-
-  function drawArrow(c, x1, y1, x2, y2) {
-    const angle = Math.atan2(y2 - y1, x2 - x1);
-    const headLen = Math.min(20, Math.hypot(x2 - x1, y2 - y1) / 3);
-    c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.stroke();
-    c.beginPath(); c.moveTo(x2, y2);
-    c.lineTo(x2 - headLen * Math.cos(angle - 0.4), y2 - headLen * Math.sin(angle - 0.4));
-    c.lineTo(x2 - headLen * Math.cos(angle + 0.4), y2 - headLen * Math.sin(angle + 0.4));
-    c.closePath(); c.fill();
-  }
-
-  function drawBlur(c, x1, y1, x2, y2) {
-    const r = Math.min(Math.abs(x2 - x1), Math.abs(y2 - y1));
-    if (r < 5) return;
-    const bx = Math.min(x1, x2), by = Math.min(y1, y2), bw = Math.abs(x2 - x1), bh = Math.abs(y2 - y1);
-    const blurCanvas = document.createElement('canvas');
-    blurCanvas.width = Math.ceil(bw); blurCanvas.height = Math.ceil(bh);
-    const bctx = blurCanvas.getContext('2d');
-    bctx.drawImage(canvas, bx, by, bw, bh, 0, 0, Math.ceil(bw / 8), Math.ceil(bh / 8));
-    bctx.imageSmoothingEnabled = false;
-    bctx.drawImage(blurCanvas, 0, 0, Math.ceil(bw / 8), Math.ceil(bh / 8), 0, 0, Math.ceil(bw), Math.ceil(bh));
-    c.drawImage(blurCanvas, bx, by);
-  }
-
-  // ── 裁剪 ──
-  function drawCropOverlay() {
-    const r = canvas.getBoundingClientRect();
-    const sx = Math.min(cropStartX, cropEndX) / scaleX + r.left;
-    const sy = Math.min(cropStartY, cropEndY) / scaleY + r.top;
-    const sw = Math.abs(cropEndX - cropStartX) / scaleX;
-    const sh = Math.abs(cropEndY - cropStartY) / scaleY;
-    cropOverlay.style.left = sx + 'px'; cropOverlay.style.top = sy + 'px';
-    cropOverlay.style.width = sw + 'px'; cropOverlay.style.height = sh + 'px';
-    cropOverlay.classList.add('active');
-  }
-
-  function doCrop() {
-    const x = Math.min(cropStartX, cropEndX), y = Math.min(cropStartY, cropEndY);
-    const w = Math.abs(cropEndX - cropStartX), h = Math.abs(cropEndY - cropStartY);
-    if (w < 5 || h < 5) { cropOverlay.classList.remove('active'); return; }
-    const imgData = ctx.getImageData(x, y, w, h);
-    // 先保存原图为当前画布
-    const prevData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    canvas.width = w; canvas.height = h;
-    ctx.putImageData(imgData, 0, 0);
-    imageData = ctx.getImageData(0, 0, w, h);
-    cropOverlay.classList.remove('active');
-    isCropping = false;
-    // 切换回矩形工具
-    document.querySelectorAll('[data-tool]').forEach(b => b.classList.remove('active'));
-    document.querySelector('[data-tool="rect"]').classList.add('active');
-    currentTool = 'rect';
-    updateCanvasScale();
-    resetHistory();
-  }
-
-  function cancelCrop() {
-    cropActive = false;
-    cropOverlay.classList.remove('active');
-    document.querySelectorAll('[data-tool]').forEach(b => b.classList.remove('active'));
-    document.querySelector('[data-tool="rect"]').classList.add('active');
-    currentTool = 'rect';
-    isCropping = false;
-  }
-
-  // ── 历史 ──
-  function resetHistory() {
-    history = []; historyIdx = -1;
-    saveHistorySnapshot();
-    updateUndoButtons();
-  }
-
-  function saveHistorySnapshot() {
-    history[historyIdx + 1] = { snapshot: ctx.getImageData(0, 0, canvas.width, canvas.height) };
-    history = history.slice(0, historyIdx + 2);
-    historyIdx = history.length - 1;
-  }
-
-  function restoreFromHistory() {
-    if (historyIdx >= 0 && history[historyIdx] && history[historyIdx].snapshot) {
-      ctx.putImageData(history[historyIdx].snapshot, 0, 0);
-    } else if (imageData) {
-      ctx.putImageData(imageData, 0, 0);
-    }
-  }
-
-  function undo() {
-    if (historyIdx <= 0) return;
-    historyIdx--;
-    if (history[historyIdx] && history[historyIdx].snapshot) {
-      ctx.putImageData(history[historyIdx].snapshot, 0, 0);
-    } else if (imageData) {
-      ctx.putImageData(imageData, 0, 0);
-    }
-    updateUndoButtons();
-  }
-
-  function redo() {
-    if (historyIdx >= history.length - 1) return;
-    historyIdx++;
-    if (history[historyIdx] && history[historyIdx].snapshot) {
-      ctx.putImageData(history[historyIdx].snapshot, 0, 0);
-    }
-    updateUndoButtons();
-  }
-
-  function updateUndoButtons() {
-    undoBtn.style.opacity = historyIdx > 0 ? '1' : '0.3';
-    redoBtn.style.opacity = historyIdx < history.length - 1 ? '1' : '0.3';
-  }
-
-  // ── 下载 ──
-  downloadBtn.addEventListener('click', () => {
+  // ── 下载 / 复制 / 取消 ──
+  document.getElementById('downloadBtn').addEventListener('click', () => {
     const link = document.createElement('a');
-    link.download = 'screenshot_' + new Date().toISOString().slice(0,19).replace(/[:-]/g,'') + '.png';
-    link.href = canvas.toDataURL('image/png');
-    link.click();
+    link.download = 'screenshot_'+new Date().toISOString().slice(0,19).replace(/[:-]/g,'')+'.png';
+    link.href = annotCanvas.toDataURL('image/png'); link.click();
   });
-
-  // ── 复制到剪贴板 ──
-  copyBtn.addEventListener('click', async () => {
-    try {
-      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
-      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-      copyBtn.textContent = '✅ 已复制';
-      setTimeout(() => { copyBtn.innerHTML = '<i class="fas fa-copy"></i> 复制'; }, 2000);
-    } catch(e) { copyBtn.textContent = '复制失败'; }
+  document.getElementById('copyBtn').addEventListener('click', async () => {
+    try { const blob=await new Promise(r=>annotCanvas.toBlob(r,'image/png')); await navigator.clipboard.write([new ClipboardItem({'image/png':blob})]); document.getElementById('copyBtn').textContent='已复制'; setTimeout(()=>document.getElementById('copyBtn').innerHTML='<i class="fas fa-copy"></i> 复制',2000); } catch(e){}
   });
+  document.getElementById('cancelBtn').addEventListener('click', exit);
+  if (navigator.clipboard && navigator.clipboard.write) document.getElementById('copyBtn').style.display='';
 
-  // ── 显示复制按钮（支持 Clipboard API 时） ──
-  if (navigator.clipboard && navigator.clipboard.write) copyBtn.style.display = '';
+  function exit() {
+    phase='idle'; isSelecting=false; isCropping=false; isDrawing=false;
+    if (stream) { stream.getTracks().forEach(t=>t.stop()); stream=null; }
+    startScreen.style.display=''; stageSelect.style.display='none'; stageAnnot.style.display='none';
+    toolbar.classList.remove('active'); bottom.classList.remove('active');
+    document.removeEventListener('keydown', onKeyDown);
+  }
 })();
