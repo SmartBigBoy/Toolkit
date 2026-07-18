@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>在线定时器 - 在线工具箱</title>
+  <meta name="description" content="在线倒计时和秒表工具，支持自定义倒计时、计次功能，纯浏览器运行">
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous">
+  <style>
+    .timer-wrap { max-width: 480px; margin: 0 auto; text-align: center; padding: 32px 0; }
+    .timer-tabs { display: flex; gap: 0; margin-bottom: 32px; background: var(--bg-tertiary); border-radius: 12px; padding: 4px; }
+    .timer-tab { flex: 1; padding: 10px; border: none; border-radius: 10px; background: transparent; color: var(--text-secondary); font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.25s; }
+    .timer-tab.active { background: var(--bg-secondary); color: var(--primary); box-shadow: 0 2px 8px rgba(99,102,241,0.12); }
+    .timer-display { font-size: 72px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: 4px; color: var(--text-primary); margin: 24px 0; font-family: 'SF Mono', Monaco, monospace; line-height: 1; }
+    @media (max-width: 480px) { .timer-display { font-size: 56px; } }
+    .timer-controls { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 24px; }
+    .timer-btn { padding: 14px 32px; border: none; border-radius: 14px; font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.2s; display: flex; align-items: center; gap: 8px; }
+    .timer-btn.primary { background: var(--primary-gradient); color: #fff; box-shadow: 0 4px 12px rgba(99,102,241,0.3); }
+    .timer-btn.primary:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(99,102,241,0.4); }
+    .timer-btn.primary.running { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); box-shadow: 0 4px 12px rgba(239,68,68,0.3); }
+    .timer-btn.secondary { background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border); }
+    .timer-btn.secondary:hover { background: var(--bg-secondary); }
+    .timer-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; }
+    .timer-presets { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 24px; }
+    .preset-btn { padding: 8px 18px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-secondary); color: var(--text-secondary); font-size: 13px; cursor: pointer; font-family: inherit; transition: all 0.2s; }
+    .preset-btn:hover { border-color: var(--primary-light); color: var(--primary); }
+    .timer-inputs { display: flex; gap: 12px; justify-content: center; margin-bottom: 16px; }
+    .timer-input-group { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .timer-input-group input { width: 80px; padding: 10px; text-align: center; border: 2px solid var(--border); border-radius: 10px; font-size: 24px; font-weight: 600; font-family: 'SF Mono', Monaco, monospace; background: var(--bg-secondary); color: var(--text-primary); }
+    .timer-input-group input:focus { outline: none; border-color: var(--primary); }
+    .timer-input-group label { font-size: 12px; color: var(--text-tertiary); }
+    .lap-list { margin-top: 24px; max-height: 200px; overflow-y: auto; text-align: left; }
+    .lap-item { display: flex; justify-content: space-between; padding: 8px 16px; border-bottom: 1px solid var(--border); font-size: 14px; font-family: 'SF Mono', Monaco, monospace; color: var(--text-secondary); }
+    .lap-item:first-child { border-top: 1px solid var(--border); }
+    .lap-item .lap-num { color: var(--text-tertiary); }
+    .timer-status { font-size: 13px; color: var(--text-tertiary); margin-top: 8px; min-height: 20px; }
+    #countdown-input-area, #stopwatch-area { display: none; }
+    #countdown-input-area.active, #stopwatch-area.active { display: block; }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="container">
+      <a href="../index.html" class="logo"><i class="fas fa-wrench"></i><h1>在线工具箱</h1></a>
+    </div>
+  </header>
+  <main class="main">
+    <div class="container">
+      <div class="tool-container" style="display:block">
+        <div class="timer-wrap">
+          <div class="timer-tabs">
+            <button id="tabCountdown" class="timer-tab active"><i class="fas fa-hourglass-half"></i> 倒计时</button>
+            <button id="tabStopwatch" class="timer-tab"><i class="fas fa-stopwatch"></i> 秒表</button>
+          </div>
+
+          <!-- 倒计时 -->
+          <div id="countdown-input-area" class="active">
+            <div class="timer-inputs">
+              <div class="timer-input-group"><input type="number" id="inputHour" min="0" max="99" value="0"><label>时</label></div>
+              <div class="timer-input-group"><input type="number" id="inputMin" min="0" max="59" value="5"><label>分</label></div>
+              <div class="timer-input-group"><input type="number" id="inputSec" min="0" max="59" value="0"><label>秒</label></div>
+            </div>
+            <div class="timer-presets" id="presets">
+              <button class="preset-btn" data-m="1">1 分钟</button>
+              <button class="preset-btn" data-m="5">5 分钟</button>
+              <button class="preset-btn" data-m="25">25 分钟</button>
+              <button class="preset-btn" data-h="1">1 小时</button>
+            </div>
+          </div>
+
+          <!-- 秒表 -->
+          <div id="stopwatch-area"></div>
+
+          <div class="timer-display" id="display">00:05:00</div>
+          <div id="timerStatus" class="timer-status"></div>
+
+          <div class="timer-controls" id="controls">
+            <button id="btnStart" class="timer-btn primary"><i class="fas fa-play"></i> 开始</button>
+            <button id="btnLap" class="timer-btn secondary" disabled><i class="fas fa-flag"></i> 计次</button>
+            <button id="btnReset" class="timer-btn secondary"><i class="fas fa-rotate-left"></i> 重置</button>
+          </div>
+
+          <div id="lapList" class="lap-list"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+  <footer class="footer container"><p>© 2026 在线工具箱 | 简洁高效的工具集合</p></footer>
+  <script src="../js/tools/timer.js"></script>
+  <script src="../js/tools_data.js"></script>
+<script>
+var _hmt = _hmt || [];
+(function() { var hm = document.createElement("script"); hm.src = "https://hm.baidu.com/hm.js?0b7fd37b2338e3531b062a45e6cb51c0"; var s = document.getElementsByTagName("script")[0]; s.parentNode.insertBefore(hm, s); })();
+</script></body>
+</html>

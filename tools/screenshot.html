@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>截图工具 - 在线工具箱</title>
+  <meta name="description" content="在线截图工具，支持屏幕截图、裁剪、标注（矩形、箭头、文字、画笔、马赛克），纯浏览器处理不上传">
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous">
+  <style>
+    .ss-wrap { max-width: 900px; margin: 0 auto; padding: 20px 0; text-align: center; }
+    .ss-btn { padding: 14px 32px; border: none; border-radius: 14px; font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit; background: var(--primary-gradient); color: #fff; box-shadow: 0 4px 12px rgba(99,102,241,0.3); transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px; }
+    .ss-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(99,102,241,0.4); }
+    .ss-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+    .ss-hint { color: var(--text-tertiary); font-size: 13px; margin-top: 12px; }
+    .ss-hint kbd { background: var(--bg-tertiary); padding: 2px 8px; border-radius: 4px; border: 1px solid var(--border); font-size: 12px; font-family: inherit; }
+    .screen-preview { display: none; margin-top: 20px; position: relative; }
+    .screen-preview.active { display: block; }
+    #ssCanvas { width: 100%; border-radius: 12px; box-shadow: 0 4px 24px rgba(0,0,0,0.1); cursor: crosshair; background: #fff; }
+    .ss-toolbar { display: none; align-items: center; justify-content: center; gap: 6px; padding: 12px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 16px; margin-top: 16px; flex-wrap: wrap; }
+    .ss-toolbar.active { display: flex; }
+    .ss-toolbar .sep { width: 1px; height: 28px; background: var(--border); margin: 0 4px; }
+    .ss-tool { width: 38px; height: 38px; border-radius: 10px; border: 1px solid transparent; background: transparent; color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; transition: all 0.15s; }
+    .ss-tool:hover { background: var(--bg-tertiary); }
+    .ss-tool.active { background: rgba(99,102,241,0.1); color: var(--primary); border-color: var(--primary-light); }
+    .ss-tool.color-btn { width: 32px; height: 32px; border-radius: 50%; padding: 0; border: 2px solid var(--border); position: relative; }
+    .ss-tool.color-btn.active { border-color: var(--primary); box-shadow: 0 0 0 2px var(--primary); }
+    .ss-tool.color-btn input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+    .ss-size-group { display: flex; align-items: center; gap: 4px; padding: 0 4px; }
+    .ss-size { width: 28px; height: 28px; border-radius: 6px; border: 1px solid transparent; background: transparent; color: var(--text-secondary); cursor: pointer; font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center; transition: all 0.15s; font-family: inherit; }
+    .ss-size:hover { background: var(--bg-tertiary); }
+    .ss-size.active { background: rgba(99,102,241,0.1); color: var(--primary); border-color: var(--primary-light); }
+    .ss-bottom { display: none; justify-content: center; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
+    .ss-bottom.active { display: flex; }
+    .ss-action { padding: 10px 24px; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.15s; display: flex; align-items: center; gap: 6px; }
+    .ss-action.primary { background: var(--primary-gradient); color: #fff; }
+    .ss-action.primary:hover { transform: translateY(-1px); }
+    .ss-action.secondary { background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border); }
+    .ss-action.secondary:hover { background: var(--bg-secondary); }
+    #cropOverlay { display: none; position: absolute; border: 2px dashed var(--primary); background: rgba(99,102,241,0.08); pointer-events: none; z-index: 5; }
+    #cropOverlay.active { display: block; }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="container">
+      <a href="../index.html" class="logo"><i class="fas fa-wrench"></i><h1>在线工具箱</h1></a>
+    </div>
+  </header>
+  <main class="main">
+    <div class="container">
+      <div class="tool-container" style="display:block">
+        <div class="ss-wrap">
+          <div id="startScreen">
+            <p style="font-size:15px;color:var(--text-secondary);margin-bottom:8px">捕获屏幕或窗口，自由标注</p>
+            <button id="btnStartCapture" class="ss-btn"><i class="fas fa-camera"></i> 开始截图</button>
+            <p class="ss-hint">快捷键: <kbd>Space</kbd> 截图 · <kbd>Ctrl+Z</kbd> 撤销 · <kbd>Esc</kbd> 取消</p>
+          </div>
+
+          <div class="screen-preview" id="screenPreview">
+            <div style="position:relative;display:inline-block;max-width:100%">
+              <canvas id="ssCanvas"></canvas>
+              <div id="cropOverlay"></div>
+            </div>
+
+            <div class="ss-toolbar" id="ssToolbar">
+              <button class="ss-tool active" data-tool="rect" title="矩形"><i class="fas fa-square"></i></button>
+              <button class="ss-tool" data-tool="arrow" title="箭头"><i class="fas fa-arrow-right"></i></button>
+              <button class="ss-tool" data-tool="text" title="文字"><i class="fas fa-font"></i></button>
+              <button class="ss-tool" data-tool="pen" title="画笔"><i class="fas fa-pen"></i></button>
+              <button class="ss-tool" data-tool="blur" title="马赛克"><i class="fas fa-eye-slash"></i></button>
+              <button class="ss-tool" data-tool="crop" title="裁剪"><i class="fas fa-crop-alt"></i></button>
+              <div class="sep"></div>
+              <button class="ss-tool" id="undoBtn" title="撤销 (Ctrl+Z)"><i class="fas fa-undo"></i></button>
+              <button class="ss-tool" id="redoBtn" title="重做"><i class="fas fa-redo"></i></button>
+              <div class="sep"></div>
+              <div class="color-btn ss-tool" id="colorPicker" style="background:#e74c3c"><input type="color" id="colorInput" value="#e74c3c"></div>
+              <div class="sep"></div>
+              <div class="ss-size-group">
+                <button class="ss-size" data-size="2">2</button>
+                <button class="ss-size active" data-size="4">4</button>
+                <button class="ss-size" data-size="8">8</button>
+              </div>
+            </div>
+
+            <div class="ss-bottom" id="ssBottom">
+              <button id="downloadBtn" class="ss-action primary"><i class="fas fa-download"></i> 下载</button>
+              <button id="copyBtn" class="ss-action secondary" style="display:none"><i class="fas fa-copy"></i> 复制</button>
+              <button id="recaptureBtn" class="ss-action secondary"><i class="fas fa-redo"></i> 重新截图</button>
+              <button id="cancelBtn" class="ss-action secondary"><i class="fas fa-times"></i> 取消</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+  <footer class="footer container"><p>© 2026 在线工具箱 | 简洁高效的工具集合</p></footer>
+  <script src="../js/tools/screenshot.js"></script>
+  <script src="../js/tools_data.js"></script>
+<script>
+var _hmt = _hmt || [];
+(function() { var hm = document.createElement("script"); hm.src = "https://hm.baidu.com/hm.js?0b7fd37b2338e3531b062a45e6cb51c0"; var s = document.getElementsByTagName("script")[0]; s.parentNode.insertBefore(hm, s); })();
+</script></body>
+</html>
