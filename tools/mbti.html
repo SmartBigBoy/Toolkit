@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MBTI人格测试 - 在线工具箱</title>
+  <meta name="description" content="在线MBTI人格测试，20题迫选法，测你的性格类型（INTJ/INFP/ENFP等16型），纯浏览器处理">
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous">
+  <style>
+    .mbti-wrap { max-width: 640px; margin: 0 auto; padding: 20px 0; min-height: 400px; }
+
+    /* 开始页 */
+    .mbti-start { text-align: center; padding: 40px 20px; }
+    .mbti-start .logo-icon { width: 80px; height: 80px; border-radius: 20px; background: var(--primary-gradient); display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; box-shadow: 0 8px 24px rgba(99,102,241,0.3); }
+    .mbti-start .logo-icon i { font-size: 36px; color: #fff; }
+    .mbti-start h2 { font-size: 22px; font-weight: 700; margin-bottom: 8px; color: var(--text-primary); }
+    .mbti-start p { font-size: 14px; color: var(--text-secondary); max-width: 400px; margin: 0 auto 24px; line-height: 1.7; }
+    .mbti-start .info { font-size: 13px; color: var(--text-tertiary); margin-top: 12px; }
+
+    /* 进度条 */
+    .mbti-progress { background: var(--bg-tertiary); border-radius: 8px; height: 6px; margin-bottom: 24px; overflow: hidden; }
+    .mbti-progress-bar { height: 100%; background: var(--primary-gradient); border-radius: 8px; transition: width 0.4s ease; }
+    .mbti-progress-text { text-align: center; font-size: 13px; color: var(--text-tertiary); margin-bottom: 16px; }
+
+    /* 题目 */
+    .mbti-question { display: none; }
+    .mbti-question.active { display: block; }
+    .mbti-q-title { font-size: 17px; font-weight: 600; color: var(--text-primary); margin-bottom: 24px; text-align: center; line-height: 1.6; }
+    .mbti-options { display: flex; flex-direction: column; gap: 12px; }
+    .mbti-option { padding: 18px 20px; border: 2px solid var(--border); border-radius: 14px; background: var(--bg-secondary); cursor: pointer; transition: all 0.2s; text-align: center; font-size: 15px; color: var(--text-primary); line-height: 1.5; }
+    .mbti-option:hover { border-color: var(--primary-light); background: rgba(99,102,241,0.03); }
+    .mbti-option.selected { border-color: var(--primary); background: rgba(99,102,241,0.08); color: var(--primary); font-weight: 600; }
+    .mbti-tag { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 4px; margin-bottom: 6px; }
+    .mbti-tag.ei { background: rgba(99,102,241,0.1); color: var(--primary); }
+    .mbti-tag.sn { background: rgba(16,185,129,0.1); color: var(--success); }
+    .mbti-tag.tf { background: rgba(245,158,11,0.1); color: var(--warning); }
+    .mbti-tag.jp { background: rgba(239,68,68,0.1); color: var(--danger); }
+
+    /* 结果页 */
+    .mbti-result { display: none; }
+    .mbti-result.active { display: block; }
+    .mbti-type-badge { text-align: center; padding: 32px 20px; }
+    .mbti-type-letters { font-size: 56px; font-weight: 800; letter-spacing: 8px; background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .mbti-type-name { font-size: 20px; font-weight: 600; color: var(--text-primary); margin-top: 8px; }
+    .mbti-type-ename { font-size: 14px; color: var(--text-secondary); margin-top: 2px; }
+
+    .mbti-bars { padding: 0 20px; margin-bottom: 24px; }
+    .mbti-bar-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+    .mbti-bar-label { font-size: 13px; font-weight: 600; min-width: 20px; color: var(--text-secondary); }
+    .mbti-bar-track { flex: 1; height: 8px; background: var(--bg-tertiary); border-radius: 4px; position: relative; overflow: hidden; }
+    .mbti-bar-fill { height: 100%; border-radius: 4px; transition: width 0.8s ease; }
+    .mbti-bar-fill.ei { background: linear-gradient(90deg, var(--primary), #818cf8); }
+    .mbti-bar-fill.sn { background: linear-gradient(90deg, var(--success), #34d399); }
+    .mbti-bar-fill.tf { background: linear-gradient(90deg, var(--warning), #fbbf24); }
+    .mbti-bar-fill.jp { background: linear-gradient(90deg, var(--danger), #f87171); }
+    .mbti-bar-pct { font-size: 13px; font-weight: 600; min-width: 44px; text-align: right; color: var(--text-secondary); }
+
+    .mbti-section { padding: 16px 20px; border-top: 1px solid var(--border); }
+    .mbti-section h3 { font-size: 14px; font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+    .mbti-section h3 i { color: var(--primary); }
+    .mbti-section p, .mbti-section li { font-size: 14px; color: var(--text-secondary); line-height: 1.7; }
+    .mbti-section ul { padding-left: 20px; }
+    .mbti-section li { margin-bottom: 4px; }
+    .mbti-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+    .mbti-tags span { padding: 4px 12px; border-radius: 6px; font-size: 13px; background: var(--bg-tertiary); color: var(--text-primary); }
+
+    .mbti-btn { padding: 14px 32px; border: none; border-radius: 14px; font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit; background: var(--primary-gradient); color: #fff; box-shadow: 0 4px 12px rgba(99,102,241,0.3); transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px; }
+    .mbti-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(99,102,241,0.4); }
+    .mbti-btn.secondary { background: var(--bg-tertiary); color: var(--text-primary); box-shadow: none; border: 1px solid var(--border); }
+    .mbti-btn.secondary:hover { background: var(--bg-secondary); transform: none; }
+    .mbti-footer { text-align: center; padding: 20px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="container">
+      <a href="../index.html" class="logo"><i class="fas fa-wrench"></i><h1>在线工具箱</h1></a>
+    </div>
+  </header>
+  <main class="main">
+    <div class="container">
+      <div class="tool-container" style="display:block">
+        <div class="mbti-wrap" id="mbtiApp">
+
+          <!-- 开始页 -->
+          <div id="mbtiStart" class="mbti-start">
+            <div class="logo-icon"><i class="fas fa-brain"></i></div>
+            <h2>MBTI 人格类型测试</h2>
+            <p>20 道选择题，基于经典迫选法，帮助你了解自己的性格倾向。请在每个问题中选择最符合你的选项。</p>
+            <button id="btnStart" class="mbti-btn"><i class="fas fa-play"></i> 开始测试</button>
+            <div class="info">大约需要 3-5 分钟 · 二选一迫选法 · 共 20 题</div>
+          </div>
+
+          <!-- 题目区 -->
+          <div id="mbtiQuestions" style="display:none">
+            <div class="mbti-progress"><div class="mbti-progress-bar" id="progressBar" style="width:0%"></div></div>
+            <div class="mbti-progress-text" id="progressText">1 / 20</div>
+            <div id="questionContainer"></div>
+          </div>
+
+          <!-- 结果页 -->
+          <div id="mbtiResult" class="mbti-result">
+            <div class="mbti-type-badge">
+              <div class="mbti-type-letters" id="resultLetters">INTJ</div>
+              <div class="mbti-type-name" id="resultName">建筑师</div>
+              <div class="mbti-type-ename" id="resultEName">Architect</div>
+            </div>
+            <div class="mbti-bars" id="resultBars"></div>
+            <div id="resultContent"></div>
+            <div class="mbti-footer">
+              <button id="btnRetest" class="mbti-btn"><i class="fas fa-redo"></i> 重新测试</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </main>
+  <footer class="footer container"><p>© 2026 在线工具箱 | 简洁高效的工具集合</p></footer>
+  <script src="../js/tools/mbti.js"></script>
+  <script src="../js/tools_data.js"></script>
+<script>
+var _hmt = _hmt || [];
+(function() { var hm = document.createElement("script"); hm.src = "https://hm.baidu.com/hm.js?0b7fd37b2338e3531b062a45e6cb51c0"; var s = document.getElementsByTagName("script")[0]; s.parentNode.insertBefore(hm, s); })();
+</script></body>
+</html>
