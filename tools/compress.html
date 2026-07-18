@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>图片压缩工具 - 在线工具箱</title>
+  <meta name="description" content="在线图片压缩工具，支持JPG、PNG、WebP压缩，自定义压缩质量，纯浏览器处理不上传服务器">
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous">
+  <style>
+    .compress-drop { background: var(--bg-secondary); border-radius: 16px; padding: 48px 24px; text-align: center; cursor: pointer; border: 2px dashed var(--border); transition: all 0.3s; margin: 20px 0; }
+    .compress-drop:hover, .compress-drop.dragover { border-color: var(--primary-light); background: rgba(99,102,241,0.03); }
+    .compress-drop .big-icon { width: 64px; height: 64px; border-radius: 50%; background: var(--primary-gradient); display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; box-shadow: 0 4px 16px rgba(99,102,241,0.3); }
+    .compress-drop .big-icon i { font-size: 24px; color: #fff; }
+    .compress-drop p { color: var(--text-primary); font-size: 15px; font-weight: 500; margin-bottom: 4px; }
+    .compress-drop .hint { color: var(--text-tertiary); font-size: 13px; }
+    .compress-preview { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 24px; }
+    @media (max-width: 768px) { .compress-preview { grid-template-columns: 1fr; } }
+    .preview-panel { background: var(--bg-secondary); border-radius: 16px; padding: 20px; border: 1px solid var(--border); }
+    .preview-panel h3 { font-size: 14px; font-weight: 600; margin-bottom: 12px; color: var(--text-primary); display: flex; align-items: center; gap: 8px; }
+    .preview-panel h3 .tag { font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 6px; }
+    .tag-original { background: rgba(99,102,241,0.1); color: var(--primary); }
+    .tag-compressed { background: rgba(16,185,129,0.1); color: var(--success); }
+    .preview-box { width: 100%; min-height: 200px; background: var(--bg-tertiary); border-radius: 12px; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; }
+    .preview-box img { max-width: 100%; max-height: 300px; object-fit: contain; }
+    .preview-box .placeholder { color: var(--text-tertiary); font-size: 13px; }
+    .file-info { display: flex; justify-content: space-between; padding: 10px 0 0; font-size: 13px; color: var(--text-secondary); }
+    .file-info .size { font-weight: 600; }
+    .file-info .size.saved { color: var(--success); }
+    .controls { margin-top: 24px; }
+    .control-row { display: grid; grid-template-columns: 100px 1fr 48px; align-items: center; gap: 12px; font-size: 13px; padding: 10px 0; }
+    .control-row label { color: var(--text-secondary); font-weight: 500; }
+    .control-row input[type="range"] { width: 100%; accent-color: var(--primary); }
+    .control-row .val { text-align: right; font-weight: 600; color: var(--primary); }
+    .control-row select { padding: 6px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary); font-size: 13px; }
+    .actions { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+    .actions .btn { flex: 1; min-width: 140px; padding: 12px 20px; border: none; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; text-decoration: none; }
+    .actions .btn.primary { background: var(--primary-gradient); color: #fff; box-shadow: 0 4px 12px rgba(99,102,241,0.3); }
+    .actions .btn.primary:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(99,102,241,0.4); }
+    .actions .btn.primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .actions .btn.secondary { background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border); }
+    .actions .btn.secondary:hover { background: var(--bg-secondary); }
+    .compress-rate { text-align: center; margin-top: 12px; font-size: 14px; }
+    .compress-rate .rate { font-weight: 700; font-size: 18px; color: var(--success); }
+    .compress-rate .rate.negative { color: var(--danger); }
+    .file-input-hidden { position: absolute; width: 0.1px; height: 0.1px; opacity: 0; overflow: hidden; z-index: -1; }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="container">
+      <a href="../index.html" class="logo">
+        <i class="fas fa-wrench"></i>
+        <h1>在线工具箱</h1>
+      </a>
+    </div>
+  </header>
+
+  <main class="main">
+    <div class="container">
+      <div class="tool-container" style="display:block">
+        <div class="section-block" style="padding:24px">
+          <div id="dropZone" class="compress-drop">
+            <div class="big-icon"><i class="fas fa-image"></i></div>
+            <p>点击或拖拽上传图片</p>
+            <p class="hint">支持 JPG、PNG、WebP，最大 20MB</p>
+            <input type="file" id="fileInput" class="file-input-hidden" accept="image/jpeg,image/png,image/webp">
+          </div>
+
+          <div id="resultArea" style="display:none">
+            <div class="compress-preview">
+              <div class="preview-panel">
+                <h3><i class="fas fa-file-image"></i> 原图 <span class="tag tag-original">ORIGINAL</span></h3>
+                <div class="preview-box"><img id="origPreview" alt="原图"></div>
+                <div class="file-info"><span id="origName"></span><span id="origSize" class="size"></span></div>
+              </div>
+              <div class="preview-panel">
+                <h3><i class="fas fa-compress-alt"></i> 压缩后 <span class="tag tag-compressed">COMPRESSED</span></h3>
+                <div class="preview-box"><img id="compPreview" alt="压缩后"></div>
+                <div class="file-info"><span id="compFormat"></span><span id="compSize" class="size"></span></div>
+              </div>
+            </div>
+
+            <div class="controls">
+              <div class="control-row">
+                <label for="quality">压缩质量</label>
+                <input type="range" id="quality" min="10" max="100" value="80">
+                <span id="qualityVal" class="val">80%</span>
+              </div>
+              <div class="control-row">
+                <label for="maxWidth">最大宽度</label>
+                <select id="maxWidth">
+                  <option value="0">原图尺寸</option>
+                  <option value="3840">4K (3840px)</option>
+                  <option value="2560">2K (2560px)</option>
+                  <option value="1920" selected>1080p (1920px)</option>
+                  <option value="1280">720p (1280px)</option>
+                  <option value="800">800px</option>
+                </select>
+                <span></span>
+              </div>
+              <div class="control-row">
+                <label for="outputFormat">输出格式</label>
+                <select id="outputFormat">
+                  <option value="image/jpeg">JPEG</option>
+                  <option value="image/webp">WebP</option>
+                  <option value="image/png">PNG</option>
+                </select>
+                <span></span>
+              </div>
+            </div>
+
+            <div id="compressRate" class="compress-rate"></div>
+
+            <div class="actions">
+              <button id="downloadBtn" class="btn primary" disabled><i class="fas fa-download"></i> 下载压缩图片</button>
+              <button id="resetBtn" class="btn secondary"><i class="fas fa-rotate-left"></i> 重新选择</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer container">
+    <p>© 2026 在线工具箱 | 简洁高效的工具集合 · 图片仅在本地浏览器处理</p>
+  </footer>
+
+  <script src="../js/tools/compress.js"></script>
+  <script src="../js/tools_data.js"></script>
+<script>
+var _hmt = _hmt || [];
+(function() { var hm = document.createElement("script"); hm.src = "https://hm.baidu.com/hm.js?0b7fd37b2338e3531b062a45e6cb51c0"; var s = document.getElementsByTagName("script")[0]; s.parentNode.insertBefore(hm, s); })();
+</script></body>
+</html>

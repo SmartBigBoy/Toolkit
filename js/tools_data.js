@@ -14,6 +14,7 @@ const TOOLS_DATA = [
   { id: 'math',       name: '数学计算',   icon: 'fa-square-root-alt', cat: 'calc' },
   { id: 'currency',   name: '汇率换算',   icon: 'fa-coins',        cat: 'calc' },
   { id: 'photo',      name: '证件照转换', icon: 'fa-camera',       cat: 'image' },
+  { id: 'compress',   name: '图片压缩',   icon: 'fa-compress-alt', cat: 'image' },
   { id: 'scan',       name: '文稿扫描',   icon: 'fa-file-alt',     cat: 'image' },
 ];
 
