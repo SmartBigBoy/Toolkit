@@ -85,7 +85,7 @@
     document.addEventListener('DOMContentLoaded', () => queryIP());
     document.getElementById('btnQueryIp').addEventListener('click', () => {
       const ip = document.getElementById('searchIp').value.trim();
-      if (ip) queryIP(ip);
+      queryIP(ip || '');
     });
     document.getElementById('searchIp').addEventListener('keydown', (e) => { if (e.key === 'Enter') document.getElementById('btnQueryIp').click(); });
   </script>

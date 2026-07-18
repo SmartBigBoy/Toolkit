@@ -108,8 +108,15 @@
             </div>
             <div class="mbti-bars" id="resultBars"></div>
             <div id="resultContent"></div>
+            <div style="text-align:center;padding:20px;border-top:1px solid var(--border)">
+              <img id="qrCode" src="" alt="QR码" style="width:120px;height:120px;border-radius:12px;background:#fff;padding:8px;box-shadow:0 2px 8px rgba(0,0,0,0.06)">
+              <p id="qrFallback" style="display:none;font-size:13px;color:var(--text-tertiary);margin-top:8px">扫码测试 MBTI 性格类型<br><span style="font-size:11px">toolkit.skin/tools/mbti.html</span></p>
+              <p style="font-size:12px;color:var(--text-tertiary);margin-top:8px">扫码或分享，让朋友也来测试</p>
+            </div>
             <div class="mbti-footer">
-              <button id="btnRetest" class="mbti-btn"><i class="fas fa-redo"></i> 重新测试</button>
+              <button id="btnSaveImg" class="mbti-btn"><i class="fas fa-image"></i> 保存图片</button>
+              <button id="btnShare" class="mbti-btn secondary"><i class="fas fa-share-alt"></i> 分享</button>
+              <button id="btnRetest" class="mbti-btn secondary"><i class="fas fa-redo"></i> 重新测试</button>
             </div>
           </div>
 

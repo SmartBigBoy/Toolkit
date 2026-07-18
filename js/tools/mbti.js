@@ -1,4 +1,6 @@
 (function() {
+  const MBTI_URL = 'https://toolkit.skin/tools/mbti.html';
+
   const questions = [
     // E/I
     { q: '周末你更倾向于？', a: '约朋友出去聚会、逛街', b: '自己在家看书或追剧', d: 'ei' },
@@ -48,6 +50,9 @@
   let currentQ = 0;
   let answers = [];
 
+  let currentQ = 0;
+  let answers = [];
+
   // DOM
   const startEl = document.getElementById('mbtiStart');
   const questionsEl = document.getElementById('mbtiQuestions');
@@ -55,11 +60,11 @@
   const container = document.getElementById('questionContainer');
   const progressBar = document.getElementById('progressBar');
   const progressText = document.getElementById('progressText');
-  const btnStart = document.getElementById('btnStart');
-  const btnRetest = document.getElementById('btnRetest');
 
   btnStart.addEventListener('click', startTest);
-  btnRetest.addEventListener('click', () => { currentQ = 0; answers = []; startEl.style.display = ''; questionsEl.style.display = 'none'; resultEl.classList.remove('active'); });
+  btnRetest.addEventListener('click', resetAll);
+
+  function resetAll() { currentQ = 0; answers = []; startEl.style.display = ''; questionsEl.style.display = 'none'; resultEl.classList.remove('active'); }
 
   function startTest() {
     startEl.style.display = 'none';
@@ -86,31 +91,46 @@
           <div class="mbti-option" data-idx="0">${q.a}</div>
           <div class="mbti-option" data-idx="1">${q.b}</div>
         </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:20px">
+        <button id="btnPrev" class="mbti-btn secondary" ${currentQ === 0 ? 'disabled' : ''}><i class="fas fa-arrow-left"></i> 上一题</button>
+        <button id="btnNext" class="mbti-btn" ${answers[currentQ] === undefined ? 'disabled' : ''}>${currentQ === questions.length - 1 ? '完成' : '下一题'} <i class="fas fa-arrow-right"></i></button>
       </div>`;
+
+    // 恢复已选答案
+    if (answers[currentQ] !== undefined) {
+      const opts = container.querySelectorAll('.mbti-option');
+      opts[answers[currentQ]].classList.add('selected');
+    }
 
     container.querySelectorAll('.mbti-option').forEach(el => {
       el.addEventListener('click', () => {
         container.querySelectorAll('.mbti-option').forEach(o => o.classList.remove('selected'));
         el.classList.add('selected');
-        answers[currentQ] = el.dataset.idx === '0' ? 0 : 1;
-        setTimeout(() => { currentQ++; renderQuestion(); }, 250);
+        answers[currentQ] = parseInt(el.dataset.idx);
+        document.getElementById('btnNext').disabled = false;
       });
+    });
+
+    document.getElementById('btnNext').addEventListener('click', () => {
+      if (answers[currentQ] === undefined) return;
+      currentQ++; renderQuestion();
+    });
+
+    document.getElementById('btnPrev').addEventListener('click', () => {
+      if (currentQ > 0) { currentQ--; renderQuestion(); }
     });
   }
 
-  function showResult() {
-    questionsEl.style.display = 'none';
-    resultEl.classList.add('active');
-
+  function calcResult() {
     const scores = { e:0, i:0, s:0, n:0, t:0, f:0, j:0, p:0 };
-    const dims = ['ei', 'sn', 'tf', 'jp'];
     questions.forEach((q, idx) => {
       const ans = answers[idx];
-      const firstIsFirst = { 'ei': ['e','i'], 'sn': ['s','n'], 'tf': ['t','f'], 'jp': ['j','p'] };
-      const [d1, d2] = firstIsFirst[q.d];
+      if (ans === undefined) return;
+      const map = { 'ei': ['e','i'], 'sn': ['s','n'], 'tf': ['t','f'], 'jp': ['j','p'] };
+      const [d1, d2] = map[q.d];
       if (ans === 0) scores[d1]++; else scores[d2]++;
     });
-
     const total = 5;
     const pairs = [
       { l:'E', r:'I', pct: Math.round(scores.e / total * 100) },
@@ -118,24 +138,26 @@
       { l:'T', r:'F', pct: Math.round(scores.t / total * 100) },
       { l:'J', r:'P', pct: Math.round(scores.j / total * 100) },
     ];
-
     let type = '';
     type += scores.e >= scores.i ? 'E' : 'I';
     type += scores.s >= scores.n ? 'S' : 'N';
     type += scores.t >= scores.f ? 'T' : 'F';
     type += scores.j >= scores.p ? 'J' : 'P';
+    return { type, pairs, td: typeData[type] || typeData['INTJ'] };
+  }
 
-    const td = typeData[type] || typeData['INTJ'];
+  function showResult() {
+    questionsEl.style.display = 'none';
+    resultEl.classList.add('active');
+
+    const { type, pairs, td } = calcResult();
 
     document.getElementById('resultLetters').textContent = type;
     document.getElementById('resultName').textContent = td.name;
     document.getElementById('resultEName').textContent = td.ename;
 
-    // 百分比条
-    const colorMap = { 'ei': 'ei', 'sn': 'sn', 'tf': 'tf', 'jp': 'jp' };
     document.getElementById('resultBars').innerHTML = pairs.map(p => {
-      const d = type.includes(p.l) ? p.pct : 100 - p.pct;
-      const fill = type.includes(p.l) ? d : 100 - d;
+      const fill = type.includes(p.l) ? p.pct : 100 - p.pct;
       return `<div class="mbti-bar-row">
         <span class="mbti-bar-label">${p.l}</span>
         <div class="mbti-bar-track"><div class="mbti-bar-fill" style="width:${fill}%"></div></div>
@@ -144,7 +166,6 @@
       </div>`;
     }).join('');
 
-    // 详情
     document.getElementById('resultContent').innerHTML = `
       <div class="mbti-section">
         <h3><i class="fas fa-tag"></i> 性格特点</h3>
@@ -162,5 +183,113 @@
         <h3><i class="fas fa-star"></i> 典型人物</h3>
         <p>${td.famous}</p>
       </div>`;
+
+    // 生成 QR 码
+    const qrImg = document.getElementById('qrCode');
+    qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(MBTI_URL);
+    qrImg.onerror = () => { qrImg.style.display = 'none'; document.getElementById('qrFallback').style.display = 'block'; };
   }
+
+  // ── 保存为图片 ──
+  document.getElementById('btnSaveImg').addEventListener('click', () => {
+    const { type, pairs, td } = calcResult();
+    const W = 600, H = 820;
+    const c = document.createElement('canvas'); c.width = W; c.height = H;
+    const ctx = c.getContext('2d');
+
+    // 背景
+    const grad = ctx.createLinearGradient(0,0,0,H);
+    grad.addColorStop(0,'#f8fafc'); grad.addColorStop(1,'#f1f5f9');
+    ctx.fillStyle = grad; ctx.fillRect(0,0,W,H);
+
+    // 标题
+    ctx.fillStyle = '#6366f1'; ctx.beginPath(); ctx.arc(W/2,0,80,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 14px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('MBTI 人格测试结果', W/2, 50);
+
+    // 类型
+    ctx.fillStyle = '#6366f1';
+    ctx.font = 'bold 56px sans-serif'; ctx.textAlign = 'center'; ctx.fillText(type, W/2, 140);
+    ctx.fillStyle = '#1e293b';
+    ctx.font = 'bold 20px sans-serif'; ctx.fillText(td.name + ' · ' + td.ename, W/2, 172);
+
+    // 分割线
+    ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(60,192); ctx.lineTo(W-60,192); ctx.stroke();
+
+    // 百分比条
+    const colors = [['#6366f1','#818cf8'],['#10b981','#34d399'],['#f59e0b','#fbbf24'],['#ef4444','#f87171']];
+    pairs.forEach((p, i) => {
+      const y = 210 + i * 36;
+      const fill = type.includes(p.l) ? p.pct : 100 - p.pct;
+      ctx.fillStyle = '#94a3b8'; ctx.font = 'bold 14px sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText(p.l, 40, y+12);
+      ctx.fillText(p.r, W-40, y+12);
+      // 进度条背景
+      ctx.fillStyle = '#e2e8f0'; roundRect(ctx, 60, y-2, W-120, 16, 8); ctx.fill();
+      // 进度条填充
+      const bw = (W-120) * fill / 100;
+      const g = ctx.createLinearGradient(60+bw,0,60,0);
+      g.addColorStop(0,colors[i][0]); g.addColorStop(1,colors[i][1]);
+      ctx.fillStyle = g; roundRect(ctx, 60, y-2, bw, 16, 8); ctx.fill();
+      // 百分比文字
+      ctx.fillStyle = colors[i][0]; ctx.font = 'bold 12px sans-serif';
+      ctx.fillText(fill + '%', 60 + bw/2, y+10);
+    });
+
+    // 特点
+    const traitsY = 370;
+    ctx.fillStyle = '#64748b'; ctx.font = 'bold 13px sans-serif'; ctx.textAlign = 'left';
+    ctx.fillText('性格特点', 40, traitsY);
+    ctx.fillStyle = '#1e293b'; ctx.font = '13px sans-serif';
+    ctx.fillText(td.traits, 40, traitsY + 22);
+
+    // 描述
+    const descY = 420;
+    ctx.fillStyle = '#64748b'; ctx.font = 'bold 13px sans-serif';
+    ctx.fillText('性格描述', 40, descY);
+    ctx.fillStyle = '#475569'; ctx.font = '12px sans-serif';
+    wrapText(ctx, td.desc, 40, descY + 22, W - 80, 18, 3);
+
+    // 职业
+    const careersY = 495;
+    ctx.fillStyle = '#64748b'; ctx.font = 'bold 13px sans-serif';
+    ctx.fillText('适合职业', 40, careersY);
+    ctx.fillStyle = '#475569'; ctx.font = '12px sans-serif';
+    ctx.fillText(td.careers, 40, careersY + 22);
+
+    // QR 码
+    const qrSize = 100, qrX = (W - qrSize) / 2, qrY = 560;
+    const qrImg = document.getElementById('qrCode');
+    if (qrImg && qrImg.complete && qrImg.naturalWidth > 0) {
+      ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
+    }
+    ctx.fillStyle = '#6366f1'; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('MBTI · 扫码测试', W/2, qrY + qrSize + 18);
+
+    // 底部文字
+    ctx.fillStyle = '#94a3b8'; ctx.font = '11px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('toolkit.skin', W/2, H - 16);
+
+    // 下载
+    const link = document.createElement('a');
+    link.download = type + 'MBTI.png';
+    link.href = c.toDataURL('image/png');
+    link.click();
+  });
+
+  // ── 分享 ──
+  document.getElementById('btnShare').addEventListener('click', async () => {
+    const { type } = calcResult();
+    const text = '我的人格类型是 ' + type + '！快来测试你的 MBTI 类型 → ' + MBTI_URL;
+    if (navigator.share) {
+      try { await navigator.share({ title: 'MBTI测试', text }); } catch(e) {}
+    } else {
+      try { await navigator.clipboard.writeText(text); alert('链接已复制到剪贴板，快去分享吧！'); } catch(e) { prompt('复制链接分享：', text); }
+    }
+  });
+
+  // ── 辅助 ──
+  function roundRect(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r); ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h); ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r); ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y); ctx.closePath(); }
+  function wrapText(ctx, text, x, y, maxW, lineH, maxLines) { const words = text.split(''); let line = '', lineCount = 0; for (let i=0; i<words.length; i++) { line += words[i]; const w = ctx.measureText(line).width; if (w > maxW) { ctx.fillText(line.slice(0,-1), x, y); line = words[i]; y += lineH; lineCount++; if (lineCount >= maxLines) { ctx.fillText('…', x, y - lineH); return; } } } ctx.fillText(line, x, y); }
 })();
