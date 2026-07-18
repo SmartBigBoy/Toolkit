@@ -80,6 +80,8 @@
     canvas.ontouchend = onSelUp;
 
     document.addEventListener('keydown', onKeyDown);
+    document.getElementById('btnConfirmCrop').onclick = confirmSelection;
+    document.getElementById('btnCancelCrop').onclick = exit;
 
     cropInfo.textContent = '拖拽选择截图区域，按 Enter 确认，Esc 取消';
   }
