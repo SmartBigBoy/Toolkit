@@ -59,34 +59,41 @@
   </main>
   <footer class="footer container"><p>© 2026 在线工具箱 | 简洁高效的工具集合</p></footer>
   <script>
+    // 多个 API 轮询，任一成功即返回
+    const IP_APIS = [
+      { url: ip => ip ? `https://api.ip.sb/geoip/${ip}` : 'https://api.ip.sb/geoip', parser: d => ({ ip: d.ip, country: d.country, region: d.region, city: d.city, isp: d.isp || d.organization || '', loc: d.latitude && d.longitude ? d.latitude + ', ' + d.longitude : '' }) },
+      { url: ip => ip ? `https://ip.useragentinfo.com/json?ip=${ip}` : 'https://ip.useragentinfo.com/json', parser: d => ({ ip: d.ip, country: d.country, region: d.province, city: d.city, isp: d.isp || d.isp_district || '', loc: '' }) },
+    ];
+
     async function queryIP(ip) {
-      const url = ip ? `https://ip-api.com/json/${ip}?lang=zh-CN` : 'https://ip-api.com/json/?lang=zh-CN';
       document.getElementById('ipLoading').style.display = 'block';
-      try {
-        const r = await fetch(url);
-        const d = await r.json();
-        document.getElementById('ipLoading').style.display = 'none';
-        if (d.status === 'fail') { document.getElementById('myIp').textContent = '查询失败'; return; }
-        document.getElementById('detIp').textContent = d.query || d.ip || '--';
-        document.getElementById('detCountry').textContent = d.country || '--';
-        document.getElementById('detRegion').textContent = d.regionName || d.region || '--';
-        document.getElementById('detCity').textContent = d.city || '--';
-        document.getElementById('detIsp').textContent = d.isp || d.org || '--';
-        document.getElementById('detLoc').textContent = d.lat && d.lon ? d.lat + ', ' + d.lon : '--';
-        if (!ip || ip === '') {
-          document.getElementById('myIp').textContent = d.query || '--';
-          document.getElementById('myLocation').textContent = [d.city, d.regionName, d.country].filter(Boolean).join(' · ');
-        }
-      } catch(e) {
-        document.getElementById('ipLoading').style.display = 'none';
-        document.getElementById('myIp').textContent = '查询失败';
+      let success = false;
+      for (const api of IP_APIS) {
+        try {
+          const r = await fetch(api.url(ip), { signal: AbortSignal.timeout(5000) });
+          const d = await r.json();
+          if (!d || (d.status === 'fail')) continue;
+          const data = api.parser(d);
+          if (!data.ip) continue;
+          document.getElementById('detIp').textContent = data.ip;
+          document.getElementById('detCountry').textContent = data.country || '--';
+          document.getElementById('detRegion').textContent = data.region || '--';
+          document.getElementById('detCity').textContent = data.city || '--';
+          document.getElementById('detIsp').textContent = data.isp || '--';
+          document.getElementById('detLoc').textContent = data.loc || '--';
+          if (!ip || ip === '') {
+            document.getElementById('myIp').textContent = data.ip;
+            document.getElementById('myLocation').textContent = [data.city, data.region, data.country].filter(Boolean).join(' · ');
+          }
+          success = true;
+          break;
+        } catch(e) { continue; }
       }
+      document.getElementById('ipLoading').style.display = 'none';
+      if (!success) document.getElementById('myIp').textContent = '查询失败，请稍后重试';
     }
     document.addEventListener('DOMContentLoaded', () => queryIP());
-    document.getElementById('btnQueryIp').addEventListener('click', () => {
-      const ip = document.getElementById('searchIp').value.trim();
-      queryIP(ip || '');
-    });
+    document.getElementById('btnQueryIp').addEventListener('click', () => { const ip = document.getElementById('searchIp').value.trim(); queryIP(ip || ''); });
     document.getElementById('searchIp').addEventListener('keydown', (e) => { if (e.key === 'Enter') document.getElementById('btnQueryIp').click(); });
   </script>
   <script src="../js/tools_data.js"></script>
