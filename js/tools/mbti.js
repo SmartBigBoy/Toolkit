@@ -189,6 +189,14 @@
     qrImg.onerror = () => { qrImg.style.display = 'none'; document.getElementById('qrFallback').style.display = 'block'; };
   }
 
+  // ── Toast ──
+  function showToast(msg) {
+    let el = document.getElementById('mbtiToast');
+    if (!el) { el = document.createElement('div'); el.id = 'mbtiToast'; el.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);color:#fff;padding:10px 24px;border-radius:10px;font-size:14px;z-index:999;transition:opacity 0.3s;opacity:0;pointer-events:none'; document.body.appendChild(el); }
+    el.textContent = msg; el.style.opacity = '1';
+    clearTimeout(el._t); el._t = setTimeout(() => el.style.opacity = '0', 2000);
+  }
+
   // ── 保存为图片 ──
   document.getElementById('btnSaveImg').addEventListener('click', () => {
     const { type, pairs, td } = calcResult();
@@ -271,21 +279,38 @@
     ctx.fillText('toolkit.skin', W/2, H - 16);
 
     // 下载
-    const link = document.createElement('a');
-    link.download = type + 'MBTI.png';
-    link.href = c.toDataURL('image/png');
-    link.click();
+    try {
+      const dataUrl = c.toDataURL('image/png');
+      const link = document.createElement('a');
+      link.download = type + '_MBTI.png';
+      link.href = dataUrl;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast('图片已保存 ✅');
+    } catch(e) { showToast('保存失败，请尝试截图'); }
   });
 
   // ── 分享 ──
   document.getElementById('btnShare').addEventListener('click', async () => {
     const { type } = calcResult();
     const text = '我的人格类型是 ' + type + '！快来测试你的 MBTI 类型 → ' + MBTI_URL;
-    if (navigator.share) {
-      try { await navigator.share({ title: 'MBTI测试', text }); } catch(e) {}
-    } else {
-      try { await navigator.clipboard.writeText(text); alert('链接已复制到剪贴板，快去分享吧！'); } catch(e) { prompt('复制链接分享：', text); }
-    }
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: 'MBTI测试', text, url: MBTI_URL });
+        return;
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+        showToast('链接已复制 ✅');
+        return;
+      }
+      // 最后兜底
+      const ta = document.createElement('textarea');
+      ta.value = text; document.body.appendChild(ta); ta.select();
+      document.execCommand('copy'); document.body.removeChild(ta);
+      showToast('链接已复制 ✅');
+    } catch(e) { showToast('分享失败，请手动复制链接'); }
   });
 
   // ── 辅助 ──
