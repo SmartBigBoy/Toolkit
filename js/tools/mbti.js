@@ -265,11 +265,20 @@
     ctx.fillStyle = '#475569'; ctx.font = '12px sans-serif';
     ctx.fillText(td.careers, 40, careersY + 22);
 
-    // QR 码
+    // QR 码（绘制失败则用文字替代）
     const qrSize = 100, qrX = (W - qrSize) / 2, qrY = 560;
-    const qrImg = document.getElementById('qrCode');
-    if (qrImg && qrImg.complete && qrImg.naturalWidth > 0) {
-      ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
+    try {
+      const qrImg = document.getElementById('qrCode');
+      if (qrImg && qrImg.complete && qrImg.naturalWidth > 0) {
+        ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
+      } else {
+        throw new Error('QR not loaded');
+      }
+    } catch(e) {
+      ctx.fillStyle = '#e2e8f0'; ctx.fillRect(qrX, qrY, qrSize, qrSize);
+      ctx.fillStyle = '#94a3b8'; ctx.font = '10px sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText('扫码测试', W/2, qrY + qrSize/2 - 4);
+      ctx.fillText('MBTI', W/2, qrY + qrSize/2 + 10);
     }
     ctx.fillStyle = '#6366f1'; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center';
     ctx.fillText('MBTI · 扫码测试', W/2, qrY + qrSize + 18);
