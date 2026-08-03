@@ -87,6 +87,8 @@ function crossfade() {
 }
 
 function startCarousel() {
+  const container = getContainer();
+  if (!container) return; // 页面无推荐容器，跳过轮播
   const currentId = getCurrentToolId();
   const others = TOOLS_DATA.filter(t => t.id !== currentId);
   shuffle(others);
@@ -95,8 +97,18 @@ function startCarousel() {
   carouselTimer = setInterval(crossfade, 5000);
 }
 
+// 自动更新 header 工具总数
+function updateToolCount() {
+  const el = document.getElementById('toolCount');
+  if (el) { el.textContent = TOOLS_DATA.length + '个工具'; }
+}
+
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', startCarousel);
+  document.addEventListener('DOMContentLoaded', () => {
+    startCarousel();
+    updateToolCount();
+  });
 } else {
   startCarousel();
+  updateToolCount();
 }

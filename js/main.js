@@ -115,6 +115,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // ── 页面加载动画（返回体验平滑化） ──
     document.body.classList.add('page-loaded');
 
+    // ── 更新工具总数 ──
+    (function updateToolCount() {
+      const el = document.getElementById('toolCount');
+      if (el) { el.textContent = document.querySelectorAll('.tool-card').length + '个工具'; }
+    })();
+
     // ── 初始化 ──
     renderRecent();
 
