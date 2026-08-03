@@ -230,6 +230,30 @@
     </main>
 
 
+    <div class="container" style="max-width:800px;margin:0 auto">
+        <article class="article-content" style="margin-top:32px">
+            <h2>哈希计算工具 — 使用教程</h2>
+            <h3>什么是哈希（Hash）？</h3>
+            <p>哈希是一种<strong>单向不可逆</strong>的摘要算法，能将任意长度的数据（文本、文件）映射为固定长度的字符串。同一个输入永远得到相同的哈希值，但反过来无法从哈希值推算出原始数据。就像指纹一样，每个文件都有独一无二的哈希"指纹"。</p>
+            <h3>常见哈希算法对比</h3>
+            <ul>
+                <li><strong>MD5</strong>：128 位（32 位十六进制），速度快但已被破解，不再推荐用于安全场景，仅适合文件完整性校验</li>
+                <li><strong>SHA-1</strong>：160 位（40 位十六进制），也曾被破解，Git 提交历史仍在使用，但不用于安全场景</li>
+                <li><strong>SHA-256</strong>：256 位（64 位十六进制），目前最安全的选择之一，比特币、数字签名等广泛使用</li>
+                <li><strong>SHA-512</strong>：512 位（128 位十六进制），安全性最高但速度较慢，适合高安全需求场景</li>
+            </ul>
+            <h3>常见使用场景</h3>
+            <ul>
+                <li><strong>文件完整性校验</strong>：下载大文件后计算 SHA-256，与官网提供的哈希值对比，确保文件未被篡改或损坏</li>
+                <li><strong>密码存储</strong>：用户密码不存明文，而是存储哈希值（加盐后），登录时比对哈希而非原密码</li>
+                <li><strong>数据去重</strong>：通过计算文件哈希快速判断两个文件是否完全一致</li>
+                <li><strong>区块链</strong>：比特币挖矿本质就是在不断尝试找到满足特定条件的 SHA-256 哈希值</li>
+            </ul>
+            <h3>数据安全说明</h3>
+            <p>如果需要校验的文件较大，本工具使用<strong>流式读取</strong>，文件内容不会全部加载到内存，更不会上传到任何服务器，隐私安全有保障。</p>
+        </article>
+    </div>
+
     <div class="tool-recommend container">
         <div class="tool-recommend-title"><i class="fas fa-sync-alt"></i> 推荐工具</div>
         <div class="rec-grid" id="tool-recommend"></div>

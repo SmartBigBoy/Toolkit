@@ -62,6 +62,31 @@
     </main>
 
 
+    <div class="container" style="max-width:800px;margin:0 auto">
+        <article class="article-content" style="margin-top:32px">
+            <h2>URL 编码解码工具 — 使用教程</h2>
+            <h3>什么是 URL 编码？</h3>
+            <p>URL（网址）只能直接传输 ASCII 字符集中的部分字符。中文字符、空格、特殊符号等都需要转换为 <code>%XX</code> 的格式才能在 URL 中安全传输，这个过程就是 <strong>URL 编码</strong>（也叫百分号编码）。</p>
+            <p>例如：<code>你好</code> 编码后变成 <code>%E4%BD%A0%E5%A5%BD</code>，<code>空格</code> 变成 <code>%20</code>。</p>
+            <h3>什么时候需要 URL 编码？</h3>
+            <ul>
+                <li><strong>GET 请求传参</strong>：URL 参数中包含中文或特殊字符时必须编码，否则可能导致乱码或请求失败</li>
+                <li><strong>前端路由</strong>：Vue/React 路由跳转时，动态参数包含特殊字符需要编码</li>
+                <li><strong>分享链接</strong>：分享的网址中包含中文或特殊符号时，浏览器会自动编码</li>
+                <li><strong>API 签名</strong>：很多开放平台的接口签名算法要求对参数做 URL 编码</li>
+            </ul>
+            <h3>encodeURI vs encodeURIComponent</h3>
+            <p>JavaScript 有两个编码函数，区别很重要：</p>
+            <ul>
+                <li><strong>encodeURIComponent()</strong>：编码范围更广，会编码 <code>/ ? & = #</code> 等 URL 保留字符，适合编码<strong>参数值</strong></li>
+                <li><strong>encodeURI()</strong>：保留 URL 结构字符，只编码非法字符，适合编码<strong>完整 URL</strong></li>
+            </ul>
+            <p>本工具使用的是 <strong>encodeURIComponent</strong> 级别的完整编码，确保编码后的结果在任何位置都能安全使用。</p>
+            <h3>数据安全说明</h3>
+            <p>所有编解码操作<strong>完全在浏览器本地完成</strong>，您的数据不会上传到任何服务器。</p>
+        </article>
+    </div>
+
     <div class="tool-recommend container">
         <div class="tool-recommend-title"><i class="fas fa-sync-alt"></i> 推荐工具</div>
         <div class="rec-grid" id="tool-recommend"></div>

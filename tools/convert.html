@@ -268,6 +268,30 @@
     </main>
 
 
+    <div class="container" style="max-width:800px;margin:0 auto">
+        <article class="article-content" style="margin-top:32px">
+            <h2>进制转换工具 — 使用教程</h2>
+            <h3>计算机中的进制是什么？</h3>
+            <p>进制（Number Base）是计数的方式。人类习惯十进制（逢十进一），而计算机底层使用二进制（逢二进一）。为了让数字更易读写，还衍生出了八进制和十六进制。本工具支持<strong>二进制、八进制、十进制、十六进制</strong>四者互转。</p>
+            <h3>各进制的特点</h3>
+            <ul>
+                <li><strong>二进制（Base 2）</strong>：只有 0 和 1，是计算机最底层的语言。如 <code>1010</code> 表示十进制 10</li>
+                <li><strong>八进制（Base 8）</strong>：使用 0-7，Unix 文件权限（如 <code>chmod 755</code>）就是用八进制表示</li>
+                <li><strong>十进制（Base 10）</strong>：日常生活使用的数字系统</li>
+                <li><strong>十六进制（Base 16）</strong>：使用 0-9 和 A-F，在内存地址、颜色值、Unicode 编码中非常常见</li>
+            </ul>
+            <h3>常见使用场景</h3>
+            <ul>
+                <li><strong>程序员日常</strong>：调试时看到一串十六进制，想知道十进制是多少</li>
+                <li><strong>颜色值计算</strong>：CSS 颜色 <code>#FF5733</code> 转成 RGB(255, 87, 51) 本质就是十六进制到十进制的转换</li>
+                <li><strong>位运算理解</strong>：理解二进制是掌握位运算（&、|、^、~）的前提</li>
+                <li><strong>嵌入式开发</strong>：寄存器地址通常用十六进制表示，需要快速换算</li>
+            </ul>
+            <h3>小知识</h3>
+            <p>在编程语言中，二进制以 <code>0b</code> 开头（如 <code>0b1010</code>），八进制以 <code>0o</code> 开头，十六进制以 <code>0x</code> 开头（如 <code>0xFF</code>）。</p>
+        </article>
+    </div>
+
     <div class="tool-recommend container">
         <div class="tool-recommend-title"><i class="fas fa-sync-alt"></i> 推荐工具</div>
         <div class="rec-grid" id="tool-recommend"></div>

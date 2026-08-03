@@ -119,6 +119,28 @@
     </main>
 
 
+    <div class="container" style="max-width:800px;margin:0 auto">
+        <article class="article-content" style="margin-top:32px">
+            <h2>颜色转换工具 — 使用教程</h2>
+            <h3>常见颜色格式有哪些？</h3>
+            <p>在网页设计和开发中，颜色有多种表示方式，各有不同的使用场景。本工具支持以下格式互转：</p>
+            <ul>
+                <li><strong>HEX（十六进制）</strong>：如 <code>#6366f1</code>，CSS 中最常用的颜色表示法，6 位或 3 位十六进制数字</li>
+                <li><strong>RGB</strong>：如 <code>rgb(99, 102, 241)</code>，通过红、绿、蓝三通道数值（0-255）定义颜色</li>
+                <li><strong>HSL</strong>：如 <code>hsl(239, 84%, 67%)</code>，通过色相、饱和度、亮度三个维度描述颜色，更符合人类直觉</li>
+                <li><strong>HSV</strong>：如 <code>hsv(239, 59%, 95%)</code>，类似 HSL 但使用"明度"替代"亮度"，在图像处理中更常见</li>
+            </ul>
+            <h3>实际开发场景</h3>
+            <ul>
+                <li><strong>设计稿取色</strong>：设计师给的是 HEX 色号，你需要转成 <code>rgba()</code> 加透明度 → 用 RGB 输出</li>
+                <li><strong>动态主题</strong>：需要同色系的浅色/深色变体 → 用 HSL 格式，只需调整亮度值即可</li>
+                <li><strong>色彩调整</strong>：想让某个颜色"亮一点"或"灰一点" → 转成 HSL 后调整 S 或 L 即可</li>
+            </ul>
+            <h3>实用技巧</h3>
+            <p>HSL 格式最容易手动微调：保持 H（色相）不变，增大 L（亮度）就是浅色变体，减小 L 就是深色变体，这在做<strong>暗黑模式适配</strong>或<strong>按钮 hover 状态</strong>时非常方便。</p>
+        </article>
+    </div>
+
     <div class="tool-recommend container">
         <div class="tool-recommend-title"><i class="fas fa-sync-alt"></i> 推荐工具</div>
         <div class="rec-grid" id="tool-recommend"></div>
