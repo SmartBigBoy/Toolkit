@@ -111,14 +111,14 @@
     const trainPlay = document.getElementById('trainPlay');
     const voiceHint = document.getElementById('voiceHint');
 
-    // ── 智能语音选择 ──
+    // ── 智能语音选择（高铁广播优先男声） ──
     let bestVoice = null;
     const VOICE_RANK = [
-      'Xiaoxiao',      // Microsoft 神经女声
-      'Yunyang',       // Microsoft 神经男声（列车广播更合适）
+      'Yunyang',       // Microsoft 神经男声 — 列车广播最佳
       'Yunxi',         // Microsoft 神经男声
-      'Xiaohan',       // Microsoft 神经女声
       'Yunxia',        // Microsoft 神经男声
+      'Xiaoxiao',      // Microsoft 神经女声（备选）
+      'Xiaohan',       // Microsoft 神经女声
       'Ting-Ting',     // macOS/iOS
       'Google',        // Google TTS
     ];
@@ -147,31 +147,101 @@
     window.speechSynthesis.onvoiceschanged = selectBestVoice;
     selectBestVoice();
 
-    // ── 高铁站台提示音（经典叮咚四音阶） ──
+    // ── 高铁站台提示音（真实旋律 + 混响） ──
+    let chimeCtx = null;
     function playChime(callback) {
       try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const t = ctx.currentTime;
-        // 火车站经典四连音：do-mi-sol-do ↑
+        chimeCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const t = chimeCtx.currentTime;
+
+        // 混响节点：模拟站台空间的自然回声
+        const convolver = chimeCtx.createConvolver();
+        const reverbLen = chimeCtx.sampleRate * 0.6; // 0.6秒混响
+        const reverbBuf = chimeCtx.createBuffer(2, reverbLen, chimeCtx.sampleRate);
+        for (let ch = 0; ch < 2; ch++) {
+          const data = reverbBuf.getChannelData(ch);
+          for (let i = 0; i < reverbLen; i++) {
+            data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (chimeCtx.sampleRate * 0.15));
+          }
+        }
+        convolver.buffer = reverbBuf;
+
+        // 干/湿混合
+        const dry = chimeCtx.createGain();
+        dry.gain.value = 0.7;
+        const wet = chimeCtx.createGain();
+        wet.gain.value = 0.25;
+        dry.connect(chimeCtx.destination);
+        wet.connect(chimeCtx.destination);
+        convolver.connect(wet);
+
+        // 真实中国高铁站台提示音：短高"叮" → 长低"咚"（纯五度）
         const notes = [
-          { freq: 1047, start: 0,    dur: 0.16, vol: 0.18 },  // C6
-          { freq: 1319, start: 0.20, dur: 0.14, vol: 0.20 },  // E6
-          { freq: 1568, start: 0.38, dur: 0.18, vol: 0.22 },  // G6
-          { freq: 2093, start: 0.60, dur: 0.32, vol: 0.28 },  // C7（尾音延长）
+          { freq: 1175, start: 0,    dur: 0.10, vol: 0.35 },  // D6 短促的高音"叮"
+          { freq: 784,  start: 0.18, dur: 0.45, vol: 0.30 },  // G5 延长的低音"咚"
         ];
         notes.forEach(n => {
-          const osc = ctx.createOscillator();
-          const gain = ctx.createGain();
-          osc.connect(gain); gain.connect(ctx.destination);
+          const osc = chimeCtx.createOscillator();
+          const gain = chimeCtx.createGain();
+          osc.connect(gain);
+          gain.connect(dry);
+          gain.connect(convolver);
           osc.frequency.value = n.freq;
-          osc.type = 'triangle';
+          osc.type = 'sine';
+          // 加入少量泛音让音色更丰富
+          const osc2 = chimeCtx.createOscillator();
+          const gain2 = chimeCtx.createGain();
+          osc2.connect(gain2);
+          gain2.connect(dry);
+          gain2.connect(convolver);
+          osc2.frequency.value = n.freq * 2;
+          osc2.type = 'sine';
           gain.gain.setValueAtTime(0, t + n.start);
-          gain.gain.linearRampToValueAtTime(n.vol, t + n.start + 0.02);
+          gain.gain.linearRampToValueAtTime(n.vol, t + n.start + 0.01);
           gain.gain.exponentialRampToValueAtTime(0.001, t + n.start + n.dur);
-          osc.start(t + n.start); osc.stop(t + n.start + n.dur + 0.05);
+          gain2.gain.setValueAtTime(0, t + n.start);
+          gain2.gain.linearRampToValueAtTime(n.vol * 0.15, t + n.start + 0.01);
+          gain2.gain.exponentialRampToValueAtTime(0.001, t + n.start + n.dur * 0.6);
+          osc.start(t + n.start);
+          osc.stop(t + n.start + n.dur + 0.1);
+          osc2.start(t + n.start);
+          osc2.stop(t + n.start + n.dur * 0.6 + 0.1);
         });
-        setTimeout(callback, 980);
-      } catch(e) { callback(); }
+        // 提示音结束后 0.3 秒开始播报
+        setTimeout(() => {
+          if (callback) callback();
+        }, 750);
+      } catch(e) { if (callback) callback(); }
+    }
+
+    // ── 模拟站台 PA 系统的底噪 ──
+    function playAmbience() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        // 极微弱的低频隆隆声，模拟站台环境
+        const bufferSize = ctx.sampleRate * 0.5;
+        const buf = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+        const data = buf.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          // 滤波后的低频噪声
+          data[i] = (Math.random() * 2 - 1) * 0.003 * Math.exp(-i / (ctx.sampleRate * 2));
+        }
+        const src = ctx.createBufferSource();
+        src.buffer = buf;
+        src.loop = true;
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.value = 200;
+        const gain = ctx.createGain();
+        gain.gain.value = 0.04;
+        src.connect(filter);
+        filter.connect(gain);
+        gain.connect(ctx.destination);
+        src.start();
+        // 3.5 秒后淡出
+        gain.gain.linearRampToValueAtTime(0.001, ctx.currentTime + 3.5);
+        setTimeout(() => { try { ctx.close(); } catch(e){} }, 4000);
+      } catch(e) {}
     }
 
     function announce() {
@@ -180,20 +250,27 @@
       trainDisplay.textContent = station;
       trainPlay.disabled = true;
       trainPlay.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 播报中';
+
+      // 启动站台环境音
+      playAmbience();
+
       playChime(() => {
         window.speechSynthesis.cancel();
-        // 完整广播词：模仿真实高铁到站播报
-        const text = '女士们先生们，列车即将到达' + station + '站。请整理好您的行李物品，准备下车。';
+        // 接近真实高铁广播词：三段式结构，用逗号制造自然停顿
+        const text = '女士们先生们，列车前方到站，' + station + '站。请下车的旅客，提前做好下车准备。';
         trainText.textContent = text;
         const u = new SpeechSynthesisUtterance(text);
         u.lang = 'zh-CN';
-        u.rate = 0.82;   // 稍慢，模仿广播语速
-        u.pitch = 1.05;  // 微调音高
+        u.rate = 0.78;   // 更慢，接近真实广播语速
+        u.pitch = 0.98;  // 中性音高，男声更沉稳
         u.volume = 1;
         if (bestVoice) u.voice = bestVoice;
         u.onend = () => {
-          trainPlay.disabled = false;
-          trainPlay.innerHTML = '<i class="fas fa-play"></i> 播放';
+          // 播报完毕后再响一次提示音（真实高铁也是如此）
+          playChime(() => {
+            trainPlay.disabled = false;
+            trainPlay.innerHTML = '<i class="fas fa-play"></i> 播放';
+          });
         };
         u.onerror = () => {
           trainPlay.disabled = false;
@@ -214,24 +291,21 @@
     document.getElementById('trainDl').addEventListener('click', () => {
       let station = stationInput.value.trim();
       if (!station) { station = '北京南'; stationInput.value = station; }
-      const text = '女士们先生们，列车即将到达' + station + '站。';
+      const text = '列车前方到站，' + station + '站。';
       trainDisplay.textContent = station;
-      const sr = 44100; const dur = 2.5; const ns = Math.floor(sr * dur);
+      const sr = 44100; const dur = 2.0; const ns = Math.floor(sr * dur);
       const buf = new ArrayBuffer(44 + ns * 2); const v = new DataView(buf);
       function ws(o, s) { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); }
       ws(0,'RIFF'); v.setUint32(4, 36 + ns * 2, true); ws(8,'WAVE'); ws(12,'fmt ');
       v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
       v.setUint32(24, sr, true); v.setUint32(28, sr * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true);
       ws(36,'data'); v.setUint32(40, ns * 2, true);
+      // 更新为新版两音提示音：D5-G4 纯五度
       for (let i = 0; i < ns; i++) {
         const t = i / sr; let sample = 0;
-        if (t < 0.18) { sample = (Math.sin(2*Math.PI*1047*t)*0.25+Math.sin(2*Math.PI*2094*t)*0.08) * Math.max(0,1-t/0.18); }
-        else if (t < 0.22) {}
-        else if (t < 0.38) { const tt = t-0.22; sample = (Math.sin(2*Math.PI*1319*tt)*0.25+Math.sin(2*Math.PI*2638*tt)*0.08) * Math.max(0,1-tt/0.16); }
-        else if (t < 0.42) {}
-        else if (t < 0.62) { const tt = t-0.42; sample = (Math.sin(2*Math.PI*1568*tt)*0.28+Math.sin(2*Math.PI*3136*tt)*0.1) * Math.max(0,1-tt/0.20); }
-        else if (t < 0.66) {}
-        else if (t < 1.02) { const tt = t-0.66; sample = (Math.sin(2*Math.PI*2093*tt)*0.32+Math.sin(2*Math.PI*4186*tt)*0.12) * Math.max(0,1-tt/0.36); }
+        if (t < 0.14) { sample = (Math.sin(2*Math.PI*1175*t)*0.35+Math.sin(2*Math.PI*2350*t)*0.1) * Math.max(0,1-t/0.14); }
+        else if (t < 0.20) {}
+        else if (t < 0.70) { const tt = t-0.20; sample = (Math.sin(2*Math.PI*784*tt)*0.30+Math.sin(2*Math.PI*1568*tt)*0.08) * Math.max(0,1-tt/0.50); }
         const val = Math.max(-32768, Math.min(32767, Math.round(sample * 32767)));
         v.setInt16(44 + i * 2, val, true);
       }
