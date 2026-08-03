@@ -2,6 +2,13 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* 键盘无障碍：保留 focus-visible 时的焦点描边 */
+:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
 }
 
 :root {

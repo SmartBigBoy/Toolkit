@@ -27,6 +27,8 @@
     tabStopwatch.classList.toggle('active', m === 'stopwatch');
     countdownArea.classList.toggle('active', m === 'countdown');
     reset();
+    // 计次按钮只在秒表模式下可能启用
+    btnLap.style.display = m === 'stopwatch' ? '' : 'none';
   }
 
   // ── 预设 ──
@@ -71,7 +73,9 @@
     isRunning = true;
     btnStart.innerHTML = '<i class="fas fa-pause"></i> 暂停';
     btnStart.classList.add('running');
-    btnLap.removeAttribute('disabled');
+    if (mode === 'stopwatch') {
+      btnLap.disabled = false;
+    }
     timerStatus.textContent = mode === 'countdown' ? '倒计时运行中' : '秒表运行中';
     const startTime = Date.now();
     const initialMs = totalMs;
@@ -96,6 +100,7 @@
     btnStart.innerHTML = '<i class="fas fa-play"></i> 继续';
     btnStart.classList.remove('running');
     timerStatus.textContent = '已暂停';
+    btnLap.disabled = true;
   }
 
   function stop() {
@@ -125,6 +130,10 @@
     item.className = 'lap-item';
     item.innerHTML = '<span class="lap-num">计次 ' + lapCount + '</span><span>' + elapsed + '</span>';
     lapList.insertBefore(item, lapList.firstChild);
+    // 点击反馈：按钮短暂闪烁
+    btnLap.style.background = 'var(--primary)';
+    btnLap.style.color = '#fff';
+    setTimeout(() => { btnLap.style.background = ''; btnLap.style.color = ''; }, 150);
   }
 
   // ── 蜂鸣 ──
@@ -139,7 +148,6 @@
       gain.gain.setValueAtTime(0.3, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1);
       osc.start(); osc.stop(ctx.currentTime + 1);
-      // 重复 3 次
       for (let i = 0; i < 3; i++) {
         const o2 = ctx.createOscillator(); const g2 = ctx.createGain();
         o2.connect(g2); g2.connect(ctx.destination);
@@ -166,4 +174,5 @@
 
   // ── 初始化 ──
   updateDisplayFromInput();
+  btnLap.style.display = 'none'; // 初始在倒计时模式，隐藏计次按钮
 })();
