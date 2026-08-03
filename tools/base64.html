@@ -75,6 +75,31 @@
     </main>
 
 
+    <div class="container" style="max-width:800px;margin:0 auto">
+        <article class="article-content" style="margin-top:32px">
+            <h2>Base64 编解码工具 — 使用教程</h2>
+            <h3>什么是 Base64 编码？</h3>
+            <p>Base64 是一种将<strong>二进制数据转换为纯文本</strong>的编码方式。它用 64 个可打印字符（A-Z、a-z、0-9、+、/）来表示任意数据，常用于在文本协议中嵌入图片、传输加密数据等场景。</p>
+            <h3>Base64 编码 vs Base64 解码</h3>
+            <ul>
+                <li><strong>编码（Encode）</strong>：把普通文本或二进制数据 → 转成 Base64 字符串。例如 <code>Hello</code> 编码后变成 <code>SGVsbG8=</code></li>
+                <li><strong>解码（Decode）</strong>：把 Base64 字符串 → 还原为原始数据</li>
+            </ul>
+            <h3>常见使用场景</h3>
+            <ul>
+                <li><strong>图片转 Base64</strong>：把图片编码后直接嵌入 HTML/CSS 中（Data URI），减少 HTTP 请求，适合小图标、Logo 等</li>
+                <li><strong>API 认证</strong>：HTTP Basic Auth 的 <code>Authorization: Basic xxxx</code> 头部就是用 Base64 编码的用户名密码</li>
+                <li><strong>数据传输</strong>：在 JSON 中传输二进制数据时，常用 Base64 编码包裹一层</li>
+                <li><strong>加密数据输出</strong>：加密算法输出的二进制结果通常用 Base64 转成可读字符串</li>
+                <li><strong>Email 附件</strong>：MIME 协议使用 Base64 编码邮件附件</li>
+            </ul>
+            <h3>Base64 的局限性</h3>
+            <p>Base64 编码后的数据<strong>比原始数据大约大 33%</strong>，不适合压缩场景。如果需要减少体积，应使用压缩算法（如 Gzip），Base64 应仅用于需要文本表示的场合。</p>
+            <h3>数据安全说明</h3>
+            <p>所有编解码操作<strong>完全在您的浏览器本地完成</strong>，文本和文件不会上传到任何服务器，请放心使用。</p>
+        </article>
+    </div>
+
     <div class="tool-recommend container">
         <div class="tool-recommend-title"><i class="fas fa-sync-alt"></i> 推荐工具</div>
         <div class="rec-grid" id="tool-recommend"></div>

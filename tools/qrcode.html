@@ -259,6 +259,34 @@
     </main>
 
 
+    <div class="container" style="max-width:800px;margin:0 auto">
+        <article class="article-content" style="margin-top:32px">
+            <h2>二维码生成器 — 使用教程</h2>
+            <h3>什么是二维码？</h3>
+            <p>二维码（QR Code，Quick Response Code）是一种<strong>二维条码</strong>，可以在水平和垂直两个方向上存储信息。相比传统一维条形码，它的存储容量更大、扫描速度更快、纠错能力更强。现在几乎所有人的手机都支持扫码识别，使二维码成为连接线上线下的最佳桥梁。</p>
+            <h3>二维码能存什么内容？</h3>
+            <ul>
+                <li><strong>网址/URL</strong>：最常见用法，扫码后直接跳转到指定网页</li>
+                <li><strong>纯文本</strong>：存储一段文字信息，常用于产品说明、防伪验证等</li>
+                <li><strong>WiFi 信息</strong>：扫码即可连接 WiFi，适合餐厅、酒店等场所</li>
+                <li><strong>名片/vCard</strong>：扫码后一键保存联系人到手机通讯录</li>
+                <li><strong>支付信息</strong>：微信、支付宝等支付码</li>
+            </ul>
+            <h3>二维码的容错级别</h3>
+            <p>二维码内置了<strong>纠错机制</strong>，即使部分区域被遮挡或损坏，仍然可以正常扫描。容错级别越高，可恢复的损坏面积越大，但生成的二维码图案也会更密集：</p>
+            <ul>
+                <li><strong>L（低）</strong>：约 7% 可恢复，适合干净环境</li>
+                <li><strong>M（中）</strong>：约 15% 可恢复，日常推荐</li>
+                <li><strong>Q（较高）</strong>：约 25% 可恢复，适合可能有轻微遮挡的场景</li>
+                <li><strong>H（高）</strong>：约 30% 可恢复，适合户外、Logo 嵌入等</li>
+            </ul>
+            <h3>使用建议</h3>
+            <p>如果二维码中间需要<strong>嵌入 Logo</strong>，建议选择 H 级别容错，确保 Logo 遮挡后仍可正常扫描。普通网址跳转选择 M 级别即可。</p>
+            <h3>数据安全说明</h3>
+            <p>二维码生成过程<strong>完全在您浏览器中完成</strong>，输入的文本、网址等信息不会上传到任何服务器。生成的二维码图片可直接右键保存或截图使用。</p>
+        </article>
+    </div>
+
     <div class="tool-recommend container">
         <div class="tool-recommend-title"><i class="fas fa-sync-alt"></i> 推荐工具</div>
         <div class="rec-grid" id="tool-recommend"></div>

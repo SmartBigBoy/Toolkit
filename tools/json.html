@@ -63,6 +63,27 @@
     </main>
 
 
+    <div class="container" style="max-width:800px;margin:0 auto">
+        <article class="article-content" style="margin-top:32px">
+            <h2>JSON 格式化工具 — 使用教程</h2>
+            <h3>什么是 JSON？</h3>
+            <p>JSON（JavaScript Object Notation）是一种轻量级的数据交换格式，广泛用于前后端通信、API 接口、配置文件等场景。它以键值对的形式组织数据，结构清晰、易于人类阅读和机器解析。</p>
+            <h3>为什么需要格式化 JSON？</h3>
+            <p>在实际开发中，从 API 返回的 JSON 数据通常是<strong>压缩成一行的</strong>（无缩进），肉眼几乎无法阅读。比如调试后端接口时，拿到的响应可能是这样的：</p>
+            <pre style="background:var(--bg-tertiary);padding:16px;border-radius:8px;overflow-x:auto;font-size:13px">{"code":200,"data":{"list":[{"id":1,"name":"张三"},{"id":2,"name":"李四"}]},"msg":"success"}</pre>
+            <p>使用本工具<strong>一键格式化</strong>后，它会变成有缩进、有换行的清晰结构，方便你快速定位字段、排查 bug。</p>
+            <h3>常见使用场景</h3>
+            <ul>
+                <li><strong>API 调试</strong>：后端返回的 JSON 看不懂？粘贴进来点"格式化"，瞬间清晰</li>
+                <li><strong>数据压缩</strong>：需要把格式化好的 JSON 塞进 URL 或配置文件？点"压缩"变成一行</li>
+                <li><strong>语法校验</strong>：不确定手写的 JSON 有没有少逗号、多括号？本工具会自动检测并提示错误位置</li>
+                <li><strong>日志分析</strong>：生产日志里的 JSON 往往被压成一行，格式化后方便搜索关键字段</li>
+            </ul>
+            <h3>数据安全说明</h3>
+            <p>所有 JSON 数据的格式化、压缩、校验<strong>完全在您的浏览器中完成</strong>，不会上传到任何服务器。您可以放心处理包含敏感信息的接口数据，关闭页面后数据自动清除。</p>
+        </article>
+    </div>
+
     <div class="tool-recommend container">
         <div class="tool-recommend-title"><i class="fas fa-sync-alt"></i> 推荐工具</div>
         <div class="rec-grid" id="tool-recommend"></div>

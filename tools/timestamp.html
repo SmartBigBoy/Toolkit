@@ -325,6 +325,32 @@
     </main>
 
 
+    <div class="container" style="max-width:800px;margin:0 auto">
+        <article class="article-content" style="margin-top:32px">
+            <h2>时间戳转换工具 — 使用教程</h2>
+            <h3>什么是时间戳？</h3>
+            <p>时间戳（Timestamp）是计算机中表示时间的<strong>数字格式</strong>，它代表从某个基准时间点开始经过的秒数或毫秒数。最常用的是 <strong>Unix 时间戳</strong>，以 1970 年 1 月 1 日 00:00:00 UTC（Unix 纪元）为起点计算。</p>
+            <h3>秒级 vs 毫秒级时间戳</h3>
+            <ul>
+                <li><strong>秒级时间戳（10位）</strong>：最通用，如 <code>1700000000</code>。大多数后端系统（Python、Go、PHP）默认使用秒级</li>
+                <li><strong>毫秒级时间戳（13位）</strong>：精度更高，如 <code>1700000000000</code>。JavaScript 的 <code>Date.now()</code> 返回的就是毫秒级</li>
+            </ul>
+            <p>本工具<strong>自动识别 10 位和 13 位</strong>时间戳，无需手动选择。</p>
+            <h3>常见使用场景</h3>
+            <ul>
+                <li><strong>API 调试</strong>：接口返回的时间是数字（如 <code>1700000000</code>），不知道对应什么日期？粘贴进来一键转换</li>
+                <li><strong>数据库查询</strong>：数据库中存的 <code>created_at</code> 是时间戳格式，需要转为人类可读的日期时间</li>
+                <li><strong>日志排查</strong>：生产日志中常见时间戳纪事，转换成日期后可快速定位事故发生时间点</li>
+                <li><strong>前端开发</strong>：JS 中的 <code>Date.now()</code> 返回毫秒级时间戳，需要和后台的秒级时间戳互转</li>
+                <li><strong>时间计算</strong>：需要知道"某个时间戳加上 30 天后是什么日期"？先转换，再计算</li>
+            </ul>
+            <h3>实时时间戳参考</h3>
+            <p>工具上方会<strong>实时显示当前的 Unix 时间戳</strong>（秒级和毫秒级），每秒钟自动更新。您可以直接复制拿去用。</p>
+            <h3>关于时区</h3>
+            <p>Unix 时间戳本身<strong>不包含时区信息</strong>，它表示的是 UTC 时间。工具显示的日期时间是按照您浏览器所在时区自动转换的，确保您看到的是"本地时间"。</p>
+        </article>
+    </div>
+
     <div class="tool-recommend container">
         <div class="tool-recommend-title"><i class="fas fa-sync-alt"></i> 推荐工具</div>
         <div class="rec-grid" id="tool-recommend"></div>
