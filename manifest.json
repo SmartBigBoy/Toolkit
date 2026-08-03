@@ -1,0 +1,13 @@
+{
+  "name": "在线工具箱 - 实用工具集合",
+  "short_name": "在线工具箱",
+  "description": "免费实用的在线工具集合，JSON格式化、时间戳转换、二维码生成等28+工具",
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#6366f1",
+  "background_color": "#f8fafc",
+  "icons": [
+    { "src": "/assets/og-cover.png", "sizes": "1200x630", "type": "image/png" }
+  ],
+  "categories": ["utilities", "productivity"]
+}

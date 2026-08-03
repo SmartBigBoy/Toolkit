@@ -97,6 +97,34 @@ function startCarousel() {
   carouselTimer = setInterval(crossfade, 5000);
 }
 
+// ── 分享按钮 ──
+document.addEventListener('DOMContentLoaded', () => {
+  const btn = document.getElementById('btnShare');
+  if (!btn) return;
+  btn.addEventListener('click', () => {
+    const title = document.title.split(' - ')[0] || document.title;
+    const url = window.location.href;
+    const text = title + ' - 在线工具箱';
+    if (navigator.share) {
+      navigator.share({ title, text, url }).catch(() => {});
+    } else {
+      // 桌面端兜底：复制链接
+      navigator.clipboard.writeText(url).then(() => {
+        btn.innerHTML = '<i class="fas fa-check"></i>';
+        setTimeout(() => { btn.innerHTML = '<i class="fas fa-share-alt"></i>'; }, 1500);
+      }).catch(() => {
+        btn.innerHTML = '<i class="fas fa-times"></i>';
+        setTimeout(() => { btn.innerHTML = '<i class="fas fa-share-alt"></i>'; }, 1500);
+      });
+    }
+  });
+});
+
+// ── Service Worker（PWA 离线缓存） ──
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(() => {});
+}
+
 // 自动更新 header 工具总数
 function updateToolCount() {
   const el = document.getElementById('toolCount');

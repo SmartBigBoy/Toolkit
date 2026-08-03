@@ -119,56 +119,20 @@
     }
   }
 
-  // ── 手机端引导 ──
+  // ── 手机端提示 ──
   function showMobileGuide() {
-    // 移除旧引导
     const old = document.getElementById('mobileGuide');
     if (old) old.remove();
-
     const guide = document.createElement('div');
     guide.id = 'mobileGuide';
-    guide.style.cssText = 'margin-top:20px;padding:20px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:16px;text-align:left;font-size:14px;line-height:1.8';
+    guide.style.cssText = 'margin-top:20px;padding:20px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:16px;text-align:center;font-size:14px;line-height:1.8';
     guide.innerHTML = [
-      '<p style="font-weight:600;color:var(--text-primary);margin-bottom:12px"><i class="fas fa-mobile-alt"></i> 手机端截图方法</p>',
-      '<p style="color:var(--text-secondary)">由于浏览器限制，手机端无法直接使用本工具截取屏幕。您可以：</p>',
-      '<p style="color:var(--text-primary);margin-top:8px"><strong>方法一：系统截图后上传标注</strong></p>',
-      '<ol style="color:var(--text-secondary);padding-left:20px">',
-        '<li>使用手机自带截图功能（同时按 电源键 + 音量减）</li>',
-        '<li>截好的图会自动保存到相册</li>',
-        '<li>使用下方 <strong>「上传图片标注」</strong> 按钮，选择截图即可进入标注工具</li>',
-      '</ol>',
-      '<p style="color:var(--text-primary);margin-top:8px"><strong>方法二：用电脑打开此页面</strong></p>',
-      '<p style="color:var(--text-secondary)">在电脑 Chrome/Edge 浏览器访问 <code style="background:var(--bg-tertiary);padding:2px 6px;border-radius:4px">toolkit.skin</code>，可使用完整的屏幕截图功能。</p>',
-      '<div style="text-align:center;margin-top:16px">',
-        '<button id="btnUploadScreenshot" style="padding:12px 24px;border:none;border-radius:10px;background:var(--primary-gradient);color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">',
-          '<i class="fas fa-upload"></i> 上传图片标注',
-        '</button>',
-        '<input type="file" id="uploadFileInput" accept="image/*" style="display:none">',
-      '</div>',
+      '<p style="font-size:40px;margin-bottom:12px">📱</p>',
+      '<p style="font-weight:600;color:var(--text-primary);margin-bottom:8px">手机浏览器暂不支持屏幕截图</p>',
+      '<p style="color:var(--text-secondary)">请使用电脑端 Chrome 或 Edge 浏览器打开此页面</p>',
+      '<p style="color:var(--text-tertiary);font-size:13px;margin-top:8px"><code style="background:var(--bg-tertiary);padding:2px 8px;border-radius:4px">toolkit.skin</code></p>',
     ].join('');
     startScreen.appendChild(guide);
-
-    // 上传图片标注
-    document.getElementById('btnUploadScreenshot').addEventListener('click', () => {
-      document.getElementById('uploadFileInput').click();
-    });
-    document.getElementById('uploadFileInput').addEventListener('change', function() {
-      const file = this.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function() {
-        const img = new Image();
-        img.onload = function() {
-          capturedImage = img;
-          const g = document.getElementById('mobileGuide');
-          if (g) g.remove();
-          toast('图片已加载，请框选区域');
-          enterSelection();
-        };
-        img.src = reader.result;
-      };
-      reader.readAsDataURL(file);
-    });
   }
 
   // ═══ 选区阶段 ═══
