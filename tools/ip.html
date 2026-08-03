@@ -6,7 +6,9 @@
   <title>IP查询 - 在线工具箱</title>
   <meta name="description" content="在线IP地址查询工具，查询本机IP、归属地、运营商信息，支持查询指定IP">
   <link rel="stylesheet" href="../css/style.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous">
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="dns-prefetch" href="https://www.googletagmanager.com">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous">
   <style>
     .ip-wrap { max-width: 600px; margin: 0 auto; padding: 20px 0; }
     .ip-my { background: var(--bg-secondary); border-radius: 16px; padding: 28px 24px; border: 1px solid var(--border); text-align: center; margin-bottom: 20px; }
@@ -57,12 +59,18 @@
       </div>
     </div>
   </main>
-  <footer class="footer container"><p>© 2026 在线工具箱 | 简洁高效的工具集合</p></footer>
+  <footer class="footer container"><p>&copy; 2026 在线工具箱 | 简洁高效的工具集合</p></footer>
   <script>
-    // 多个 API 轮询，任一成功即返回
+    // 多个 API 轮询，任一成功即返回（优先强制 IPv4）
     const IP_APIS = [
+      // ip.sb 强制 IPv4（避免返回 IPv6 地址含字母冒号）
+      { url: ip => ip ? `https://api-ipv4.ip.sb/geoip/${ip}` : 'https://api-ipv4.ip.sb/geoip', parser: d => ({ ip: d.ip, country: d.country, region: d.region, city: d.city, isp: d.isp || d.organization || '', loc: d.latitude && d.longitude ? d.latitude + ', ' + d.longitude : '' }) },
+      // ip.sb 普通（IPv4 不可用时兜底）
       { url: ip => ip ? `https://api.ip.sb/geoip/${ip}` : 'https://api.ip.sb/geoip', parser: d => ({ ip: d.ip, country: d.country, region: d.region, city: d.city, isp: d.isp || d.organization || '', loc: d.latitude && d.longitude ? d.latitude + ', ' + d.longitude : '' }) },
+      // useragentinfo
       { url: ip => ip ? `https://ip.useragentinfo.com/json?ip=${ip}` : 'https://ip.useragentinfo.com/json', parser: d => ({ ip: d.ip, country: d.country, region: d.province, city: d.city, isp: d.isp || d.isp_district || '', loc: '' }) },
+      // PConline 国内稳定访问
+      { url: ip => ip ? `https://whois.pconline.com.cn/ipJson.jsp?ip=${ip}&json=true` : 'https://whois.pconline.com.cn/ipJson.jsp?json=true', parser: d => ({ ip: d.ip, country: '中国', region: d.pro, city: d.city, isp: d.addr || '', loc: '' }) },
     ];
 
     async function queryIP(ip) {

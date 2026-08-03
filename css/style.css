@@ -1031,31 +1031,31 @@ body {
     max-width: 800px;
     margin: 0 auto;
     padding: 30px 20px;
-    background: #fff;
+    background: var(--bg-secondary);
     border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    box-shadow: var(--shadow-sm);
 }
 .article-content h1 {
     font-size: 1.8rem;
-    color: #1a1a1a;
+    color: var(--text-primary);
     margin-bottom: 24px;
     line-height: 1.4;
 }
 .article-content h2 {
     font-size: 1.4rem;
-    color: #333;
+    color: var(--text-primary);
     margin: 32px 0 16px;
     padding-bottom: 8px;
-    border-bottom: 2px solid #f0f0f0;
+    border-bottom: 2px solid var(--border);
 }
 .article-content h3 {
     font-size: 1.2rem;
-    color: #444;
+    color: var(--text-primary);
     margin: 24px 0 12px;
 }
 .article-content p {
     line-height: 1.8;
-    color: #333;
+    color: var(--text-primary);
     margin-bottom: 16px;
 }
 .article-content ul, .article-content ol {
@@ -1064,11 +1064,11 @@ body {
 }
 .article-content li {
     line-height: 1.8;
-    color: #333;
+    color: var(--text-primary);
     margin-bottom: 8px;
 }
 .article-content a {
-    color: #4f46e5;
+    color: var(--primary);
     text-decoration: none;
 }
 .article-content a:hover {
@@ -1083,5 +1083,46 @@ body {
     border-radius: 8px;
 }
 .article-content strong {
-    color: #1a1a1a;
+    color: var(--text-primary);
+}
+.article-content blockquote {
+    border-left: 4px solid var(--primary);
+    padding: 12px 20px;
+    margin: 20px 0;
+    background: var(--bg-tertiary);
+    border-radius: 0 8px 8px 0;
+    color: var(--text-secondary);
+}
+.article-content hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 32px 0;
+}
+.article-content .article-meta {
+    color: var(--text-secondary);
+    font-size: 14px;
+    margin-bottom: 24px;
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+.article-content .article-meta i {
+    margin-right: 4px;
+    color: var(--text-tertiary);
+}
+.article-content .tip-box {
+    background: rgba(99, 102, 241, 0.08);
+    border: 1px solid rgba(99, 102, 241, 0.15);
+    border-left: 4px solid var(--primary);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: 20px 0;
+}
+.article-content .tip-box p {
+    margin: 0;
+    color: var(--text-primary);
+}
+.article-content .article-source {
+    font-size: 13px;
+    color: var(--text-tertiary);
 }
