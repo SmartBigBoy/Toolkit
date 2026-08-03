@@ -115,27 +115,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // ── 页面加载动画（返回体验平滑化） ──
     document.body.classList.add('page-loaded');
 
-    // ── 分享按钮 ──
-    (function initShare() {
-      const btn = document.getElementById('btnShare');
-      if (!btn) return;
-      btn.addEventListener('click', () => {
-        const title = '在线工具箱 - 实用工具集合';
-        const url = window.location.href;
-        if (navigator.share) {
-          navigator.share({ title, text: '28+实用工具，纯浏览器处理不上传', url }).catch(() => {});
-        } else {
-          navigator.clipboard.writeText(url).then(() => {
-            btn.innerHTML = '<i class="fas fa-check"></i>';
-            setTimeout(() => { btn.innerHTML = '<i class="fas fa-share-alt"></i>'; }, 1500);
-          }).catch(() => {
-            btn.innerHTML = '<i class="fas fa-times"></i>';
-            setTimeout(() => { btn.innerHTML = '<i class="fas fa-share-alt"></i>'; }, 1500);
-          });
-        }
-      });
-    })();
-
     // ── Service Worker ──
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').catch(() => {});
