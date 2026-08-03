@@ -34,6 +34,10 @@
     .train-btn.dl { background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); }
     .train-btn.dl:hover { background: rgba(255,255,255,0.18); }
     .train-hint { font-size: 13px; color: var(--text-tertiary); margin-top: 20px; }
+    .voice-indicator { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 6px; }
+    .voice-indicator.good { background: #10b981; }
+    .voice-indicator.ok { background: #f59e0b; }
+    .voice-indicator.poor { background: #ef4444; }
   </style>
 </head>
 <body>
@@ -71,7 +75,7 @@
               <button id="trainDl" class="train-btn dl"><i class="fas fa-download"></i> 下载</button>
             </div>
           </div>
-          <div class="train-hint">语音播报使用浏览器 TTS 引擎，效果因设备和语音包而异</div>
+          <div class="train-hint" id="voiceHint">正在检测最佳语音引擎…</div>
         </div>
       </div>
     </div>
@@ -88,8 +92,8 @@
                 <li><strong>视频创作</strong>：为旅行 Vlog 添加高铁广播背景音</li>
                 <li><strong>铁路爱好者</strong>：高铁迷可以用这个模拟不同车次的到站效果</li>
             </ul>
-            <h3>使用技巧</h3>
-            <p>选择车次类型（G 字头高铁、D 字头动车、C 字头城际等）后输入到站站名，即可生成对应的广播语音。站名建议使用真实车站名称，效果更逼真。</p>
+            <h3>语音效果说明</h3>
+            <p>本工具会<strong>自动检测系统中最佳的中文语音引擎</strong>，优先选择神经语音（Microsoft Xiaoxiao 等）。建议使用 Edge 浏览器以获得与官方 Azure TTS 一致的自然听感。提示音模拟了火车站经典的"叮咚"四音阶提示旋律。</p>
             <h3>免责声明</h3>
             <p>本工具仅为娱乐用途，语音模拟效果仅供参考，不构成任何真实的铁路运营信息。</p>
         </article>
@@ -99,30 +103,74 @@
         <div class="rec-grid" id="tool-recommend"></div>
     </div>
 
-  <footer class="footer container"><p>© 2026 在线工具箱 | 简洁高效的工具集合</p></footer>
+  <footer class="footer container"><p>&copy; 2026 在线工具箱 | 简洁高效的工具集合</p></footer>
   <script>
     const stationInput = document.getElementById('stationInput');
     const trainText = document.getElementById('trainText');
     const trainDisplay = document.getElementById('trainDisplay');
     const trainPlay = document.getElementById('trainPlay');
+    const voiceHint = document.getElementById('voiceHint');
 
+    // ── 智能语音选择 ──
+    let bestVoice = null;
+    const VOICE_RANK = [
+      'Xiaoxiao',      // Microsoft 神经女声
+      'Yunyang',       // Microsoft 神经男声（列车广播更合适）
+      'Yunxi',         // Microsoft 神经男声
+      'Xiaohan',       // Microsoft 神经女声
+      'Yunxia',        // Microsoft 神经男声
+      'Ting-Ting',     // macOS/iOS
+      'Google',        // Google TTS
+    ];
+
+    function selectBestVoice() {
+      const voices = window.speechSynthesis.getVoices();
+      if (!voices.length) { voiceHint.textContent = '未检测到语音引擎，请使用 Edge 或 Chrome 浏览器'; return; }
+      for (const name of VOICE_RANK) {
+        const v = voices.find(v => v.name.includes(name));
+        if (v) { bestVoice = v; break; }
+      }
+      if (!bestVoice) {
+        bestVoice = voices.find(v => v.lang.startsWith('zh-CN')) ||
+                    voices.find(v => v.lang.startsWith('zh-Hans')) ||
+                    voices.find(v => v.lang.startsWith('zh')) || null;
+      }
+      if (bestVoice) {
+        const isNeural = bestVoice.name.includes('Xiao') || bestVoice.name.includes('Yun');
+        const quality = isNeural ? 'good' : 'ok';
+        voiceHint.innerHTML = '<span class="voice-indicator ' + quality + '"></span>语音引擎：' + bestVoice.name + (isNeural ? '（神经语音）' : '');
+      } else {
+        voiceHint.innerHTML = '<span class="voice-indicator poor"></span>未找到中文语音，播报效果可能不佳';
+      }
+    }
+    window.speechSynthesis.getVoices();
+    window.speechSynthesis.onvoiceschanged = selectBestVoice;
+    selectBestVoice();
+
+    // ── 高铁站台提示音（经典叮咚四音阶） ──
     function playChime(callback) {
       try {
         const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        // 叮咚两音，模拟火车站台提示音
+        const t = ctx.currentTime;
+        // 火车站经典四连音：do-mi-sol-do ↑
         const notes = [
-          { freq: 880, start: 0, dur: 0.2 },
-          { freq: 1320, start: 0.25, dur: 0.3 },
+          { freq: 1047, start: 0,    dur: 0.16, vol: 0.18 },  // C6
+          { freq: 1319, start: 0.20, dur: 0.14, vol: 0.20 },  // E6
+          { freq: 1568, start: 0.38, dur: 0.18, vol: 0.22 },  // G6
+          { freq: 2093, start: 0.60, dur: 0.32, vol: 0.28 },  // C7（尾音延长）
         ];
         notes.forEach(n => {
-          const osc = ctx.createOscillator(); const gain = ctx.createGain();
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
           osc.connect(gain); gain.connect(ctx.destination);
-          osc.frequency.value = n.freq; osc.type = 'sine';
-          gain.gain.setValueAtTime(0.2, ctx.currentTime + n.start);
-          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + n.start + n.dur);
-          osc.start(ctx.currentTime + n.start); osc.stop(ctx.currentTime + n.start + n.dur + 0.05);
+          osc.frequency.value = n.freq;
+          osc.type = 'triangle';
+          gain.gain.setValueAtTime(0, t + n.start);
+          gain.gain.linearRampToValueAtTime(n.vol, t + n.start + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + n.start + n.dur);
+          osc.start(t + n.start); osc.stop(t + n.start + n.dur + 0.05);
         });
-        setTimeout(callback, 650);
+        setTimeout(callback, 980);
       } catch(e) { callback(); }
     }
 
@@ -130,14 +178,28 @@
       let station = stationInput.value.trim();
       if (!station) { station = stationInput.placeholder; stationInput.value = station; }
       trainDisplay.textContent = station;
-      trainPlay.disabled = true; trainPlay.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 播报中';
+      trainPlay.disabled = true;
+      trainPlay.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 播报中';
       playChime(() => {
         window.speechSynthesis.cancel();
+        // 完整广播词：模仿真实高铁到站播报
         const text = '女士们先生们，列车即将到达' + station + '站。请整理好您的行李物品，准备下车。';
         trainText.textContent = text;
         const u = new SpeechSynthesisUtterance(text);
-        u.lang = 'zh-CN'; u.rate = 0.80; u.pitch = 1.06; u.volume = 1;
-        u.onend = () => { trainPlay.disabled = false; trainPlay.innerHTML = '<i class="fas fa-play"></i> 播放'; };
+        u.lang = 'zh-CN';
+        u.rate = 0.82;   // 稍慢，模仿广播语速
+        u.pitch = 1.05;  // 微调音高
+        u.volume = 1;
+        if (bestVoice) u.voice = bestVoice;
+        u.onend = () => {
+          trainPlay.disabled = false;
+          trainPlay.innerHTML = '<i class="fas fa-play"></i> 播放';
+        };
+        u.onerror = () => {
+          trainPlay.disabled = false;
+          trainPlay.innerHTML = '<i class="fas fa-play"></i> 播放';
+          trainText.textContent = '播报失败，请刷新后重试';
+        };
         window.speechSynthesis.speak(u);
       });
     }
@@ -154,32 +216,31 @@
       if (!station) { station = '北京南'; stationInput.value = station; }
       const text = '女士们先生们，列车即将到达' + station + '站。';
       trainDisplay.textContent = station;
-
-      const sr = 44100; const dur = 2.0; const ns = Math.floor(sr * dur);
+      const sr = 44100; const dur = 2.5; const ns = Math.floor(sr * dur);
       const buf = new ArrayBuffer(44 + ns * 2); const v = new DataView(buf);
       function ws(o, s) { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); }
       ws(0,'RIFF'); v.setUint32(4, 36 + ns * 2, true); ws(8,'WAVE'); ws(12,'fmt ');
       v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
       v.setUint32(24, sr, true); v.setUint32(28, sr * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true);
       ws(36,'data'); v.setUint32(40, ns * 2, true);
-
       for (let i = 0; i < ns; i++) {
         const t = i / sr; let sample = 0;
-        if (t < 0.15) { sample = Math.sin(2 * Math.PI * 880 * t) * 0.3 * (1 - t/0.15); }
-        else if (t < 0.2) {}
-        else if (t < 0.35) { const tt = t - 0.2; sample = Math.sin(2 * Math.PI * 1320 * tt) * 0.25 * (1 - tt/0.15); }
-        else if (t < 0.4) {}
-        else { sample = Math.sin(2 * Math.PI * 440 * t) * 0.06 * Math.max(0, 1 - (t-0.4)/1.6); }
+        if (t < 0.18) { sample = (Math.sin(2*Math.PI*1047*t)*0.25+Math.sin(2*Math.PI*2094*t)*0.08) * Math.max(0,1-t/0.18); }
+        else if (t < 0.22) {}
+        else if (t < 0.38) { const tt = t-0.22; sample = (Math.sin(2*Math.PI*1319*tt)*0.25+Math.sin(2*Math.PI*2638*tt)*0.08) * Math.max(0,1-tt/0.16); }
+        else if (t < 0.42) {}
+        else if (t < 0.62) { const tt = t-0.42; sample = (Math.sin(2*Math.PI*1568*tt)*0.28+Math.sin(2*Math.PI*3136*tt)*0.1) * Math.max(0,1-tt/0.20); }
+        else if (t < 0.66) {}
+        else if (t < 1.02) { const tt = t-0.66; sample = (Math.sin(2*Math.PI*2093*tt)*0.32+Math.sin(2*Math.PI*4186*tt)*0.12) * Math.max(0,1-tt/0.36); }
         const val = Math.max(-32768, Math.min(32767, Math.round(sample * 32767)));
         v.setInt16(44 + i * 2, val, true);
       }
-
       const blob = new Blob([buf], { type: 'audio/wav' });
       const url = URL.createObjectURL(blob); const a = document.createElement('a');
       a.href = url; a.download = '高铁到站_' + station + '.wav';
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
       setTimeout(() => URL.revokeObjectURL(url), 5000);
-      trainText.textContent = '✅ 音频已下载（含提示音）';
+      trainText.textContent = '✅ 提示音已下载（完整语音需浏览器 TTS 支持）';
       setTimeout(() => { trainText.textContent = text; }, 2000);
     });
   </script>
