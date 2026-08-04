@@ -153,6 +153,10 @@
                     <input type="range" id="volume" min="0" max="1" step="0.05" value="1">
                     <span class="slider-val" id="volumeVal">100%</span>
                 </div>
+                <div class="field">
+                    <label>下载音色（在线合成，需联网）</label>
+                    <select id="dlVoice" class="text-input"></select>
+                </div>
                 <div class="btn-row">
                     <button class="btn-play" id="playBtn"><i class="fas fa-play"></i> 播放</button>
                     <button class="btn-stop" id="stopBtn" disabled><i class="fas fa-stop"></i> 停止</button>
@@ -167,7 +171,7 @@
                 </div>
                 <div class="notice">
                     <b>提示：</b>本工具基于浏览器的 <b>Web Speech API</b>，所有朗读都在你的设备本地完成，<b>不会上传任何文字</b>。部分系统需先安装中文语音包（如 Windows 在「设置 → 时间和语言 → 语音」中添加“中文(简体)”语音）；Safari 浏览器对中文语音支持有限。<br>
-                    <b>下载音频：</b>点击「下载音频」会通过<b>在线语音合成服务</b>生成并导出为 WAV 文件（需联网，文本会发送给该服务，且音色与本地「播放」可能不同）；长文本自动分段合成后合并为单个文件。
+                    <b>下载音频：</b>点击「下载音频」会通过<b>微软 Edge 在线语音</b>（免费、无需密钥、神经网络音色）生成并导出为 <b>MP3</b> 文件（需联网，文本会发送给微软语音服务，音色与本地「播放」不同，可在「下载音色」中选择男女声）；长文本自动分段合成后合并为单个文件。
                 </div>
                 <div id="unsupportedBox" class="unsupported" style="display:none;">抱歉，当前浏览器不支持语音合成功能，请更换 Chrome / Edge / Firefox 等现代浏览器后再试。</div>
             </div>
@@ -185,7 +189,7 @@
                 <li>在「语音」下拉框中选择喜欢的声音（默认优先列出中文语音）；</li>
                 <li>拖动<strong>语速 / 音调 / 音量</strong>滑块调整到合适效果；</li>
                 <li>点击<strong>播放</strong>开始朗读，播放中可再次点击按钮<strong>暂停 / 继续</strong>，点击<strong>停止</strong>结束；</li>
-                <li>点击<strong>下载音频</strong>可将当前文本合成为 WAV 文件保存到本地（需联网，调用在线语音服务）。</li>
+                <li>点击<strong>下载音频</strong>可将当前文本合成为 MP3 文件保存到本地（需联网，调用微软 Edge 在线语音服务，可在「下载音色」中选男女声）。</li>
             </ul>
             <h3>常见使用场景</h3>
             <ul>
@@ -197,7 +201,7 @@
             <h3>为什么读出来是英文口音 / 没有中文？</h3>
             <p>语音列表由<strong>你的操作系统</strong>提供。若列表里没有中文语音，请先在系统中安装中文语音包（Windows：「设置 → 时间和语言 → 语音 → 添加语音」选“中文(简体，中国)”；macOS：「系统设置 → 辅助功能 → 语音内容 → 系统声音」下载中文）。安装后刷新本页面即可看到。</p>
             <h3>数据安全</h3>
-            <p>「播放」功能的所有语音合成均在<strong>本地浏览器</strong>完成，文字内容不会被发送到任何服务器，可放心处理私密文本。而「下载音频」为获取可保存的文件，会调用<strong>在线语音合成服务</strong>，相应文本会被发送给该服务，请勿用于高度敏感内容。</p>
+            <p>「播放」功能的所有语音合成均在<strong>本地浏览器</strong>完成，文字内容不会被发送到任何服务器，可放心处理私密文本。而「下载音频」为获取可保存的文件，会调用<strong>微软 Edge 在线语音服务</strong>，相应文本会被发送给微软，请勿用于高度敏感内容。</p>
         </article>
     </div>
 
@@ -228,6 +232,31 @@
         const charCount = document.getElementById('charCount');
         const progressFill = document.getElementById('progressFill');
         const unsupportedBox = document.getElementById('unsupportedBox');
+        const dlVoiceEl = document.getElementById('dlVoice');
+
+        const EDGE_VOICES = [
+            { id: 'zh-CN-XiaoxiaoNeural', label: '中文 · 女声（晓晓）', lang: 'zh' },
+            { id: 'zh-CN-YunxiNeural',    label: '中文 · 男声（云希）', lang: 'zh' },
+            { id: 'zh-CN-YunjianNeural',  label: '中文 · 男声（云健）', lang: 'zh' },
+            { id: 'en-US-AriaNeural',     label: 'English · Female (Aria)', lang: 'en' },
+            { id: 'en-US-GuyNeural',      label: 'English · Male (Guy)', lang: 'en' },
+            { id: 'ja-JP-NanamiNeural',   label: '日本語 · 女声（七海）', lang: 'ja' },
+            { id: 'ko-KR-SunHiNeural',    label: '한국어 · 여성 (SunHi)', lang: 'ko' }
+        ];
+        EDGE_VOICES.forEach(v => {
+            const opt = document.createElement('option');
+            opt.value = v.id; opt.textContent = v.label;
+            dlVoiceEl.appendChild(opt);
+        });
+        function syncDlVoiceToLang() {
+            const v = getSelectedVoice();
+            const lang = (v ? v.lang : 'zh-CN').toLowerCase();
+            let pick = 'zh-CN-XiaoxiaoNeural';
+            if (lang.startsWith('en')) pick = 'en-US-AriaNeural';
+            else if (lang.startsWith('ja')) pick = 'ja-JP-NanamiNeural';
+            else if (lang.startsWith('ko')) pick = 'ko-KR-SunHiNeural';
+            dlVoiceEl.value = pick;
+        }
 
         let voices = [];
         let isPaused = false;
@@ -235,7 +264,6 @@
         if (!('speechSynthesis' in window)) {
             unsupportedBox.style.display = 'block';
             playBtn.disabled = true;
-            downloadBtn.disabled = true;
         }
 
         function updateLabels() {
@@ -252,6 +280,7 @@
             charCount.textContent = n + ' 字';
         }
         textEl.addEventListener('input', updateCount);
+        voiceEl.addEventListener('change', syncDlVoiceToLang);
 
         function populateVoices() {
             voices = synth.getVoices();
@@ -275,6 +304,7 @@
             const zh = sorted.find(v => v.lang.startsWith('zh'));
             if (zh) voiceEl.value = zh.name;
             else if (current) voiceEl.value = current;
+            syncDlVoiceToLang();
         }
 
         populateVoices();
@@ -334,101 +364,110 @@
             statusText.textContent = '已停止';
         });
 
-        /* ============ 下载音频（在线语音合成 → WAV） ============ */
-        function normalizeLang(lang) {
-            if (!lang) return 'zh-CN';
-            const l = lang.toLowerCase();
-            if (l.startsWith('zh')) return (l.includes('tw') || l.includes('hant')) ? 'zh-TW' : 'zh-CN';
-            if (l.startsWith('en')) return 'en-US';
-            if (l.startsWith('ja')) return 'ja-JP';
-            if (l.startsWith('ko')) return 'ko-KR';
-            if (l.startsWith('fr')) return 'fr-FR';
-            if (l.startsWith('de')) return 'de-DE';
-            if (l.startsWith('es')) return 'es-ES';
-            return lang;
-        }
+        /* ============ 下载音频（Edge 在线语音合成 → MP3，无需密钥） ============ */
+        const EDGE_TOKEN = '6A5AA1D79F1554D68080C0FAC7E7A8B2';
+        const CRLF = String.fromCharCode(13, 10);
 
-        function splitText(text, limit) {
+        function edgeNowStr() {
+            return new Date().toUTCString(); // e.g. "Wed, 04 Aug 2026 03:02:03 GMT"
+        }
+        async function edgeGecToken(dateStr) {
+            const data = dateStr + 'Y29tLg==' + EDGE_TOKEN;
+            const bytes = new TextEncoder().encode(data);
+            const digest = await crypto.subtle.digest('SHA-256', bytes);
+            const bin = new Uint8Array(digest);
+            let s = '';
+            for (let i = 0; i < bin.length; i++) s += String.fromCharCode(bin[i]);
+            return btoa(s);
+        }
+        function edgeEscapeXml(t) {
+            return t.replace(/[&<>'"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&apos;', '"': '&quot;' }[c]));
+        }
+        function edgeSplit(text, limit) {
+            const NL = String.fromCharCode(10);
+            const seps = ['。', '！', '？', '!', '?', NL];
             const chunks = [];
-            const parts = text.match(/[^。！？!?\n]+[。！？!?\n]*/g) || [text];
             let buf = '';
-            for (const p of parts) {
-                if ((buf + p).length <= limit) {
-                    buf += p;
-                } else {
-                    if (buf) { chunks.push(buf); buf = ''; }
-                    if (p.length <= limit) {
-                        buf = p;
-                    } else {
-                        for (let i = 0; i < p.length; i += limit) chunks.push(p.slice(i, i + limit));
-                    }
+            for (let i = 0; i < text.length; i++) {
+                const ch = text[i];
+                buf += ch;
+                const isSep = seps.indexOf(ch) !== -1;
+                if (isSep || buf.length >= limit) {
+                    chunks.push(buf);
+                    buf = '';
                 }
             }
             if (buf) chunks.push(buf);
-            return chunks.map(c => c.trim()).filter(c => c.length > 0);
+            return chunks.map(c => c.trim()).filter(c => c.length);
+        }
+        function edgeSend(ws, dateStr, voiceId, text) {
+            const langCode = voiceId.split('-').slice(0, 2).join('-');
+            const ssml = "<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='" +
+                langCode + "'><voice name='" + voiceId + "'>" + edgeEscapeXml(text) + "</voice></speak>";
+            const header = "X-Timestamp: " + dateStr + CRLF +
+                "Content-Type: application/ssml+xml" + CRLF +
+                "Path: ssml" + CRLF + CRLF;
+            ws.send(header + ssml);
         }
 
-        async function fetchChunkMp3(text, lang) {
-            const url = 'https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=' +
-                encodeURIComponent(lang) + '&q=' + encodeURIComponent(text);
-            const res = await fetch(url);
-            if (!res.ok) throw new Error('HTTP ' + res.status);
-            return await res.arrayBuffer();
-        }
-
-        function concatAudioBuffers(ctx, buffers) {
-            if (!buffers.length) return null;
-            const numCh = buffers[0].numberOfChannels;
-            const sampleRate = buffers[0].sampleRate;
-            let total = 0;
-            for (const b of buffers) total += b.length;
-            const out = ctx.createBuffer(numCh, total, sampleRate);
-            let offset = 0;
-            for (const b of buffers) {
-                for (let c = 0; c < b.numberOfChannels; c++) {
-                    out.getChannelData(c).set(b.getChannelData(c), offset);
-                }
-                offset += b.length;
-            }
-            return out;
-        }
-
-        function audioBufferToWav(buffer) {
-            const numCh = buffer.numberOfChannels;
-            const sampleRate = buffer.sampleRate;
-            const numFrames = buffer.length;
-            const bytesPerSample = 2;
-            const blockAlign = numCh * bytesPerSample;
-            const dataSize = numFrames * blockAlign;
-            const ab = new ArrayBuffer(44 + dataSize);
-            const view = new DataView(ab);
-            let off = 0;
-            const writeStr = (s) => { for (let i = 0; i < s.length; i++) view.setUint8(off++, s.charCodeAt(i)); };
-            const writeU32 = (v) => { view.setUint32(off, v, true); off += 4; };
-            const writeU16 = (v) => { view.setUint16(off, v, true); off += 2; };
-            writeStr('RIFF');
-            writeU32(36 + dataSize);
-            writeStr('WAVE');
-            writeStr('fmt ');
-            writeU32(16);
-            writeU16(1);
-            writeU16(numCh);
-            writeU32(sampleRate);
-            writeU32(sampleRate * blockAlign);
-            writeU16(blockAlign);
-            writeU16(16);
-            writeStr('data');
-            writeU32(dataSize);
-            const channels = [];
-            for (let c = 0; c < numCh; c++) channels.push(buffer.getChannelData(c));
-            for (let i = 0; i < numFrames; i++) {
-                for (let c = 0; c < numCh; c++) {
-                    let s = Math.max(-1, Math.min(1, channels[c][i]));
-                    view.setInt16(off, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
-                    off += 2;
-                }
-            }
-            return new Uint8Array(ab);
+        function edgeSynthesize(voiceId, text, onProgress) {
+            const dateStr = edgeNowStr();
+            return edgeGecToken(dateStr).then(token => {
+                const connId = (crypto.randomUUID ? crypto.randomUUID()
+                    : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+                        const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+                        return v.toString(16);
+                    }));
+                const url = 'wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1?TrustedClientToken=' +
+                    EDGE_TOKEN + '&Sec-MS-GEC=' + encodeURIComponent(token) + '&Sec-MS-GEC-Version=1&ConnectionId=' + connId;
+                return new Promise((resolve, reject) => {
+                    let ws;
+                    try { ws = new WebSocket(url); }
+                    catch (e) { reject(new Error('无法建立连接：' + e.message)); return; }
+                    ws.binaryType = 'arraybuffer';
+                    const chunks = [];
+                    const parts = edgeSplit(text, 1000);
+                    let cur = [];
+                    let pendingIdx = -1;
+                    const sendChunk = (i) => {
+                        if (i >= parts.length) return;
+                        cur = [];
+                        pendingIdx = i;
+                        edgeSend(ws, dateStr, voiceId, parts[i]);
+                    };
+                    ws.onopen = () => {
+                        const cfg = "X-Timestamp: " + dateStr + CRLF +
+                            "Content-Type: application/json; charset=utf-8" + CRLF +
+                            "Path: speech.config" + CRLF + CRLF +
+                            '{"context":{"synthesis":{"audio":{"metadataoptions":{"sentenceBoundaryEnabled":false,"wordBoundaryEnabled":false},"outputFormat":"audio-24khz-48kbitrate-mono-mp3"}}}}';
+                        ws.send(cfg);
+                        sendChunk(0);
+                    };
+                    ws.onmessage = (ev) => {
+                        const data = new Uint8Array(ev.data);
+                        const headerLen = (data[0] << 8) | data[1];
+                        const headerText = new TextDecoder().decode(data.subarray(2, 2 + headerLen));
+                        const audio = data.subarray(2 + headerLen);
+                        if (headerText.indexOf('Path:audio') !== -1 && audio.length) cur.push(audio);
+                        if (headerText.indexOf('Path:turn.end') !== -1) {
+                            for (const c of cur) chunks.push(c);
+                            const next = pendingIdx + 1;
+                            if (next < parts.length) {
+                                onProgress && onProgress(next, parts.length);
+                                sendChunk(next);
+                            } else {
+                                let total = 0; for (const c of chunks) total += c.length;
+                                const out = new Uint8Array(total);
+                                let o = 0; for (const c of chunks) { out.set(c, o); o += c.length; }
+                                try { ws.close(); } catch (e) {}
+                                resolve(out);
+                            }
+                        }
+                    };
+                    ws.onerror = () => { reject(new Error('连接出错（可能被网络拦截，或当前网络无法访问微软语音服务）')); };
+                    ws.onclose = () => { /* 成功时已由 turn.end 解析；异常时 onerror 已处理 */ };
+                });
+            });
         }
 
         function triggerDownload(blob, filename) {
@@ -444,35 +483,23 @@
         async function downloadAudio() {
             const text = textEl.value.trim();
             if (!text) { statusText.textContent = '请输入要朗读的文字'; return; }
-            const v = getSelectedVoice();
-            const lang = normalizeLang(v ? v.lang : 'zh-CN');
-            const chunks = splitText(text, 180);
-            if (!chunks.length) { statusText.textContent = '没有可下载的内容'; return; }
+            if (!window.crypto || !crypto.subtle) {
+                statusText.textContent = '当前环境不支持安全加密（需 HTTPS），无法生成下载';
+                return;
+            }
+            const voiceId = dlVoiceEl.value || 'zh-CN-XiaoxiaoNeural';
             downloadBtn.disabled = true;
-            let done = 0;
-            statusText.textContent = '正在生成音频 (0/' + chunks.length + ')';
+            statusText.textContent = '正在生成音频 (0/1)';
             try {
-                const AC = window.AudioContext || window.webkitAudioContext;
-                const ctx = new AC();
-                if (ctx.state === 'suspended') await ctx.resume();
-                const buffers = [];
-                for (const c of chunks) {
-                    const ab = await fetchChunkMp3(c, lang);
-                    const buf = await ctx.decodeAudioData(ab);
-                    buffers.push(buf);
-                    done++;
-                    statusText.textContent = '正在生成音频 (' + done + '/' + chunks.length + ')';
-                    await new Promise(r => setTimeout(r, 120));
-                }
-                const merged = concatAudioBuffers(ctx, buffers);
-                if (!merged) throw new Error('音频合并失败');
-                const wav = audioBufferToWav(merged);
-                const blob = new Blob([wav], { type: 'audio/wav' });
-                triggerDownload(blob, 'tts-audio.wav');
-                statusText.textContent = '下载完成 ✓ (WAV ' + (blob.size / 1024).toFixed(0) + ' KB)';
+                const bytes = await edgeSynthesize(voiceId, text, (i, n) => {
+                    statusText.textContent = '正在生成音频 (' + i + '/' + n + ')';
+                });
+                const blob = new Blob([bytes], { type: 'audio/mpeg' });
+                triggerDownload(blob, 'tts-audio.mp3');
+                statusText.textContent = '下载完成 ✓ (MP3 ' + (blob.size / 1024).toFixed(0) + ' KB)';
             } catch (e) {
                 statusText.textContent = '下载失败：' + (e && e.message ? e.message : e) +
-                    '（若提示跨域/网络拦截，请改用「播放」，或换用可访问该语音服务的网络环境）';
+                    '（若网络无法访问微软语音服务，请改用「播放」，或后续接入自备后端代理）';
             } finally {
                 downloadBtn.disabled = false;
             }
