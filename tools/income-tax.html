@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="在线工具箱">
+    <link rel="apple-touch-icon" href="/assets/og-cover.png">
+    <title>个税计算器 - 在线工具箱</title>
+    <meta name="description" content="在线个人所得税计算器，按综合所得年度税率表计算应缴个税与到手工资，支持五险一金与专项附加扣除，纯浏览器运行">
+    <meta name="keywords" content="在线工具,个税计算器,个人所得税,工资计算器,到手工资,五险一金,工具箱">
+    <meta name="author" content="TOOLKIT.SKIN">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://toolkit.skin/tools/income-tax.html">
+    <meta property="og:title" content="个税计算器 - 在线工具箱">
+    <meta property="og:description" content="免费在线个人所得税计算器，算清每月到手工资。">
+    <meta property="og:url" content="https://toolkit.skin/tools/income-tax.html">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="TOOLKIT.SKIN 在线工具箱">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="个税计算器 - 在线工具箱">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="dns-prefetch" href="https://www.googletagmanager.com">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="dns-prefetch" href="https://pagead2.googlesyndication.com">
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6560822080596473" crossorigin="anonymous"></script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-V8533PXQLF"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-V8533PXQLF');
+    </script>
+    <style>
+        body { background: var(--bg-primary); margin: 0; padding: 0; }
+        .container-box {
+            max-width: 640px;
+            margin: 40px auto;
+            background: #fff;
+            border-radius: 24px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        .tool-header {
+            background: linear-gradient(135deg, #10b981, #34d399);
+            padding: 30px 24px;
+            color: #fff;
+        }
+        .tool-header h1 {
+            margin: 0 0 8px 0;
+            font-size: 24px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .tool-header p { margin: 0; font-size: 14px; opacity: 0.9; }
+        .tool-body { padding: 24px; }
+        .field { margin-bottom: 16px; }
+        .field label { display: block; font-size: 13px; color: #6b7280; margin-bottom: 8px; }
+        .text-input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        .text-input:focus { outline: none; border-color: #10b981; }
+        .text-input::placeholder { color: #9ca3af; }
+        .convert-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #10b981, #34d399);
+            border: none;
+            border-radius: 12px;
+            color: #fff;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 2px 8px rgba(16,185,129,0.3);
+        }
+        .convert-btn:hover { box-shadow: 0 4px 12px rgba(16,185,129,0.4); }
+        .result-card { background: #f3f4f6; border-radius: 16px; padding: 18px; margin-top: 16px; }
+        .result-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-top: 1px solid #e5e7eb; font-size: 14px; }
+        .result-row:first-child { border-top: none; }
+        .result-row .r-label { color: #6b7280; }
+        .result-row .r-value { font-weight: 600; color: #1f2937; font-family: monospace; }
+        .result-row.highlight .r-value { color: #10b981; font-size: 18px; }
+        .note { font-size: 12px; color: #9ca3af; line-height: 1.6; margin-top: 14px; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="../index.html" class="logo">
+                <i class="fas fa-wrench"></i>
+                <h1>在线工具箱</h1><span class="tool-count" id="toolCount">--</span>
+            </a>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container-box">
+            <div class="tool-header">
+                <h1><i class="fas fa-file-invoice-dollar"></i> 个税计算器</h1>
+                <p>算清你每月实际到手工资</p>
+            </div>
+            <div class="tool-body">
+                <div class="field">
+                    <label>月税前工资（元）</label>
+                    <input type="number" id="gross" class="text-input" placeholder="例如：20000" value="20000">
+                </div>
+                <div class="field">
+                    <label>五险一金月缴（元，个人部分，可填 0）</label>
+                    <input type="number" id="insurance" class="text-input" placeholder="例如：3000" value="3000">
+                </div>
+                <div class="field">
+                    <label>专项附加扣除月额（元，可填 0）</label>
+                    <input type="number" id="additional" class="text-input" placeholder="例如：2000（子女教育/房贷/赡养老人等）" value="2000">
+                </div>
+                <button class="convert-btn" onclick="calc()"><i class="fas fa-calculator"></i> 立即计算</button>
+
+                <div class="result-card" id="result" style="display:none;">
+                    <div class="result-row"><span class="r-label">适用税率</span><span class="r-value" id="rate">—</span></div>
+                    <div class="result-row"><span class="r-label">全年应纳税所得额</span><span class="r-value" id="taxable">—</span></div>
+                    <div class="result-row"><span class="r-label">全年应缴个税</span><span class="r-value" id="annualTax">—</span></div>
+                    <div class="result-row"><span class="r-label">每月应缴个税（均值）</span><span class="r-value" id="monthlyTax">—</span></div>
+                    <div class="result-row highlight"><span class="r-label">每月到手工资</span><span class="r-value" id="monthlyNet">—</span></div>
+                    <div class="result-row"><span class="r-label">全年到手工资</span><span class="r-value" id="annualNet">—</span></div>
+                    <div class="note" id="calcNote"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div class="container" style="max-width:800px;margin:0 auto">
+        <article class="article-content" style="margin-top:32px">
+            <h2>个税计算器 — 使用教程</h2>
+            <h3>个税是怎么算的？</h3>
+            <p>中国大陆的<strong>工资薪金所得</strong>属于「综合所得」，按年计算、按月预缴。计算公式简化为：</p>
+            <pre style="background:var(--bg-tertiary);padding:16px;border-radius:8px;overflow-x:auto;font-size:13px">全年应纳税所得额 = 年薪 − 60000(起征点) − 五险一金(全年) − 专项附加扣除(全年)
+全年应缴个税 = 全年应纳税所得额 × 税率 − 速算扣除数</pre>
+            <h3>税率表（综合所得年度）</h3>
+            <ul>
+                <li>不超过 36,000 元：税率 3%</li>
+                <li>36,000 – 144,000 元：税率 10%，速算扣除 2,520</li>
+                <li>144,000 – 300,000 元：税率 20%，速算扣除 16,920</li>
+                <li>300,000 – 420,000 元：税率 25%，速算扣除 31,920</li>
+                <li>420,000 – 660,000 元：税率 30%，速算扣除 52,920</li>
+                <li>660,000 – 960,000 元：税率 35%，速算扣除 85,920</li>
+                <li>超过 960,000 元：税率 45%，速算扣除 181,920</li>
+            </ul>
+            <h3>各项怎么填</h3>
+            <ul>
+                <li><strong>月税前工资</strong>：合同上的税前月薪（未扣五险一金前）。</li>
+                <li><strong>五险一金月缴</strong>：个人缴纳的养老、医疗、失业、公积金之和，可在工资条上查到。</li>
+                <li><strong>专项附加扣除</strong>：子女教育、继续教育、大病医疗、住房贷款利息、住房租金、赡养老人、3岁以下婴幼儿照护等，按每月标准合计。</li>
+            </ul>
+            <h3>说明</h3>
+            <p>本工具采用「按年计税后平均到月」的简化模型，结果中的「每月应缴个税」为全年均值。实际单位<strong>预缴</strong>采用累计预扣法，个别月份可能略有差异，年终汇算清缴后多退少补。计算结果仅供参考。</p>
+        </article>
+    </div>
+
+    <div class="tool-recommend container">
+        <div class="tool-recommend-title"><i class="fas fa-sync-alt"></i> 推荐工具</div>
+        <div class="rec-grid" id="tool-recommend"></div>
+    </div>
+    <footer class="footer">
+        <div class="container">
+            <p>© 2026 在线工具箱 | 简洁高效的工具集合</p>
+        </div>
+    </footer>
+
+    <script>
+        function fmt(n){ return '¥' + Math.round(n).toLocaleString('zh-CN'); }
+
+        function calcTax(t){
+            const brackets = [
+                [36000,    0.03, 0],
+                [144000,   0.10, 2520],
+                [300000,   0.20, 16920],
+                [420000,   0.25, 31920],
+                [660000,   0.30, 52920],
+                [960000,   0.35, 85920],
+                [Infinity, 0.45, 181920]
+            ];
+            for(const [cap, rate, ded] of brackets){
+                if(t <= cap) return { tax: Math.max(0, t * rate - ded), rate: (rate*100)+'%', ded };
+            }
+            return { tax: 0, rate: '0%', ded: 0 };
+        }
+
+        function calc(){
+            const g = parseFloat(document.getElementById('gross').value) || 0;
+            const ins = parseFloat(document.getElementById('insurance').value) || 0;
+            const add = parseFloat(document.getElementById('additional').value) || 0;
+
+            const annualGross = g * 12;
+            let taxable = annualGross - 60000 - ins * 12 - add * 12;
+            if(taxable < 0) taxable = 0;
+
+            const { tax, rate } = calcTax(taxable);
+            const monthlyTax = tax / 12;
+            const monthlyNet = g - ins - monthlyTax;
+            const annualNet = monthlyNet * 12;
+
+            document.getElementById('rate').textContent = rate;
+            document.getElementById('taxable').textContent = fmt(taxable);
+            document.getElementById('annualTax').textContent = fmt(tax);
+            document.getElementById('monthlyTax').textContent = fmt(monthlyTax);
+            document.getElementById('monthlyNet').textContent = fmt(monthlyNet);
+            document.getElementById('annualNet').textContent = fmt(annualNet);
+            document.getElementById('calcNote').textContent = '注：以上为按年计税后平均到月的简化结果，单位实际预缴采用累计预扣法，可能与个别月份略有差异，年终汇算清缴多退少补。';
+            document.getElementById('result').style.display = 'block';
+        }
+        calc();
+    </script>
+    <script src="../js/tools_data.js"></script>
+    <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?0b7fd37b2338e3531b062a45e6cb51c0";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+    </script>
+</body>
+</html>
