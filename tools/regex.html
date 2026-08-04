@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="在线工具箱">
+    <link rel="apple-touch-icon" href="/assets/og-cover.png">
+    <title>正则测试器 - 在线工具箱</title>
+    <meta name="description" content="在线正则表达式测试工具，支持实时匹配高亮、捕获组提取、常用 flag，纯浏览器运行不上传服务器">
+    <meta name="keywords" content="在线工具,正则表达式,正则测试,Regex,开发工具,工具箱">
+    <meta name="author" content="TOOLKIT.SKIN">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://toolkit.skin/tools/regex.html">
+    <meta property="og:title" content="正则测试器 - 在线工具箱">
+    <meta property="og:description" content="免费在线正则表达式测试工具，实时高亮匹配、提取捕获组。">
+    <meta property="og:url" content="https://toolkit.skin/tools/regex.html">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="TOOLKIT.SKIN 在线工具箱">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="正则测试器 - 在线工具箱">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="dns-prefetch" href="https://www.googletagmanager.com">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="dns-prefetch" href="https://pagead2.googlesyndication.com">
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6560822080596473" crossorigin="anonymous"></script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-V8533PXQLF"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-V8533PXQLF');
+    </script>
+    <style>
+        body { background: var(--bg-primary); margin: 0; padding: 0; }
+        .container-box {
+            max-width: 780px;
+            margin: 40px auto;
+            background: #fff;
+            border-radius: 24px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        .tool-header {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            padding: 30px 24px;
+            color: #fff;
+        }
+        .tool-header h1 {
+            margin: 0 0 8px 0;
+            font-size: 24px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .tool-header p { margin: 0; font-size: 14px; opacity: 0.9; }
+        .tool-body { padding: 24px; }
+        .field { margin-bottom: 18px; }
+        .field > label { display: block; font-size: 13px; color: #6b7280; margin-bottom: 8px; }
+        .text-input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        .text-input:focus { outline: none; border-color: #8b5cf6; }
+        .text-input::placeholder { color: #9ca3af; }
+        textarea.text-input { resize: vertical; min-height: 130px; font-family: monospace; line-height: 1.5; }
+        .pattern-row { display: flex; gap: 6px; align-items: center; }
+        .pattern-row .text-input { font-family: monospace; flex: 1; }
+        .pattern-row .slash { color: #9ca3af; font-family: monospace; font-size: 18px; }
+        .flags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+        .flag-chip {
+            padding: 6px 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 999px;
+            font-size: 13px;
+            color: #6b7280;
+            cursor: pointer;
+            user-select: none;
+        }
+        .flag-chip.active {
+            background: linear-gradient(135deg, #8b5cf6, #a78bfa);
+            color: #fff;
+            border-color: transparent;
+        }
+        .result-card { background: #f3f4f6; border-radius: 16px; padding: 18px; margin-top: 8px; }
+        .result-card .label { font-size: 12px; color: #9ca3af; margin-bottom: 8px; }
+        .match-count { font-size: 15px; color: #1f2937; font-weight: 500; }
+        .match-list { margin-top: 12px; max-height: 300px; overflow: auto; }
+        .match-item { border-top: 1px solid #e5e7eb; padding: 10px 0; font-size: 13px; }
+        .match-item:first-child { border-top: none; }
+        .match-item .idx { color: #9ca3af; }
+        .match-item .val { color: #1f2937; font-family: monospace; word-break: break-all; }
+        .match-item .groups { color: #6366f1; font-family: monospace; word-break: break-all; display: block; margin-top: 4px; }
+        .highlight-box {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 14px;
+            font-family: monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 260px;
+            overflow: auto;
+        }
+        mark { background: #fde68a; color: #1f2937; border-radius: 3px; padding: 0 2px; }
+        .error-msg { color: #ef4444; font-size: 13px; margin-top: 8px; }
+        .empty { color: #9ca3af; font-size: 13px; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="../index.html" class="logo">
+                <i class="fas fa-wrench"></i>
+                <h1>在线工具箱</h1><span class="tool-count" id="toolCount">--</span>
+            </a>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container-box">
+            <div class="tool-header">
+                <h1><i class="fas fa-code"></i> 正则测试器</h1>
+                <p>实时匹配、高亮、提取捕获组，纯前端运行</p>
+            </div>
+            <div class="tool-body">
+                <div class="field">
+                    <label>正则表达式（两侧 / 仅为展示，无需输入）</label>
+                    <div class="pattern-row">
+                        <span class="slash">/</span>
+                        <input type="text" id="pattern" class="text-input" placeholder="例如：(\d{3})-(\d{4})" value="(\w+)@(\w+)\.(\w+)">
+                        <span class="slash">/</span>
+                    </div>
+                    <div class="flags" id="flags">
+                        <span class="flag-chip active" data-flag="g">g 全局</span>
+                        <span class="flag-chip" data-flag="i">i 忽略大小写</span>
+                        <span class="flag-chip" data-flag="m">m 多行</span>
+                        <span class="flag-chip" data-flag="s">s 点匹配换行</span>
+                        <span class="flag-chip" data-flag="u">u Unicode</span>
+                        <span class="flag-chip" data-flag="y">y 粘性</span>
+                    </div>
+                </div>
+                <div class="field">
+                    <label>测试文本</label>
+                    <textarea id="testText" class="text-input" placeholder="在此粘贴或输入待匹配的文本...">联系：alice@example.com，bob@test.org
+电话：123-4567，工作邮箱 carol@work.cn</textarea>
+                </div>
+                <div id="error" class="error-msg" style="display:none;"></div>
+                <div class="field">
+                    <label>匹配高亮</label>
+                    <div id="highlight" class="highlight-box"></div>
+                </div>
+                <div class="result-card">
+                    <div class="label">匹配结果</div>
+                    <div id="matchCount" class="match-count">—</div>
+                    <div id="matchList" class="match-list"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div class="container" style="max-width:800px;margin:0 auto">
+        <article class="article-content" style="margin-top:32px">
+            <h2>正则测试器 — 使用教程</h2>
+            <h3>什么是正则表达式？</h3>
+            <p>正则表达式（Regular Expression，简称正则 / Regex）是一种用于<strong>匹配字符串模式</strong>的表达式，广泛用于表单校验、日志提取、文本替换等场景。例如验证邮箱、提取手机号、批量替换内容都靠它。</p>
+            <h3>如何使用本工具</h3>
+            <ul>
+                <li>在「正则表达式」框中输入模式，两侧斜杠仅为视觉展示，无需输入；</li>
+                <li>在下方选择需要的 <strong>flag</strong>（如 <code>g</code> 全局匹配、<code>i</code> 忽略大小写）；</li>
+                <li>「测试文本」中输入或粘贴待匹配内容，结果会<strong>实时</strong>显示；</li>
+                <li>「匹配高亮」区域会高亮所有命中片段，「匹配结果」会列出每次匹配的位置与<strong>捕获组</strong>。</li>
+            </ul>
+            <h3>常见 flag 含义</h3>
+            <ul>
+                <li><strong>g</strong>：全局匹配，找出所有结果而非第一个；</li>
+                <li><strong>i</strong>：忽略大小写；</li>
+                <li><strong>m</strong>：多行模式，<code>^</code> 和 <code>$</code> 匹配每行首尾；</li>
+                <li><strong>s</strong>：让 <code>.</code> 也能匹配换行符。</li>
+            </ul>
+            <h3>数据安全</h3>
+            <p>所有匹配计算<strong>完全在您的浏览器中完成</strong>，不会上传任何文本，可放心处理敏感内容。</p>
+        </article>
+    </div>
+
+    <div class="tool-recommend container">
+        <div class="tool-recommend-title"><i class="fas fa-sync-alt"></i> 推荐工具</div>
+        <div class="rec-grid" id="tool-recommend"></div>
+    </div>
+    <footer class="footer">
+        <div class="container">
+            <p>© 2026 在线工具箱 | 简洁高效的工具集合</p>
+        </div>
+    </footer>
+
+    <script>
+        const patternEl = document.getElementById('pattern');
+        const textEl = document.getElementById('testText');
+        const flagsEl = document.getElementById('flags');
+        const errorEl = document.getElementById('error');
+        const highlightEl = document.getElementById('highlight');
+        const countEl = document.getElementById('matchCount');
+        const listEl = document.getElementById('matchList');
+        let activeFlags = new Set(['g']);
+
+        flagsEl.querySelectorAll('.flag-chip').forEach(chip => {
+            chip.addEventListener('click', () => {
+                const f = chip.dataset.flag;
+                if (activeFlags.has(f)) { activeFlags.delete(f); chip.classList.remove('active'); }
+                else { activeFlags.add(f); chip.classList.add('active'); }
+                run();
+            });
+        });
+        patternEl.addEventListener('input', run);
+        textEl.addEventListener('input', run);
+
+        function escapeHtml(s){ return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+        function run(){
+            const pattern = patternEl.value;
+            const text = textEl.value;
+            errorEl.style.display = 'none';
+            highlightEl.innerHTML = '';
+            listEl.innerHTML = '';
+            countEl.textContent = '—';
+            if(!pattern){ highlightEl.innerHTML = '<span class="empty">请输入正则表达式</span>'; return; }
+            if(!text){ highlightEl.innerHTML = '<span class="empty">请输入测试文本</span>'; return; }
+            let re;
+            try { re = new RegExp(pattern, [...activeFlags].join('')); }
+            catch(e){ errorEl.style.display='block'; errorEl.textContent='正则语法错误：'+e.message; return; }
+
+            const hasG = activeFlags.has('g');
+            const matches = [];
+            if(hasG){
+                let m; let guard=0;
+                while((m = re.exec(text)) !== null){
+                    matches.push(m);
+                    if(m.index === re.lastIndex) re.lastIndex++;
+                    if(++guard > 100000) break;
+                }
+            } else {
+                const m = re.exec(text);
+                if(m) matches.push(m);
+            }
+
+            if(matches.length === 0){
+                highlightEl.innerHTML = escapeHtml(text) || '<span class="empty">（空文本）</span>';
+            } else {
+                let html=''; let last=0;
+                matches.forEach(m=>{
+                    const start=m.index, end=m.index+m[0].length;
+                    html += escapeHtml(text.slice(last,start));
+                    html += '<mark>'+escapeHtml(text.slice(start,end))+'</mark>';
+                    last=end;
+                });
+                html += escapeHtml(text.slice(last));
+                highlightEl.innerHTML = html;
+            }
+
+            countEl.textContent = '共匹配 '+matches.length+' 处';
+            if(matches.length===0){
+                listEl.innerHTML = '<div class="empty">没有匹配到任何内容</div>';
+            } else {
+                listEl.innerHTML = matches.slice(0,200).map((m,i)=>{
+                    const groups = m.length>1 ? m.slice(1).map((g,j)=>'组'+(j+1)+': '+(g===undefined?'(未匹配)':g)).join('，') : '';
+                    return '<div class="match-item"><span class="idx">#'+(i+1)+' @ '+m.index+'</span> — <span class="val">'+escapeHtml(m[0])+'</span>'+(groups?'<span class="groups">'+escapeHtml(groups)+'</span>':'')+'</div>';
+                }).join('');
+            }
+        }
+        run();
+    </script>
+    <script src="../js/tools_data.js"></script>
+    <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?0b7fd37b2338e3531b062a45e6cb51c0";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+    </script>
+</body>
+</html>
