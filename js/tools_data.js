@@ -4,6 +4,7 @@ const TOOLS_DATA = [
   { id: 'timestamp',  name: '时间戳转换', icon: 'fa-clock',        cat: 'dev' },
   { id: 'base64',     name: 'Base64编码', icon: 'fa-key',          cat: 'dev' },
   { id: 'url',        name: 'URL编码',    icon: 'fa-link',         cat: 'dev' },
+  { id: 'regex',      name: '正则测试器', icon: 'fa-code',         cat: 'dev' },
   { id: 'text',       name: '文本处理',   icon: 'fa-align-left',   cat: 'text' },
   { id: 'hash',       name: '哈希计算',   icon: 'fa-shield-alt',   cat: 'dev' },
   { id: 'password',   name: '密码生成',   icon: 'fa-lock',         cat: 'dev' },
@@ -13,6 +14,8 @@ const TOOLS_DATA = [
   { id: 'convert',    name: '进制转换',   icon: 'fa-calculator',   cat: 'calc' },
   { id: 'math',       name: '数学计算',   icon: 'fa-square-root-alt', cat: 'calc' },
   { id: 'currency',   name: '汇率换算',   icon: 'fa-coins',        cat: 'calc' },
+  { id: 'income-tax', name: '个税计算器', icon: 'fa-file-invoice-dollar', cat: 'calc' },
+  { id: 'mortgage',   name: '房贷计算器', icon: 'fa-home',         cat: 'calc' },
   { id: 'photo',      name: '证件照转换', icon: 'fa-camera',       cat: 'image' },
   { id: 'train',      name: '高铁到站',   icon: 'fa-train',         cat: 'fun' },
   { id: 'alipay',     name: '支付宝到账', icon: 'fa-bell',          cat: 'fun' },
@@ -37,7 +40,7 @@ function shuffle(arr) {
 /* 获取当前页面 ID */
 function getCurrentToolId() {
   const path = window.location.pathname;
-  const m = path.match(/tools\/(\w+)\.html/);
+  const m = path.match(/tools\/([\w-]+)\.html/);
   return m ? m[1] : null;
 }
 
