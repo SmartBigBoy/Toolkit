@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="在线工具箱">
+    <link rel="apple-touch-icon" href="/assets/og-cover.png">
+    <title>文本转语音 - 在线工具箱</title>
+    <meta name="description" content="在线文本转语音工具，支持中文语音、语速/音调/音量调节，基于浏览器 Web Speech API，纯前端运行不上传服务器">
+    <meta name="keywords" content="在线工具,文本转语音,文字转语音,TTS,语音朗读,在线朗读,工具箱">
+    <meta name="author" content="TOOLKIT.SKIN">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://toolkit.skin/tools/tts.html">
+    <meta property="og:title" content="文本转语音 - 在线工具箱">
+    <meta property="og:description" content="免费在线文本转语音工具，输入文字即可朗读，支持中文语音与语速调节。">
+    <meta property="og:url" content="https://toolkit.skin/tools/tts.html">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="TOOLKIT.SKIN 在线工具箱">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="文本转语音 - 在线工具箱">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="dns-prefetch" href="https://www.googletagmanager.com">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="dns-prefetch" href="https://pagead2.googlesyndication.com">
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6560822080596473" crossorigin="anonymous"></script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-V8533PXQLF"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-V8533PXQLF');
+    </script>
+    <style>
+        body { background: var(--bg-primary); margin: 0; padding: 0; }
+        .container-box {
+            max-width: 680px;
+            margin: 40px auto;
+            background: #fff;
+            border-radius: 24px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        .tts-header {
+            background: linear-gradient(135deg, #06b6d4, #0891b2);
+            padding: 30px 24px;
+            color: #fff;
+        }
+        .tts-header h1 {
+            margin: 0 0 8px 0;
+            font-size: 24px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .tts-header p { margin: 0; font-size: 14px; opacity: 0.9; }
+        .tts-body { padding: 24px; }
+        .field { margin-bottom: 18px; }
+        .field > label { display: block; font-size: 13px; color: #6b7280; margin-bottom: 8px; }
+        .text-input {
+            width: 100%;
+            padding: 14px;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 15px;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+        .text-input:focus { outline: none; border-color: #06b6d4; }
+        textarea.text-input { resize: vertical; min-height: 180px; line-height: 1.6; }
+        select.text-input { cursor: pointer; background: #fff; }
+        .slider-row { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+        .slider-row .slider-label { width: 56px; font-size: 13px; color: #6b7280; flex-shrink: 0; }
+        .slider-row input[type=range] { flex: 1; accent-color: #0891b2; }
+        .slider-row .slider-val { width: 52px; text-align: right; font-size: 13px; color: #1f2937; font-family: monospace; flex-shrink: 0; }
+        .btn-row { display: flex; gap: 12px; margin-top: 8px; }
+        .btn-play {
+            flex: 1;
+            padding: 14px;
+            background: linear-gradient(135deg, #06b6d4, #0891b2);
+            border: none; border-radius: 12px; color: #fff; font-size: 15px; font-weight: 500;
+            cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+            box-shadow: 0 2px 8px rgba(8,145,178,0.3);
+        }
+        .btn-play:hover { box-shadow: 0 4px 12px rgba(8,145,178,0.4); }
+        .btn-stop {
+            padding: 14px 20px;
+            background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; color: #6b7280;
+            font-size: 15px; cursor: pointer; display: flex; align-items: center; gap: 8px;
+        }
+        .btn-stop:hover { background: #f9fafb; }
+        .btn-stop:disabled { opacity: 0.5; cursor: not-allowed; }
+        .progress-wrap { margin-top: 16px; }
+        .progress-bar { height: 8px; background: #e5e7eb; border-radius: 999px; overflow: hidden; }
+        .progress-fill { height: 100%; width: 0%; background: linear-gradient(135deg, #06b6d4, #0891b2); transition: width 0.1s; }
+        .status-row { display: flex; justify-content: space-between; font-size: 12px; color: #9ca3af; margin-top: 8px; }
+        .notice {
+            background: rgba(8,145,178,0.08); border-left: 4px solid #0891b2; border-radius: 8px;
+            padding: 12px 16px; font-size: 13px; color: #64748b; margin-top: 18px; line-height: 1.6;
+        }
+        .notice b { color: #0891b2; }
+        .unsupported { color: #ef4444; font-size: 14px; margin-top: 12px; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="../index.html" class="logo">
+                <i class="fas fa-wrench"></i>
+                <h1>在线工具箱</h1><span class="tool-count" id="toolCount">--</span>
+            </a>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container-box">
+            <div class="tts-header">
+                <h1><i class="fas fa-volume-up"></i> 文本转语音</h1>
+                <p>输入文字，让它读给你听</p>
+            </div>
+            <div class="tts-body">
+                <div class="field">
+                    <label>要朗读的文本</label>
+                    <textarea id="text" class="text-input" placeholder="在此输入或粘贴需要朗读的文字……">你好，欢迎使用在线工具箱的文本转语音功能。输入文字，点击播放即可听到朗读。</textarea>
+                </div>
+                <div class="field">
+                    <label>语音（语言 / 声音）</label>
+                    <select id="voice" class="text-input"><option value="">加载中…</option></select>
+                </div>
+                <div class="slider-row">
+                    <span class="slider-label">语速</span>
+                    <input type="range" id="rate" min="0.5" max="2" step="0.1" value="1">
+                    <span class="slider-val" id="rateVal">1.0×</span>
+                </div>
+                <div class="slider-row">
+                    <span class="slider-label">音调</span>
+                    <input type="range" id="pitch" min="0" max="2" step="0.1" value="1">
+                    <span class="slider-val" id="pitchVal">1.0</span>
+                </div>
+                <div class="slider-row">
+                    <span class="slider-label">音量</span>
+                    <input type="range" id="volume" min="0" max="1" step="0.05" value="1">
+                    <span class="slider-val" id="volumeVal">100%</span>
+                </div>
+                <div class="btn-row">
+                    <button class="btn-play" id="playBtn"><i class="fas fa-play"></i> 播放</button>
+                    <button class="btn-stop" id="stopBtn" disabled><i class="fas fa-stop"></i> 停止</button>
+                </div>
+                <div class="progress-wrap">
+                    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+                    <div class="status-row">
+                        <span id="statusText">待播放</span>
+                        <span id="charCount">0 字</span>
+                    </div>
+                </div>
+                <div class="notice">
+                    <b>提示：</b>本工具基于浏览器的 <b>Web Speech API</b>，所有朗读都在你的设备本地完成，<b>不会上传任何文字</b>。部分系统需先安装中文语音包（如 Windows 在「设置 → 时间和语言 → 语音」中添加“中文(简体)”语音）；Safari 浏览器对中文语音支持有限。
+                </div>
+                <div id="unsupportedBox" class="unsupported" style="display:none;">抱歉，当前浏览器不支持语音合成功能，请更换 Chrome / Edge / Firefox 等现代浏览器后再试。</div>
+            </div>
+        </div>
+    </main>
+
+    <div class="container" style="max-width:800px;margin:0 auto">
+        <article class="article-content" style="margin-top:32px">
+            <h2>文本转语音工具 — 使用教程</h2>
+            <h3>这是什么？</h3>
+            <p><strong>文本转语音（Text-To-Speech，简称 TTS）</strong>是一种将文字转换为自然语音朗读的技术。本工具借助浏览器内置的语音合成能力，把输入的中文（或其他语言）文字直接朗读出来，<strong>无需联网、不上传服务器</strong>。</p>
+            <h3>如何使用</h3>
+            <ul>
+                <li>在文本框中输入或粘贴需要朗读的内容；</li>
+                <li>在「语音」下拉框中选择喜欢的声音（默认优先列出中文语音）；</li>
+                <li>拖动<strong>语速 / 音调 / 音量</strong>滑块调整到合适效果；</li>
+                <li>点击<strong>播放</strong>开始朗读，播放中可再次点击按钮<strong>暂停 / 继续</strong>，点击<strong>停止</strong>结束。</li>
+            </ul>
+            <h3>常见使用场景</h3>
+            <ul>
+                <li><strong>听文章 / 听小说</strong>：把长文粘贴进来，闭眼听；</li>
+                <li><strong>校对文稿</strong>：朗读能帮人更快发现错别字和语病；</li>
+                <li><strong>辅助阅读</strong>：为视力不便或需要多任务处理的用户提供便利；</li>
+                <li><strong>语言学习</strong>：听标准发音，纠正自己的读法。</li>
+            </ul>
+            <h3>为什么读出来是英文口音 / 没有中文？</h3>
+            <p>语音列表由<strong>你的操作系统</strong>提供。若列表里没有中文语音，请先在系统中安装中文语音包（Windows：「设置 → 时间和语言 → 语音 → 添加语音」选“中文(简体，中国)”；macOS：「系统设置 → 辅助功能 → 语音内容 → 系统声音」下载中文）。安装后刷新本页面即可看到。</p>
+            <h3>数据安全</h3>
+            <p>所有语音合成均在<strong>本地浏览器</strong>完成，文字内容不会被发送到任何服务器，可放心处理私密文本。</p>
+        </article>
+    </div>
+
+    <div class="tool-recommend container">
+        <div class="tool-recommend-title"><i class="fas fa-sync-alt"></i> 推荐工具</div>
+        <div class="rec-grid" id="tool-recommend"></div>
+    </div>
+    <footer class="footer">
+        <div class="container">
+            <p>© 2026 在线工具箱 | 简洁高效的工具集合</p>
+        </div>
+    </footer>
+
+    <script>
+        const synth = window.speechSynthesis;
+        const textEl = document.getElementById('text');
+        const voiceEl = document.getElementById('voice');
+        const rateEl = document.getElementById('rate');
+        const pitchEl = document.getElementById('pitch');
+        const volumeEl = document.getElementById('volume');
+        const rateVal = document.getElementById('rateVal');
+        const pitchVal = document.getElementById('pitchVal');
+        const volumeVal = document.getElementById('volumeVal');
+        const playBtn = document.getElementById('playBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const statusText = document.getElementById('statusText');
+        const charCount = document.getElementById('charCount');
+        const progressFill = document.getElementById('progressFill');
+        const unsupportedBox = document.getElementById('unsupportedBox');
+
+        let voices = [];
+        let isPaused = false;
+
+        if (!('speechSynthesis' in window)) {
+            unsupportedBox.style.display = 'block';
+            playBtn.disabled = true;
+        }
+
+        function updateLabels() {
+            rateVal.textContent = parseFloat(rateEl.value).toFixed(1) + '×';
+            pitchVal.textContent = parseFloat(pitchEl.value).toFixed(1);
+            volumeVal.textContent = Math.round(volumeEl.value * 100) + '%';
+        }
+        rateEl.addEventListener('input', updateLabels);
+        pitchEl.addEventListener('input', updateLabels);
+        volumeEl.addEventListener('input', updateLabels);
+
+        function updateCount() {
+            const n = textEl.value.length;
+            charCount.textContent = n + ' 字';
+        }
+        textEl.addEventListener('input', updateCount);
+
+        function populateVoices() {
+            voices = synth.getVoices();
+            const current = voiceEl.value;
+            voiceEl.innerHTML = '';
+            if (voices.length === 0) {
+                voiceEl.innerHTML = '<option value="">(系统暂无可用语音)</option>';
+                return;
+            }
+            const sorted = voices.slice().sort((a, b) => {
+                const az = a.lang.startsWith('zh') ? 0 : 1;
+                const bz = b.lang.startsWith('zh') ? 0 : 1;
+                return az - bz;
+            });
+            sorted.forEach(v => {
+                const opt = document.createElement('option');
+                opt.value = v.name;
+                opt.textContent = v.name + ' (' + v.lang + ')';
+                voiceEl.appendChild(opt);
+            });
+            const zh = sorted.find(v => v.lang.startsWith('zh'));
+            if (zh) voiceEl.value = zh.name;
+            else if (current) voiceEl.value = current;
+        }
+
+        populateVoices();
+        if (typeof speechSynthesis.onvoiceschanged !== 'undefined') {
+            speechSynthesis.onvoiceschanged = populateVoices;
+        }
+
+        function getSelectedVoice() {
+            return voices.find(v => v.name === voiceEl.value) || null;
+        }
+
+        function resetUI() {
+            isPaused = false;
+            stopBtn.disabled = true;
+            playBtn.innerHTML = '<i class="fas fa-play"></i> 播放';
+            statusText.textContent = '待播放';
+            progressFill.style.width = '0%';
+        }
+
+        function speak() {
+            const text = textEl.value.trim();
+            if (!text) { statusText.textContent = '请输入要朗读的文字'; return; }
+            synth.cancel();
+            const u = new SpeechSynthesisUtterance(text);
+            const v = getSelectedVoice();
+            if (v) u.voice = v;
+            u.lang = v ? v.lang : 'zh-CN';
+            u.rate = parseFloat(rateEl.value);
+            u.pitch = parseFloat(pitchEl.value);
+            u.volume = parseFloat(volumeEl.value);
+            const total = text.length;
+            u.onboundary = (e) => {
+                if (total > 0) progressFill.style.width = Math.min(100, (e.charIndex / total) * 100) + '%';
+            };
+            u.onend = () => { resetUI(); statusText.textContent = '朗读完成'; };
+            u.onerror = (e) => { resetUI(); statusText.textContent = '朗读出错：' + e.error; };
+            synth.speak(u);
+            isPaused = false;
+            stopBtn.disabled = false;
+            playBtn.innerHTML = '<i class="fas fa-pause"></i> 暂停';
+            statusText.textContent = '朗读中…';
+        }
+
+        playBtn.addEventListener('click', () => {
+            if (!synth) return;
+            if (synth.speaking) {
+                if (isPaused) { synth.resume(); isPaused = false; playBtn.innerHTML = '<i class="fas fa-pause"></i> 暂停'; statusText.textContent = '朗读中…'; }
+                else { synth.pause(); isPaused = true; playBtn.innerHTML = '<i class="fas fa-play"></i> 继续'; statusText.textContent = '已暂停'; }
+            } else {
+                speak();
+            }
+        });
+
+        stopBtn.addEventListener('click', () => {
+            synth.cancel();
+            resetUI();
+            statusText.textContent = '已停止';
+        });
+
+        updateLabels();
+        updateCount();
+    </script>
+    <script src="../js/tools_data.js"></script>
+    <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?0b7fd37b2338e3531b062a45e6cb51c0";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+    </script>
+</body>
+</html>
