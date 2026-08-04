@@ -94,6 +94,13 @@
         }
         .btn-stop:hover { background: #f9fafb; }
         .btn-stop:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-download {
+            padding: 14px 20px;
+            background: #fff; border: 1px solid #06b6d4; border-radius: 12px; color: #0891b2;
+            font-size: 15px; cursor: pointer; display: flex; align-items: center; gap: 8px;
+        }
+        .btn-download:hover { background: rgba(6,182,212,0.08); }
+        .btn-download:disabled { opacity: 0.5; cursor: not-allowed; }
         .progress-wrap { margin-top: 16px; }
         .progress-bar { height: 8px; background: #e5e7eb; border-radius: 999px; overflow: hidden; }
         .progress-fill { height: 100%; width: 0%; background: linear-gradient(135deg, #06b6d4, #0891b2); transition: width 0.1s; }
@@ -149,6 +156,7 @@
                 <div class="btn-row">
                     <button class="btn-play" id="playBtn"><i class="fas fa-play"></i> 播放</button>
                     <button class="btn-stop" id="stopBtn" disabled><i class="fas fa-stop"></i> 停止</button>
+                    <button class="btn-download" id="downloadBtn"><i class="fas fa-download"></i> 下载音频</button>
                 </div>
                 <div class="progress-wrap">
                     <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
@@ -158,7 +166,8 @@
                     </div>
                 </div>
                 <div class="notice">
-                    <b>提示：</b>本工具基于浏览器的 <b>Web Speech API</b>，所有朗读都在你的设备本地完成，<b>不会上传任何文字</b>。部分系统需先安装中文语音包（如 Windows 在「设置 → 时间和语言 → 语音」中添加“中文(简体)”语音）；Safari 浏览器对中文语音支持有限。
+                    <b>提示：</b>本工具基于浏览器的 <b>Web Speech API</b>，所有朗读都在你的设备本地完成，<b>不会上传任何文字</b>。部分系统需先安装中文语音包（如 Windows 在「设置 → 时间和语言 → 语音」中添加“中文(简体)”语音）；Safari 浏览器对中文语音支持有限。<br>
+                    <b>下载音频：</b>点击「下载音频」会通过<b>在线语音合成服务</b>生成并导出为 WAV 文件（需联网，文本会发送给该服务，且音色与本地「播放」可能不同）；长文本自动分段合成后合并为单个文件。
                 </div>
                 <div id="unsupportedBox" class="unsupported" style="display:none;">抱歉，当前浏览器不支持语音合成功能，请更换 Chrome / Edge / Firefox 等现代浏览器后再试。</div>
             </div>
@@ -175,7 +184,8 @@
                 <li>在文本框中输入或粘贴需要朗读的内容；</li>
                 <li>在「语音」下拉框中选择喜欢的声音（默认优先列出中文语音）；</li>
                 <li>拖动<strong>语速 / 音调 / 音量</strong>滑块调整到合适效果；</li>
-                <li>点击<strong>播放</strong>开始朗读，播放中可再次点击按钮<strong>暂停 / 继续</strong>，点击<strong>停止</strong>结束。</li>
+                <li>点击<strong>播放</strong>开始朗读，播放中可再次点击按钮<strong>暂停 / 继续</strong>，点击<strong>停止</strong>结束；</li>
+                <li>点击<strong>下载音频</strong>可将当前文本合成为 WAV 文件保存到本地（需联网，调用在线语音服务）。</li>
             </ul>
             <h3>常见使用场景</h3>
             <ul>
@@ -187,7 +197,7 @@
             <h3>为什么读出来是英文口音 / 没有中文？</h3>
             <p>语音列表由<strong>你的操作系统</strong>提供。若列表里没有中文语音，请先在系统中安装中文语音包（Windows：「设置 → 时间和语言 → 语音 → 添加语音」选“中文(简体，中国)”；macOS：「系统设置 → 辅助功能 → 语音内容 → 系统声音」下载中文）。安装后刷新本页面即可看到。</p>
             <h3>数据安全</h3>
-            <p>所有语音合成均在<strong>本地浏览器</strong>完成，文字内容不会被发送到任何服务器，可放心处理私密文本。</p>
+            <p>「播放」功能的所有语音合成均在<strong>本地浏览器</strong>完成，文字内容不会被发送到任何服务器，可放心处理私密文本。而「下载音频」为获取可保存的文件，会调用<strong>在线语音合成服务</strong>，相应文本会被发送给该服务，请勿用于高度敏感内容。</p>
         </article>
     </div>
 
@@ -213,6 +223,7 @@
         const volumeVal = document.getElementById('volumeVal');
         const playBtn = document.getElementById('playBtn');
         const stopBtn = document.getElementById('stopBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
         const statusText = document.getElementById('statusText');
         const charCount = document.getElementById('charCount');
         const progressFill = document.getElementById('progressFill');
@@ -224,6 +235,7 @@
         if (!('speechSynthesis' in window)) {
             unsupportedBox.style.display = 'block';
             playBtn.disabled = true;
+            downloadBtn.disabled = true;
         }
 
         function updateLabels() {
@@ -321,6 +333,152 @@
             resetUI();
             statusText.textContent = '已停止';
         });
+
+        /* ============ 下载音频（在线语音合成 → WAV） ============ */
+        function normalizeLang(lang) {
+            if (!lang) return 'zh-CN';
+            const l = lang.toLowerCase();
+            if (l.startsWith('zh')) return (l.includes('tw') || l.includes('hant')) ? 'zh-TW' : 'zh-CN';
+            if (l.startsWith('en')) return 'en-US';
+            if (l.startsWith('ja')) return 'ja-JP';
+            if (l.startsWith('ko')) return 'ko-KR';
+            if (l.startsWith('fr')) return 'fr-FR';
+            if (l.startsWith('de')) return 'de-DE';
+            if (l.startsWith('es')) return 'es-ES';
+            return lang;
+        }
+
+        function splitText(text, limit) {
+            const chunks = [];
+            const parts = text.match(/[^。！？!?\n]+[。！？!?\n]*/g) || [text];
+            let buf = '';
+            for (const p of parts) {
+                if ((buf + p).length <= limit) {
+                    buf += p;
+                } else {
+                    if (buf) { chunks.push(buf); buf = ''; }
+                    if (p.length <= limit) {
+                        buf = p;
+                    } else {
+                        for (let i = 0; i < p.length; i += limit) chunks.push(p.slice(i, i + limit));
+                    }
+                }
+            }
+            if (buf) chunks.push(buf);
+            return chunks.map(c => c.trim()).filter(c => c.length > 0);
+        }
+
+        async function fetchChunkMp3(text, lang) {
+            const url = 'https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=' +
+                encodeURIComponent(lang) + '&q=' + encodeURIComponent(text);
+            const res = await fetch(url);
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            return await res.arrayBuffer();
+        }
+
+        function concatAudioBuffers(ctx, buffers) {
+            if (!buffers.length) return null;
+            const numCh = buffers[0].numberOfChannels;
+            const sampleRate = buffers[0].sampleRate;
+            let total = 0;
+            for (const b of buffers) total += b.length;
+            const out = ctx.createBuffer(numCh, total, sampleRate);
+            let offset = 0;
+            for (const b of buffers) {
+                for (let c = 0; c < b.numberOfChannels; c++) {
+                    out.getChannelData(c).set(b.getChannelData(c), offset);
+                }
+                offset += b.length;
+            }
+            return out;
+        }
+
+        function audioBufferToWav(buffer) {
+            const numCh = buffer.numberOfChannels;
+            const sampleRate = buffer.sampleRate;
+            const numFrames = buffer.length;
+            const bytesPerSample = 2;
+            const blockAlign = numCh * bytesPerSample;
+            const dataSize = numFrames * blockAlign;
+            const ab = new ArrayBuffer(44 + dataSize);
+            const view = new DataView(ab);
+            let off = 0;
+            const writeStr = (s) => { for (let i = 0; i < s.length; i++) view.setUint8(off++, s.charCodeAt(i)); };
+            const writeU32 = (v) => { view.setUint32(off, v, true); off += 4; };
+            const writeU16 = (v) => { view.setUint16(off, v, true); off += 2; };
+            writeStr('RIFF');
+            writeU32(36 + dataSize);
+            writeStr('WAVE');
+            writeStr('fmt ');
+            writeU32(16);
+            writeU16(1);
+            writeU16(numCh);
+            writeU32(sampleRate);
+            writeU32(sampleRate * blockAlign);
+            writeU16(blockAlign);
+            writeU16(16);
+            writeStr('data');
+            writeU32(dataSize);
+            const channels = [];
+            for (let c = 0; c < numCh; c++) channels.push(buffer.getChannelData(c));
+            for (let i = 0; i < numFrames; i++) {
+                for (let c = 0; c < numCh; c++) {
+                    let s = Math.max(-1, Math.min(1, channels[c][i]));
+                    view.setInt16(off, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+                    off += 2;
+                }
+            }
+            return new Uint8Array(ab);
+        }
+
+        function triggerDownload(blob, filename) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 1000);
+        }
+
+        async function downloadAudio() {
+            const text = textEl.value.trim();
+            if (!text) { statusText.textContent = '请输入要朗读的文字'; return; }
+            const v = getSelectedVoice();
+            const lang = normalizeLang(v ? v.lang : 'zh-CN');
+            const chunks = splitText(text, 180);
+            if (!chunks.length) { statusText.textContent = '没有可下载的内容'; return; }
+            downloadBtn.disabled = true;
+            let done = 0;
+            statusText.textContent = '正在生成音频 (0/' + chunks.length + ')';
+            try {
+                const AC = window.AudioContext || window.webkitAudioContext;
+                const ctx = new AC();
+                if (ctx.state === 'suspended') await ctx.resume();
+                const buffers = [];
+                for (const c of chunks) {
+                    const ab = await fetchChunkMp3(c, lang);
+                    const buf = await ctx.decodeAudioData(ab);
+                    buffers.push(buf);
+                    done++;
+                    statusText.textContent = '正在生成音频 (' + done + '/' + chunks.length + ')';
+                    await new Promise(r => setTimeout(r, 120));
+                }
+                const merged = concatAudioBuffers(ctx, buffers);
+                if (!merged) throw new Error('音频合并失败');
+                const wav = audioBufferToWav(merged);
+                const blob = new Blob([wav], { type: 'audio/wav' });
+                triggerDownload(blob, 'tts-audio.wav');
+                statusText.textContent = '下载完成 ✓ (WAV ' + (blob.size / 1024).toFixed(0) + ' KB)';
+            } catch (e) {
+                statusText.textContent = '下载失败：' + (e && e.message ? e.message : e) +
+                    '（若提示跨域/网络拦截，请改用「播放」，或换用可访问该语音服务的网络环境）';
+            } finally {
+                downloadBtn.disabled = false;
+            }
+        }
+
+        downloadBtn.addEventListener('click', downloadAudio);
 
         updateLabels();
         updateCount();
