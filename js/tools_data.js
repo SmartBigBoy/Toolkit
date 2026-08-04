@@ -6,6 +6,7 @@ const TOOLS_DATA = [
   { id: 'url',        name: 'URL编码',    icon: 'fa-link',         cat: 'dev' },
   { id: 'regex',      name: '正则测试器', icon: 'fa-code',         cat: 'dev' },
   { id: 'text',       name: '文本处理',   icon: 'fa-align-left',   cat: 'text' },
+  { id: 'tts',        name: '文本转语音', icon: 'fa-volume-up',    cat: 'text' },
   { id: 'hash',       name: '哈希计算',   icon: 'fa-shield-alt',   cat: 'dev' },
   { id: 'password',   name: '密码生成',   icon: 'fa-lock',         cat: 'dev' },
   { id: 'qrcode',     name: '二维码生成', icon: 'fa-qrcode',       cat: 'image' },
