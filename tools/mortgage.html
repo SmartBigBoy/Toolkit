@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="在线工具箱">
+    <link rel="apple-touch-icon" href="/assets/og-cover.png">
+    <title>房贷计算器 - 在线工具箱</title>
+    <meta name="description" content="在线房贷计算器，支持等额本息与等额本金两种还款方式，计算月供、总利息与总还款额，纯浏览器运行">
+    <meta name="keywords" content="在线工具,房贷计算器,月供计算,等额本息,等额本金,贷款计算器,工具箱">
+    <meta name="author" content="TOOLKIT.SKIN">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://toolkit.skin/tools/mortgage.html">
+    <meta property="og:title" content="房贷计算器 - 在线工具箱">
+    <meta property="og:description" content="免费在线房贷计算器，算清月供与总利息。">
+    <meta property="og:url" content="https://toolkit.skin/tools/mortgage.html">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="TOOLKIT.SKIN 在线工具箱">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="房贷计算器 - 在线工具箱">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="dns-prefetch" href="https://www.googletagmanager.com">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="dns-prefetch" href="https://pagead2.googlesyndication.com">
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6560822080596473" crossorigin="anonymous"></script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-V8533PXQLF"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-V8533PXQLF');
+    </script>
+    <style>
+        body { background: var(--bg-primary); margin: 0; padding: 0; }
+        .container-box {
+            max-width: 640px;
+            margin: 40px auto;
+            background: #fff;
+            border-radius: 24px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        .tool-header {
+            background: linear-gradient(135deg, #3b82f6, #60a5fa);
+            padding: 30px 24px;
+            color: #fff;
+        }
+        .tool-header h1 {
+            margin: 0 0 8px 0;
+            font-size: 24px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .tool-header p { margin: 0; font-size: 14px; opacity: 0.9; }
+        .tool-body { padding: 24px; }
+        .field { margin-bottom: 16px; }
+        .field label { display: block; font-size: 13px; color: #6b7280; margin-bottom: 8px; }
+        .text-input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        .text-input:focus { outline: none; border-color: #3b82f6; }
+        .text-input::placeholder { color: #9ca3af; }
+        .seg { display: flex; gap: 8px; margin-bottom: 16px; }
+        .seg button {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            background: #fff;
+            font-size: 14px;
+            color: #6b7280;
+            cursor: pointer;
+        }
+        .seg button.active {
+            background: linear-gradient(135deg, #3b82f6, #60a5fa);
+            color: #fff;
+            border-color: transparent;
+        }
+        .convert-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #3b82f6, #60a5fa);
+            border: none;
+            border-radius: 12px;
+            color: #fff;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 2px 8px rgba(59,130,246,0.3);
+        }
+        .convert-btn:hover { box-shadow: 0 4px 12px rgba(59,130,246,0.4); }
+        .result-card { background: #f3f4f6; border-radius: 16px; padding: 18px; margin-top: 16px; }
+        .result-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-top: 1px solid #e5e7eb; font-size: 14px; }
+        .result-row:first-child { border-top: none; }
+        .result-row .r-label { color: #6b7280; }
+        .result-row .r-value { font-weight: 600; color: #1f2937; font-family: monospace; }
+        .result-row.highlight .r-value { color: #3b82f6; font-size: 18px; }
+        .note { font-size: 12px; color: #9ca3af; line-height: 1.6; margin-top: 14px; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="../index.html" class="logo">
+                <i class="fas fa-wrench"></i>
+                <h1>在线工具箱</h1><span class="tool-count" id="toolCount">--</span>
+            </a>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container-box">
+            <div class="tool-header">
+                <h1><i class="fas fa-home"></i> 房贷计算器</h1>
+                <p>算清月供、总利息与还款总额</p>
+            </div>
+            <div class="tool-body">
+                <div class="field">
+                    <label>贷款总额（万元）</label>
+                    <input type="number" id="amount" class="text-input" placeholder="例如：100" value="100">
+                </div>
+                <div class="field">
+                    <label>贷款年限（年）</label>
+                    <input type="number" id="years" class="text-input" placeholder="例如：30" value="30">
+                </div>
+                <div class="field">
+                    <label>年利率（%，年化，如 3.5 表示 3.5%）</label>
+                    <input type="number" id="rate" class="text-input" step="0.01" placeholder="例如：3.5" value="3.5">
+                </div>
+                <div class="seg" id="method">
+                    <button type="button" class="active" data-method="equal">等额本息</button>
+                    <button type="button" data-method="principal">等额本金</button>
+                </div>
+                <button class="convert-btn" onclick="calc()"><i class="fas fa-calculator"></i> 立即计算</button>
+
+                <div class="result-card" id="result" style="display:none;">
+                    <div class="result-row"><span class="r-label">还款方式</span><span class="r-value" id="methodName">—</span></div>
+                    <div class="result-row highlight"><span class="r-label" id="payLabel">每月月供</span><span class="r-value" id="monthly">—</span></div>
+                    <div class="result-row"><span class="r-label">还款月数</span><span class="r-value" id="months">—</span></div>
+                    <div class="result-row"><span class="r-label">利息总额</span><span class="r-value" id="totalInterest">—</span></div>
+                    <div class="result-row"><span class="r-label">还款总额（本+息）</span><span class="r-value" id="totalPay">—</span></div>
+                    <div class="note" id="calcNote"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div class="container" style="max-width:800px;margin:0 auto">
+        <article class="article-content" style="margin-top:32px">
+            <h2>房贷计算器 — 使用教程</h2>
+            <h3>等额本息 vs 等额本金</h3>
+            <ul>
+                <li><strong>等额本息</strong>：每月还款额固定，前期偿还的利息多、本金少。适合收入稳定、希望月供不变的工薪族。</li>
+                <li><strong>等额本金</strong>：每月偿还的本金固定，利息随剩余本金递减，因此<strong>月供逐月减少</strong>。前期压力大，但总利息更少，适合前期还款能力强的人。</li>
+            </ul>
+            <h3>怎么填</h3>
+            <ul>
+                <li><strong>贷款总额</strong>：以「万元」为单位，例如 100 表示 100 万。</li>
+                <li><strong>贷款年限</strong>：常见 20 年、30 年。</li>
+                <li><strong>年利率</strong>：填年化利率数字，例如商业贷款 3.5% 就填 3.5。组合贷可分别用商贷/公积金贷利率估算。</li>
+            </ul>
+            <h3>说明</h3>
+            <p>本工具按等额本息、等额本金的标准公式精确计算，未计入提前还款、利率浮动、月供四舍五入尾数差异及各项手续费，结果仅供参考。</p>
+        </article>
+    </div>
+
+    <div class="tool-recommend container">
+        <div class="tool-recommend-title"><i class="fas fa-sync-alt"></i> 推荐工具</div>
+        <div class="rec-grid" id="tool-recommend"></div>
+    </div>
+    <footer class="footer">
+        <div class="container">
+            <p>© 2026 在线工具箱 | 简洁高效的工具集合</p>
+        </div>
+    </footer>
+
+    <script>
+        let currentMethod = 'equal';
+
+        document.querySelectorAll('#method button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('#method button').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentMethod = btn.dataset.method;
+                calc();
+            });
+        });
+
+        function fmt(n){ return '¥' + Math.round(n).toLocaleString('zh-CN'); }
+
+        function calc(){
+            const P = (parseFloat(document.getElementById('amount').value) || 0) * 10000;
+            const years = parseFloat(document.getElementById('years').value) || 0;
+            const annualRate = parseFloat(document.getElementById('rate').value) || 0;
+            const n = Math.round(years * 12);
+            const mr = annualRate / 100 / 12;
+
+            if(P <= 0 || n <= 0){
+                document.getElementById('result').style.display = 'none';
+                return;
+            }
+
+            let monthlyText, note;
+            let totalInterest, totalPay;
+
+            if(currentMethod === 'equal'){
+                let monthly;
+                if(mr === 0){ monthly = P / n; }
+                else {
+                    const pow = Math.pow(1 + mr, n);
+                    monthly = P * mr * pow / (pow - 1);
+                }
+                totalInterest = monthly * n - P;
+                totalPay = monthly * n;
+                monthlyText = fmt(monthly);
+                note = '等额本息：每月月供固定为 ' + fmt(monthly) + '，共 ' + n + ' 期。';
+                document.getElementById('payLabel').textContent = '每月月供';
+            } else {
+                const principal = P / n;
+                const firstMonth = principal + P * mr;
+                totalInterest = P * mr * (n + 1) / 2;
+                totalPay = P + totalInterest;
+                monthlyText = fmt(firstMonth) + ' 起（逐月递减）';
+                note = '等额本金：首月 ' + fmt(firstMonth) + '，之后每月递减约 ' + fmt(principal * mr) + '，末月约 ' + fmt(principal + principal * mr) + '，共 ' + n + ' 期。';
+                document.getElementById('payLabel').textContent = '首月月供';
+            }
+
+            document.getElementById('methodName').textContent = currentMethod === 'equal' ? '等额本息' : '等额本金';
+            document.getElementById('monthly').textContent = monthlyText;
+            document.getElementById('months').textContent = n + ' 个月';
+            document.getElementById('totalInterest').textContent = fmt(totalInterest);
+            document.getElementById('totalPay').textContent = fmt(totalPay);
+            document.getElementById('calcNote').textContent = note + ' 未计入提前还款、利率浮动及尾数差异，仅供参考。';
+            document.getElementById('result').style.display = 'block';
+        }
+        calc();
+    </script>
+    <script src="../js/tools_data.js"></script>
+    <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?0b7fd37b2338e3531b062a45e6cb51c0";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+    </script>
+</body>
+</html>
