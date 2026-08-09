@@ -34,12 +34,15 @@
         gtag('js', new Date());
         gtag('config', 'G-V8533PXQLF');
     </script>
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"SoftwareApplication","name":"个税计算器","applicationCategory":"FinanceApplication","operatingSystem":"Web","url":"https://toolkit.skin/tools/income-tax.html","description":"在线个人所得税计算器，按综合所得年度税率表计算应缴个税与到手工资，支持五险一金与专项附加扣除","offers":{"@type":"Offer","price":"0","priceCurrency":"CNY"},"publisher":{"@type":"Organization","name":"TOOLKIT.SKIN"}}
+    </script>
     <style>
         body { background: var(--bg-primary); margin: 0; padding: 0; }
         .container-box {
             max-width: 640px;
             margin: 40px auto;
-            background: #fff;
+            background: var(--bg-secondary);
             border-radius: 24px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.08);
             overflow: hidden;
@@ -60,17 +63,19 @@
         .tool-header p { margin: 0; font-size: 14px; opacity: 0.9; }
         .tool-body { padding: 24px; }
         .field { margin-bottom: 16px; }
-        .field label { display: block; font-size: 13px; color: #6b7280; margin-bottom: 8px; }
+        .field label { display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 8px; }
         .text-input {
             width: 100%;
             padding: 12px 14px;
-            border: 1px solid #e5e7eb;
+            border: 1px solid var(--border);
             border-radius: 12px;
             font-size: 14px;
             box-sizing: border-box;
+            background: var(--bg-primary);
+            color: var(--text-primary);
         }
         .text-input:focus { outline: none; border-color: #10b981; }
-        .text-input::placeholder { color: #9ca3af; }
+        .text-input::placeholder { color: var(--text-tertiary); }
         .convert-btn {
             width: 100%;
             padding: 14px;
@@ -88,13 +93,13 @@
             box-shadow: 0 2px 8px rgba(16,185,129,0.3);
         }
         .convert-btn:hover { box-shadow: 0 4px 12px rgba(16,185,129,0.4); }
-        .result-card { background: #f3f4f6; border-radius: 16px; padding: 18px; margin-top: 16px; }
-        .result-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-top: 1px solid #e5e7eb; font-size: 14px; }
+        .result-card { background: var(--bg-tertiary); border-radius: 16px; padding: 18px; margin-top: 16px; }
+        .result-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-top: 1px solid var(--border); font-size: 14px; }
         .result-row:first-child { border-top: none; }
-        .result-row .r-label { color: #6b7280; }
-        .result-row .r-value { font-weight: 600; color: #1f2937; font-family: monospace; }
+        .result-row .r-label { color: var(--text-secondary); }
+        .result-row .r-value { font-weight: 600; color: var(--text-primary); font-family: monospace; }
         .result-row.highlight .r-value { color: #10b981; font-size: 18px; }
-        .note { font-size: 12px; color: #9ca3af; line-height: 1.6; margin-top: 14px; }
+        .note { font-size: 12px; color: var(--text-tertiary); line-height: 1.6; margin-top: 14px; }
     </style>
 </head>
 <body>

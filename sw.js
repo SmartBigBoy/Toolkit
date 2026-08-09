@@ -1,4 +1,4 @@
-const CACHE_NAME = 'toolkit-v1';
+const CACHE_NAME = 'toolkit-v2';
 
 self.addEventListener('install', e => {
   e.waitUntil(
@@ -32,7 +32,24 @@ self.addEventListener('install', e => {
         '/tools/mbti.html',
         '/tools/alipay.html',
         '/tools/train.html',
+        '/tools/income-tax.html',
+        '/tools/mortgage.html',
+        '/tools/regex.html',
+        '/tools/tts.html',
+        '/tools/claude.html',
+        '/tools/Hermes.html',
+        '/tools/OpenClaw.html',
+        '/tools/blog-ai-server.html',
+        '/tools/workbuddy.html',
       ])
+    )
+  );
+});
+
+self.addEventListener('activate', e => {
+  e.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(keys.map(k => k !== CACHE_NAME ? caches.delete(k) : null))
     )
   );
 });

@@ -31,7 +31,7 @@
         .error-code {
             font-size: 8rem;
             font-weight: bold;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -52,7 +52,7 @@
             align-items: center;
             gap: 0.5rem;
             padding: 1rem 2rem;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
             color: white;
             text-decoration: none;
             border-radius: 50px;
@@ -61,7 +61,55 @@
         }
         .error-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.3);
+        }
+        .suggest-tools {
+            margin-top: 2.5rem;
+            max-width: 600px;
+        }
+        .suggest-title {
+            font-size: 14px;
+            color: var(--text-tertiary);
+            margin-bottom: 1rem;
+        }
+        .suggest-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: center;
+        }
+        .suggest-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            padding: 16px 14px;
+            min-width: 80px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+        .suggest-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--primary-light);
+            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.12);
+        }
+        .suggest-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+        .suggest-name {
+            font-size: 12px;
+            color: var(--text-secondary);
         }
     </style>
 
@@ -94,13 +142,42 @@
                     <i class="fas fa-home"></i>
                     返回首页
                 </a>
+                <div class="suggest-tools">
+                    <div class="suggest-title">或者试试这些热门工具</div>
+                    <div class="suggest-grid">
+                        <a href="./tools/json.html" class="suggest-card">
+                            <div class="suggest-icon"><i class="fas fa-code"></i></div>
+                            <span class="suggest-name">JSON格式化</span>
+                        </a>
+                        <a href="./tools/timestamp.html" class="suggest-card">
+                            <div class="suggest-icon"><i class="fas fa-clock"></i></div>
+                            <span class="suggest-name">时间戳转换</span>
+                        </a>
+                        <a href="./tools/qrcode.html" class="suggest-card">
+                            <div class="suggest-icon"><i class="fas fa-qrcode"></i></div>
+                            <span class="suggest-name">二维码生成</span>
+                        </a>
+                        <a href="./tools/base64.html" class="suggest-card">
+                            <div class="suggest-icon"><i class="fas fa-exchange-alt"></i></div>
+                            <span class="suggest-name">Base64</span>
+                        </a>
+                        <a href="./tools/income-tax.html" class="suggest-card">
+                            <div class="suggest-icon"><i class="fas fa-file-invoice-dollar"></i></div>
+                            <span class="suggest-name">个税计算器</span>
+                        </a>
+                        <a href="./tools/password.html" class="suggest-card">
+                            <div class="suggest-icon"><i class="fas fa-key"></i></div>
+                            <span class="suggest-name">密码生成</span>
+                        </a>
+                    </div>
+                </div>
             </div>
         </div>
     </main>
 
     <footer class="footer">
         <div class="container">
-            <p>&copy; 2024 TOOLKIT.SKIN - 免费在线工具箱 | 
+            <p>&copy; 2026 TOOLKIT.SKIN - 免费在线工具箱 |
                 <a href="./disclaimer.html">免责声明</a>
             </p>
         </div>

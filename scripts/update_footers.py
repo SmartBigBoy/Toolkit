@@ -15,7 +15,7 @@ def update_footer(filepath):
     
     new_footer = '''<footer class="footer">
         <div class="container">
-            <p>&copy; 2024 <a href="https://toolkit.skin" style="color: inherit; text-decoration: none;">TOOLKIT.SKIN</a> - 免费在线工具箱 | 
+            <p>&copy; 2026 <a href="https://toolkit.skin" style="color: inherit; text-decoration: none;">TOOLKIT.SKIN</a> - 免费在线工具箱 |
                 <a href="../disclaimer.html" style="color: inherit;">免责声明</a>
             </p>
         </div>

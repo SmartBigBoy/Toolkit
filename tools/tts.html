@@ -34,12 +34,15 @@
         gtag('js', new Date());
         gtag('config', 'G-V8533PXQLF');
     </script>
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"SoftwareApplication","name":"文本转语音","applicationCategory":"MultimediaApplication","operatingSystem":"Web","url":"https://toolkit.skin/tools/tts.html","description":"在线文本转语音工具，支持中文语音、语速/音调/音量调节，基于浏览器 Web Speech API，纯前端运行不上传服务器","offers":{"@type":"Offer","price":"0","priceCurrency":"CNY"},"publisher":{"@type":"Organization","name":"TOOLKIT.SKIN"}}
+    </script>
     <style>
         body { background: var(--bg-primary); margin: 0; padding: 0; }
         .container-box {
             max-width: 680px;
             margin: 40px auto;
-            background: #fff;
+            background: var(--bg-secondary);
             border-radius: 24px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.08);
             overflow: hidden;
@@ -60,23 +63,25 @@
         .tts-header p { margin: 0; font-size: 14px; opacity: 0.9; }
         .tts-body { padding: 24px; }
         .field { margin-bottom: 18px; }
-        .field > label { display: block; font-size: 13px; color: #6b7280; margin-bottom: 8px; }
+        .field > label { display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 8px; }
         .text-input {
             width: 100%;
             padding: 14px;
-            border: 1px solid #e5e7eb;
+            border: 1px solid var(--border);
             border-radius: 12px;
             font-size: 15px;
             box-sizing: border-box;
             font-family: inherit;
+            background: var(--bg-primary);
+            color: var(--text-primary);
         }
         .text-input:focus { outline: none; border-color: #06b6d4; }
         textarea.text-input { resize: vertical; min-height: 180px; line-height: 1.6; }
-        select.text-input { cursor: pointer; background: #fff; }
+        select.text-input { cursor: pointer; background: var(--bg-secondary); }
         .slider-row { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
-        .slider-row .slider-label { width: 56px; font-size: 13px; color: #6b7280; flex-shrink: 0; }
+        .slider-row .slider-label { width: 56px; font-size: 13px; color: var(--text-secondary); flex-shrink: 0; }
         .slider-row input[type=range] { flex: 1; accent-color: #0891b2; }
-        .slider-row .slider-val { width: 52px; text-align: right; font-size: 13px; color: #1f2937; font-family: monospace; flex-shrink: 0; }
+        .slider-row .slider-val { width: 52px; text-align: right; font-size: 13px; color: var(--text-primary); font-family: monospace; flex-shrink: 0; }
         .btn-row { display: flex; gap: 12px; margin-top: 8px; }
         .btn-play {
             flex: 1;
@@ -89,22 +94,22 @@
         .btn-play:hover { box-shadow: 0 4px 12px rgba(8,145,178,0.4); }
         .btn-stop {
             padding: 14px 20px;
-            background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; color: #6b7280;
+            background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; color: var(--text-secondary);
             font-size: 15px; cursor: pointer; display: flex; align-items: center; gap: 8px;
         }
-        .btn-stop:hover { background: #f9fafb; }
+        .btn-stop:hover { background: var(--bg-tertiary); }
         .btn-stop:disabled { opacity: 0.5; cursor: not-allowed; }
         .btn-download {
             padding: 14px 20px;
-            background: #fff; border: 1px solid #06b6d4; border-radius: 12px; color: #0891b2;
+            background: var(--bg-secondary); border: 1px solid #06b6d4; border-radius: 12px; color: #0891b2;
             font-size: 15px; cursor: pointer; display: flex; align-items: center; gap: 8px;
         }
         .btn-download:hover { background: rgba(6,182,212,0.08); }
         .btn-download:disabled { opacity: 0.5; cursor: not-allowed; }
         .progress-wrap { margin-top: 16px; }
-        .progress-bar { height: 8px; background: #e5e7eb; border-radius: 999px; overflow: hidden; }
+        .progress-bar { height: 8px; background: var(--border); border-radius: 999px; overflow: hidden; }
         .progress-fill { height: 100%; width: 0%; background: linear-gradient(135deg, #06b6d4, #0891b2); transition: width 0.1s; }
-        .status-row { display: flex; justify-content: space-between; font-size: 12px; color: #9ca3af; margin-top: 8px; }
+        .status-row { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-tertiary); margin-top: 8px; }
         .notice {
             background: rgba(8,145,178,0.08); border-left: 4px solid #0891b2; border-radius: 8px;
             padding: 12px 16px; font-size: 13px; color: #64748b; margin-top: 18px; line-height: 1.6;
