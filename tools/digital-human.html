@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="在线工具箱">
+    <link rel="apple-touch-icon" href="/assets/og-cover.png">
+    <title>3D数字人桌面智能小助手配置教程 | 在线工具箱</title>
+    <meta name="description" content="3D数字人桌面智能小助手配置教程，魔珐星云+DeepSeek+whisper三步搭建桌面AI数字人">
+    <meta name="keywords" content="3D数字人, 魔珐星云, DeepSeek, 桌面助手, 数字人, 语音助手, AI助手, whisper">
+    <meta name="author" content="TOOLKIT.SKIN">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://toolkit.skin/tools/digital-human.html">
+    <meta property="og:title" content="3D数字人桌面智能小助手配置教程">
+    <meta property="og:description" content="魔珐星云+DeepSeek+whisper，三步搭建属于你的桌面3D数字人">
+    <meta property="og:type" content="article">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="dns-prefetch" href="https://www.googletagmanager.com">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous">
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-V8533PXQLF"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-V8533PXQLF');
+    </script>
+<script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"SoftwareApplication","name":"3D数字人桌面智能小助手配置教程 | 在线工具箱","applicationCategory":"UtilitiesApplication","operatingSystem":"Web","url":"https://toolkit.skin/tools/digital-human.html","description":"魔珐星云+DeepSeek+whisper三步搭建桌面3D数字人智能小助手","offers":{"@type":"Offer","price":"0","priceCurrency":"CNY"},"publisher":{"@type":"Organization","name":"TOOLKIT.SKIN"}}
+    </script>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="../index.html" class="logo">
+                <i class="fas fa-wrench"></i>
+                <h1>在线工具箱</h1><span class="tool-count" id="toolCount">--</span>
+            </a>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            <article class="article-content">
+                <h1>3D数字人桌面智能小助手配置教程</h1>
+
+                <p class="article-meta">
+                    <span><i class="fas fa-user"></i> Canicer</span>
+                    <span><i class="fas fa-calendar"></i> 2026-08-19</span>
+                    <span><i class="fas fa-tags"></i> 3D数字人 · 魔珐星云 · DeepSeek · AI</span>
+                </p>
+
+                <p>想让桌面上住进一个会说、会动、有表情的 3D 数字人吗？本文从零开始，带你完成「<strong>软件安装 → 3D数字人创建 → DeepSeek API 申请 → 桌面小助手配置</strong>」全流程，最后再拆解它的开发原理与二次开发方向。</p>
+
+                <h2>一、安装软件</h2>
+
+                <p>文件解压缩，找到 exe 文件，双击运行（<strong>绿色软件免安装</strong>）。软件启动后显示设置页面，可以看到需要配置以下信息：</p>
+
+                <ul>
+                    <li><strong>名称</strong>：根据个人喜好输入即可</li>
+                    <li><strong>3D数字人应用ID、应用密钥</strong>：见第二节内容</li>
+                    <li><strong>DeepSeek大语言模型API Key</strong>：见第三节内容</li>
+                </ul>
+
+                <figure>
+                    <img src="https://i-blog.csdnimg.cn/direct/e1a6b7d0bb894254b5a73fc68c179668.png" alt="软件设置页面">
+                    <figcaption>软件设置页面</figcaption>
+                </figure>
+
+                <h2>二、3D数字人配置</h2>
+
+                <p>注册魔珐星云账户：<a href="https://xingyun3d.com/" target="_blank" rel="nofollow">https://xingyun3d.com/</a>，点击右上角登录/注册按钮，进入注册流程。</p>
+
+                <figure>
+                    <img src="https://i-blog.csdnimg.cn/direct/0f9102aac16f4ed29fec40e6922df2cb.png" alt="魔珐星云网站首页">
+                    <figcaption>图1 魔珐星云网站首页</figcaption>
+                </figure>
+
+                <p>在注册页面，勾选同意按钮，选择其它登录方式，输入手机号、验证码及邀请码（<strong>XDBAC5Q6KM</strong>）注册。</p>
+
+                <div class="tip-box">
+                    <p><i class="fas fa-gift"></i> <strong>福利提示：</strong>使用此内测邀请码可得 <strong>2000 分钟免费体验权</strong>，加上新用户注册赠送的 <strong>200 分钟</strong>体验时长，合计 <strong>2200 分钟免费时长</strong>。</p>
+                </div>
+
+                <figure>
+                    <img src="https://i-blog.csdnimg.cn/direct/7ff5eb8ea47942979988e8effba8d5b3.png" alt="注册页面">
+                    <figcaption>图2 注册页面</figcaption>
+                </figure>
+
+                <p>登录后，进入<strong>具身驱动页面</strong>，选择个人喜欢的数字人形象，然后点击<strong>创建同款应用</strong>。</p>
+
+                <figure>
+                    <img src="https://i-blog.csdnimg.cn/direct/d5c33a70418c48fc82707d48c18d77a8.png" alt="具身驱动页面">
+                    <figcaption>图3 具身驱动页面</figcaption>
+                </figure>
+
+                <p>在设置页输入应用信息，点击<strong>创建并进入调试</strong>即可。</p>
+
+                <figure>
+                    <img src="https://i-blog.csdnimg.cn/direct/fac5d0714e484802a46dfc4c47cca0f9.png" alt="应用设置页面">
+                    <figcaption>图4 应用设置页面</figcaption>
+                </figure>
+
+                <p>创建成功后，点击<strong>场景</strong>，选择形象背景，这里推荐选择透明"背景-全身"。音色、表演等功能按照个人喜好设置即可。人物配置设置完成后，点击右上角的<strong>预览效果</strong>，查看数字人实际呈现效果。</p>
+
+                <figure>
+                    <img src="https://i-blog.csdnimg.cn/direct/30130547952140b0ad3dd693ae6573e6.png" alt="人物设置页面">
+                    <figcaption>图5 人物设置页面</figcaption>
+                </figure>
+
+                <figure>
+                    <img src="https://i-blog.csdnimg.cn/direct/b0dd122f8d074d60a10629b4edc20837.png" alt="人物预览效果">
+                    <figcaption>图6 人物预览效果</figcaption>
+                </figure>
+
+                <p>确认人物语音播放正常后，点击右上角<strong>"接入SDK"</strong>按钮，记录 <strong>App ID、App Secret</strong> 信息。这两段信息就是调用此数字人的钥匙 🔑，请做好保存，稍后把它们复制到软件设置页面的对应位置。</p>
+
+                <figure>
+                    <img src="https://i-blog.csdnimg.cn/direct/be8937d150f5425292534c6e87b5fbde.png" alt="魔珐星云数字人应用ID及密钥">
+                    <figcaption>图7 魔珐星云数字人应用ID及密钥</figcaption>
+                </figure>
+
+                <h2>三、DeepSeek账号注册</h2>
+
+                <p>注册 DeepSeek 账户：<a href="https://www.deepseek.com" target="_blank" rel="nofollow">https://www.deepseek.com</a>，点击<strong>API开放平台</strong>进行注册。</p>
+
+                <figure>
+                    <img src="https://i-blog.csdnimg.cn/direct/806667234d744e1ab1d2403c9e6b4f5c.png" alt="DeepSeek首页图">
+                    <figcaption>图8 DeepSeek首页图</figcaption>
+                </figure>
+
+                <p>登录后，点击左侧<strong>充值</strong>页面。DeepSeek 作为最具性价比的国内大语言模型，为智能助手充值 <strong>10 元足够用一年</strong>。</p>
+
+                <figure>
+                    <img src="https://i-blog.csdnimg.cn/direct/7d7f3f55541c4c91a5595e7d23c2840d.png" alt="DeepSeek充值页面">
+                    <figcaption>图9 DeepSeek充值页面</figcaption>
+                </figure>
+
+                <p>账户充值完毕后，点击左侧的 <strong>API Keys</strong> 按钮，点击<strong>创建 API Key</strong>，输入名称（比如"桌面智能小助手"），点击创建。此时弹出的 API Key 就是外部调用 DeepSeek 大模型对话的钥匙 🔑。</p>
+
+                <div class="tip-box">
+                    <p><i class="fas fa-exclamation-triangle"></i> <strong>注意：</strong>此页面<strong>仅显示一次</strong>，点击复制后请做好留存，稍后把它复制到软件设置页面的对应位置。</p>
+                </div>
+
+                <figure>
+                    <img src="https://i-blog.csdnimg.cn/direct/88297d1875914e0f83c348519a05207d.png" alt="DeepSeek创建API Key页面">
+                    <figcaption>图10 DeepSeek创建API Key页面</figcaption>
+                </figure>
+
+                <h2>四、配置桌面智能小助手</h2>
+
+                <p>双击打开软件，软件启动后显示设置页面，按照以下信息完成配置：</p>
+
+                <ul>
+                    <li><strong>名称</strong>：根据个人喜好输入即可</li>
+                    <li><strong>3D数字人应用ID、应用密钥</strong>：输入魔珐星云创建应用的 ID 和密钥</li>
+                    <li><strong>DeepSeek大语言模型API Key</strong>：输入 DeepSeek API Key</li>
+                </ul>
+
+                <p>点击右下角的<strong>保存及校验</strong>按钮，稍等片刻，确认校验无误则配置成功，此时小助手将成功渲染到桌面。</p>
+
+                <figure>
+                    <img src="https://i-blog.csdnimg.cn/direct/740557714a8440d2a0b143d09a418ea5.png" alt="桌面小助手运行图">
+                    <figcaption>图11 桌面小助手运行图</figcaption>
+                </figure>
+
+                <h2>五、开发介绍</h2>
+
+                <h3>1. 具备功能</h3>
+
+                <ul>
+                    <li>人物支持桌面内<strong>随意拖拽</strong></li>
+                    <li>点击人物身体听到"滴"提示音<strong>开启语音对话</strong>（初次对话需要几秒钟加载语音识别模型）</li>
+                    <li>默认接入 DeepSeek 大模型<strong>快速响应</strong></li>
+                    <li>人物<strong>口型、表情、动作及情绪</strong>等和对话内容高度统一，情绪价值拉满</li>
+                    <li>文件包含所有<strong>工程文件</strong>，支持二次开发优化</li>
+                    <li><strong>离线语音识别模型</strong>，高隐私性、响应快</li>
+                    <li>配置 <strong>VAD 语音活动检测</strong>功能（准确识别人声开始及结束）</li>
+                </ul>
+
+                <h3>2. 软件整体结构</h3>
+
+                <p>级联链路：<strong>ASR + LLM + TTS</strong></p>
+
+                <ul>
+                    <li><strong>ASR</strong>：采用 OpenAI 开源的 <strong>whisper</strong> 语音识别模型，识别用户说话，并转化为文字送至 LLM；</li>
+                    <li><strong>LLM</strong>：采用 DeepSeek 国内最高性价比大语言模型，处理 ASR 转化的文字，并输出反馈至 TTS；</li>
+                    <li><strong>TTS</strong>：采用魔珐星云 3D 数字人自带语音合成模型，将 LLM 反馈的文本合成带语气、语调的音频播放给用户。</li>
+                </ul>
+
+                <h3>3. 二次开发方向</h3>
+
+                <ul>
+                    <li><strong>升级 ASR</strong>：当前采用的 whisper 体积小、便携性高，但参数也小，语音识别准确率并非最优。不考虑软件体积的情况下，可以考虑升级参数更高的 ASR 模型。</li>
+                    <li><strong>Realtime Speech-to-Speech</strong>：取消本地离线 ASR（缺点：识别准确率不高），直接调用多模态大模型，用户输入音频至大模型，大模型反馈文本至魔珐星云输出。</li>
+                    <li><strong>增加唤醒词检测</strong>（如"Hey 宝贝"），比点击人物体验感更好。</li>
+                    <li><strong>增加功能性（偏向 Agent）</strong>：通过语音对话让其帮忙设置定时任务、操作电脑增删文件等等。</li>
+                </ul>
+
+                <blockquote>
+                    <p>建议：整套方案只需 <strong>2200 分钟免费数字人时长 + 10 元 DeepSeek 充值</strong>，即可让桌面住进一个随时可以聊天、还会跟着情绪做表情动作的 3D 数字人。对 AI 语音交互感兴趣的同学，很适合作为入门项目研究。</p>
+                </blockquote>
+
+            </article>
+        </div>
+    </main>
+
+    <div class="tool-recommend container">
+        <div class="tool-recommend-title"><i class="fas fa-sync-alt"></i> 推荐工具</div>
+        <div class="rec-grid" id="tool-recommend"></div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2026 在线工具箱 | 简洁高效的工具集合</p>
+        </div>
+    </footer>
+
+    <script src="../js/tools_data.js"></script>
+</body>
+</html>
